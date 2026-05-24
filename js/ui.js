@@ -33,7 +33,7 @@ const UI = (() => {
   function init() {
     // Calc 변경 구독 → UI 갱신
     Calc.onChange((totals, state) => {
-      _updateTotalBoxes(totals);
+      _updateTotalBoxes(Calc.getAllTotalsDc());
       _updateLocalTotal(_currentPageId);
       _syncCheckboxes(state);
       _syncGradeButtons(state.grade);
@@ -48,6 +48,9 @@ const UI = (() => {
     // 세션 복원
     const session = Store.loadSession();
     if (session) Calc.fromSnapshot(session);
+
+    // DC 버튼 초기화
+    _updateDcButtons();
 
     // 초기 페이지
     go('rm-overview');
@@ -675,11 +678,52 @@ const UI = (() => {
    * 11. 패키지 DC (기본 틀 — 추후 실계산 로직 추가)
    * ============================================================ */
   function applyPackage(num) {
-    const totals = Calc.getAllTotals();
-    if (num === 1) {
-      showToast('패키지 DC ①: 로드맵 + 개별 동시 가입 할인 (추후 적용)', 'warn');
+    const group = num === 1 ? 'roadmap' : 'individual';
+    const config = cfg();
+    const rate = (config.discount || {})[group] || 0;
+
+    // 개별 DC — 할인율 0이면 동작 안함
+    if (group === 'individual' && rate === 0) {
+      showToast('개별 DC 할인율이 설정되지 않았습니다', 'warn');
+      return;
+    }
+
+    const isOn = Calc.toggleDc(group);
+    _updateDcButtons();
+    _updateTotalBoxes(Calc.getAllTotalsDc());
+
+    const label = group === 'roadmap' ? '로드맵' : '개별';
+    if (isOn) {
+      showToast(`${label} DC ${rate}% 할인이 적용되었습니다`, 'success');
     } else {
-      showToast('패키지 DC ②: 로드맵 + 개별 + 대입전략 동시 가입 할인 (추후 적용)', 'warn');
+      showToast(`${label} DC 할인이 해제되었습니다`, 'warn');
+    }
+  }
+
+  // DC 버튼 텍스트 + 활성 상태 업데이트
+  function _updateDcButtons() {
+    const config = cfg();
+    const disc   = config.discount || {};
+
+    const btn1 = document.querySelector('.pkg-btn-1');
+    const btn2 = document.querySelector('.pkg-btn-2');
+
+    if (btn1) {
+      const rate = disc.roadmap || 0;
+      const isOn = Calc.isDcActive('roadmap');
+      btn1.textContent = `로드맵 DC (${rate}%)`;
+      btn1.classList.toggle('pkg-btn-active', isOn);
+    }
+    if (btn2) {
+      const rate = disc.individual || 0;
+      if (rate === 0) {
+        btn2.style.display = 'none';
+      } else {
+        btn2.style.display = '';
+        const isOn = Calc.isDcActive('individual');
+        btn2.textContent = `개별 DC (${rate}%)`;
+        btn2.classList.toggle('pkg-btn-active', isOn);
+      }
     }
   }
 
