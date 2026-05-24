@@ -372,10 +372,10 @@ const Admin = (() => {
     if (!el) return;
 
     // 사이드 메뉴 active 갱신
-    document.querySelectorAll('.ct-side-item').forEach(item => {
+    document.querySelectorAll('#tab-content .ct-side-item').forEach(item => {
       item.classList.remove('ct-side-active');
     });
-    const activeItem = document.querySelector(`.ct-side-item[onclick*="${pageId}"]`);
+    const activeItem = document.querySelector(`#tab-content .ct-side-item[onclick*="${pageId}"]`);
     if (activeItem) activeItem.classList.add('ct-side-active');
 
     el.innerHTML = `
