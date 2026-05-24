@@ -32,12 +32,7 @@
     <div class="topbar">
       <!-- 좌: 브레드크럼 + 제목 -->
       <div>
-        <div class="tb-breadcrumb">
-          <i class="ti ti-home" style="font-size:13px;"></i>
-          <span>/</span>
-          <span id="tb-section">로드맵 컨설팅</span>
-        </div>
-        <div class="tb-title" id="tb-title">연간 관리형</div>
+        <div class="tb-title" id="tb-title">전체 보기</div>
       </div>
 
       <!-- 우: 컨트롤 묶음 -->
@@ -51,10 +46,9 @@
         <div class="grade-divider"></div>
 
         <!-- 학생 선택 / 저장 -->
-        <select class="student-select" id="student-select"
-          onchange="UI.loadSelectedStudent()">
-          <option value="">학생 선택...</option>
-        </select>
+        <button class="btn" id="student-select-btn" onclick="UI.openStudentSelectModal()" title="학생 불러오기">
+          <i class="ti ti-users"></i> <span id="student-select-label">학생 선택</span>
+        </button>
         <button class="btn" onclick="UI.openSaveStudentModal()" title="현재 선택값을 학생으로 저장">
           <i class="ti ti-user-plus"></i> 저장
         </button>
