@@ -406,12 +406,18 @@ const UI = (() => {
         </div>`;
     }).join('');
 
+    const noticeCard = `
+        <div class="aoc-notice-card">
+          <i class="ti ti-alert-triangle"></i>
+          <span>${config.overviewNotice}</span>
+        </div>`;
+
     return `
       <div id="pg-rm-overview" class="page">
         <div class="ov-grid">${cards}</div>
         <div class="aoc-section" id="aoc-section" style="display:none;">
           <div class="aoc-header"><i class="ti ti-plus"></i> 고3 추가 선택 항목</div>
-          <div class="aoc-grid">${addOnCards}</div>
+          <div class="aoc-grid">${addOnCards}${noticeCard}</div>
         </div>
         <div class="global-notice">
           <i class="ti ti-alert-triangle"></i>
