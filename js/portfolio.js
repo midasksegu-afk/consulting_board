@@ -68,16 +68,17 @@ const Portfolio = (() => {
    * 2. 출력물 HTML 생성
    * ============================================================ */
   function _buildHTML(items, studentKey) {
-    const config  = MK_CONFIG.resolve();
-    const totals  = Calc.getAllTotals();
-    const grade   = Calc.getGrade();
+    const config   = MK_CONFIG.resolve();
+    const totals   = Calc.getAllTotals();
+    const totalsDc = Calc.getAllTotalsDc();
+    const grade    = Calc.getGrade();
     const gradeStr = grade ? `고${grade}학년` : '학년 미선택';
 
-    // 학생 정보 파싱 (키: 이름_학교학년_진로)
-    const parts     = (studentKey || '').split('_');
-    const stuName   = parts[0] || '';
-    const stuSchool = parts[1] || '';
-    const stuGoal   = parts[2] || '';
+    // 학생 정보 파싱 (tb-title: 이름 · 학교 · 진로)
+    const parts     = (studentKey || '').split(' · ');
+    const stuName   = parts[0]?.trim() || '';
+    const stuSchool = parts[1]?.trim() || '';
+    const stuGoal   = parts[2]?.trim() || '';
 
     const hasItems = Object.values(items).some(arr => arr.length > 0);
 
@@ -90,8 +91,14 @@ const Portfolio = (() => {
         </div>`;
     }
 
-    const sectionHtml = (label, arr, total) => {
+    // DC 적용 여부
+    const dcRoadmap    = Calc.isDcActive('roadmap');
+    const dcIndividual = Calc.isDcActive('individual');
+
+    const sectionHtml = (groupKey, arr, rawTotal, dcTotal) => {
       if (!arr.length) return '';
+      const label = config.groups?.[groupKey]?.label || groupKey;
+      const hasDc = rawTotal !== dcTotal;
       const rows = arr.map(item => `
         <tr>
           <td style="padding:7px 0;font-size:13px;color:#43434A;">${item.label}</td>
@@ -99,21 +106,47 @@ const Portfolio = (() => {
                      text-align:right;white-space:nowrap;">${fmt(item.amt)}</td>
         </tr>`).join('');
 
+      const subtotalHtml = hasDc ? `
+        <div class="pf-subtotal">
+          원가: <span style="text-decoration:line-through;color:#86868B;">${fmt(rawTotal)}</span>
+          &nbsp;→&nbsp; 할인 후: <strong style="color:#5b35c4;">${fmt(dcTotal)}</strong>
+        </div>` : `
+        <div class="pf-subtotal">소계: ${fmt(rawTotal)}</div>`;
+
       return `
         <div class="pf-section">
           <div class="pf-section-title">■ ${label}</div>
           <table style="width:100%;border-collapse:collapse;">
             <tbody>${rows}</tbody>
           </table>
-          <div class="pf-subtotal">소계: ${fmt(total)}</div>
+          ${subtotalHtml}
         </div>`;
     };
+
+    const grandRaw = totals.grand;
+    const grandDc  = totalsDc.grand;
+    const hasDcAny = grandRaw !== grandDc;
+
+    const totalHtml = hasDcAny ? `
+      <div class="pf-total-row">
+        <span class="pf-total-label">합계금액</span>
+        <div style="text-align:right;">
+          <div style="font-size:13px;color:#86868B;text-decoration:line-through;margin-bottom:2px;">
+            원가 ${fmt(grandRaw)}
+          </div>
+          <span class="pf-total-amt">${fmt(grandDc)}</span>
+        </div>
+      </div>` : `
+      <div class="pf-total-row">
+        <span class="pf-total-label">합계금액</span>
+        <span class="pf-total-amt">${fmt(grandRaw)}</span>
+      </div>`;
 
     return `
       <div class="pf-doc">
         <!-- 헤더 -->
         <div class="pf-header">
-          <div class="pf-brand">${config.app.brandName}</div>
+          <div class="pf-brand">마이더스K교육컨설팅</div>
           <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
           <div class="pf-license">${config.app.license}</div>
         </div>
@@ -124,18 +157,15 @@ const Portfolio = (() => {
             <span class="pf-info-label">학년</span>
             <span class="pf-info-value">${gradeStr}</span>
           </div>
-          ${stuName ? `
-          <div class="pf-info-item">
+          ${stuName ? `<div class="pf-info-item">
             <span class="pf-info-label">학생명</span>
             <span class="pf-info-value">${stuName}</span>
           </div>` : ''}
-          ${stuSchool ? `
-          <div class="pf-info-item">
+          ${stuSchool ? `<div class="pf-info-item">
             <span class="pf-info-label">학교</span>
             <span class="pf-info-value">${stuSchool}</span>
           </div>` : ''}
-          ${stuGoal ? `
-          <div class="pf-info-item">
+          ${stuGoal ? `<div class="pf-info-item">
             <span class="pf-info-label">진로목표</span>
             <span class="pf-info-value">${stuGoal}</span>
           </div>` : ''}
@@ -148,25 +178,21 @@ const Portfolio = (() => {
         <!-- 선택 프로그램 -->
         <div class="pf-programs">
           <div class="pf-programs-title">[ 선택 프로그램 ]</div>
-          ${sectionHtml('로드맵 컨설팅',    items.roadmap,    totals.roadmap)}
-          ${sectionHtml('개별 컨설팅',      items.individual, totals.individual)}
-          ${sectionHtml('대입 전략 컨설팅', items.strategy,   totals.strategy)}
+          ${sectionHtml('roadmap',    items.roadmap,    totals.roadmap,    totalsDc.roadmap)}
+          ${sectionHtml('individual', items.individual, totals.individual, totalsDc.individual)}
+          ${sectionHtml('strategy',   items.strategy,   totals.strategy,   totalsDc.strategy)}
         </div>
 
         <!-- 합계 -->
-        <div class="pf-total-row">
-          <span class="pf-total-label">합계금액</span>
-          <span class="pf-total-amt">${fmt(totals.grand)}</span>
-        </div>
+        ${totalHtml}
         <div class="pf-tax">※ 부가세 별도</div>
 
-        <!-- 서명란 -->
+        <!-- 하단 고정문구 -->
         <div class="pf-sign">
-          <p>위 컨설팅 프로그램 선택에 동의합니다.</p>
-          <div class="pf-sign-row">
-            <span>성명: <span class="pf-sign-line" style="width:160px;"></span> (인)</span>
-            <span>날짜: ____년 ____월 ____일</span>
-          </div>
+          <p style="font-size:13px;color:#43434A;line-height:1.8;">
+            티처스 컨설턴트의 학생부 관리 컨설팅<br>
+            상담문의 : 053-782-0331
+          </p>
         </div>
       </div>`;
   }
@@ -177,7 +203,7 @@ const Portfolio = (() => {
    * ============================================================ */
   function open() {
     const items      = _collectItems();
-    const studentKey = document.getElementById('student-select')?.value || '';
+    const studentKey = document.getElementById('tb-title')?.textContent || '';
     const body       = _buildHTML(items, studentKey);
 
     const existing = document.getElementById('pf-modal');
