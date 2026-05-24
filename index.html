@@ -15,7 +15,7 @@
 
   <!-- ═══ 사이드바 ═══ -->
   <div class="sb">
-    <div class="sb-logo">
+    <div class="sb-logo" onclick="UI.go('rm-overview')" title="전체 보기로 이동">
       <div class="sb-logo-brand" id="sb-brand">MK MIDAS K</div>
       <div class="sb-logo-name"  id="sb-name">학생부 관리 컨설팅</div>
       <div class="sb-logo-sub"   id="sb-sub">Education Consulting</div>
@@ -133,8 +133,8 @@
   document.addEventListener('DOMContentLoaded', () => {
     const c = MK_CONFIG.app;
     document.getElementById('sb-brand').textContent = c.brandName;
-    document.getElementById('sb-name').textContent  = c.brandSub;
-    document.getElementById('sb-sub').textContent   = c.brandEn;
+    document.getElementById('sb-name').textContent  = '마이더스K교육컨설팅';
+    document.getElementById('sb-sub').textContent   = 'CONSULTING BOARD';
     document.getElementById('sb-foot').innerHTML    =
       `<strong>${c.license.split(' ').slice(0,2).join(' ')}</strong><br>${c.license}<br>${c.copyright}`;
   });
