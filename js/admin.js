@@ -180,6 +180,10 @@ const Admin = (() => {
             value="${price.label}"
             oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
             placeholder="항목명">
+          <input class="admin-input" style="flex:1;min-width:60px;max-width:140px;"
+            value="${price.note || ''}"
+            oninput="Admin.updatePriceField('${pageId}', ${idx}, 'note', this.value)"
+            placeholder="비고 (예: 1회/고3)">
           <div style="display:flex;align-items:center;gap:4px;flex:0.8;">
             <input class="admin-input" style="width:70px;text-align:right;"
               value="${numOnly}" type="number" min="0"
