@@ -761,3 +761,22 @@ select[title] { cursor: help; }
 .admin-save-btn:hover {
   background: #d0c6ff !important;
 }
+
+/* ================================================================
+   관리자 사이드 메뉴 그룹 라벨 강화
+================================================================ */
+.ct-group-label {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: var(--text-1) !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  padding: 14px 14px 6px !important;
+  background: var(--surface2) !important;
+  border-top: 1px solid var(--border) !important;
+  margin-top: 4px !important;
+}
+.ct-group-label:first-child {
+  border-top: none !important;
+  margin-top: 0 !important;
+}
