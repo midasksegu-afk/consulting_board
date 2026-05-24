@@ -69,6 +69,29 @@ const Admin = (() => {
     const cfg  = _draft;
     let html   = '';
 
+    // DC 할인율 섹션
+    const disc = cfg.discount || {};
+    html += `
+      <div class="admin-section">
+        <div class="admin-section-title">DC 할인율 설정</div>
+        <div class="admin-price-row">
+          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">로드맵 DC (%)</span>
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0" max="100"
+            value="${disc.roadmap ?? 10}"
+            onchange="Admin.updateDiscountField('roadmap', this.value)">
+          <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
+        </div>
+        <div class="admin-price-row">
+          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">개별 DC (%)</span>
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0" max="100"
+            value="${disc.individual ?? 0}"
+            onchange="Admin.updateDiscountField('individual', this.value)">
+          <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
+        </div>
+      </div>`;
+
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = cfg.pages[pageId];
       if (!page || page.isOverview) return;
@@ -152,6 +175,29 @@ const Admin = (() => {
     const el  = document.getElementById('tab-name');
     const cfg = _draft;
     let html  = '';
+
+    // DC 할인율 섹션
+    const disc = cfg.discount || {};
+    html += `
+      <div class="admin-section">
+        <div class="admin-section-title">DC 할인율 설정</div>
+        <div class="admin-price-row">
+          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">로드맵 DC (%)</span>
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0" max="100"
+            value="${disc.roadmap ?? 10}"
+            onchange="Admin.updateDiscountField('roadmap', this.value)">
+          <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
+        </div>
+        <div class="admin-price-row">
+          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">개별 DC (%)</span>
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0" max="100"
+            value="${disc.individual ?? 0}"
+            onchange="Admin.updateDiscountField('individual', this.value)">
+          <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
+        </div>
+      </div>`;
 
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = cfg.pages[pageId];
@@ -462,6 +508,16 @@ const Admin = (() => {
 
 
   /* ============================================================
+   * 8-1. DC 할인율 업데이트
+   * ============================================================ */
+  function updateDiscountField(group, value) {
+    if (!_draft.discount) _draft.discount = {};
+    const old = _draft.discount[group];
+    _draft.discount[group] = parseInt(value) || 0;
+    Store.addLog('price', `DC 할인율 ${group}`, old, value);
+  }
+
+  /* ============================================================
    * 9. 전체 저장
    * ============================================================ */
   function saveAll() {
@@ -482,6 +538,7 @@ const Admin = (() => {
     checkPin, switchTab,
     // 금액
     renderPriceTab, updatePriceField, addPriceItem, deletePriceItem,
+    updateDiscountField,
     // 프로그램명
     renderNameTab, updateNameField,
     // 콘텐츠
