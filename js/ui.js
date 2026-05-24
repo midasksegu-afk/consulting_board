@@ -1,0 +1,663 @@
+/**
+ * ui.js — 마이더스K DOM 렌더링 & 이벤트 전담
+ *
+ * 원칙:
+ *  - Calc / Store / Config 는 DOM을 모름 → UI만 DOM 조작
+ *  - 모든 렌더링은 config 기반 동적 생성 (하드코딩 없음)
+ *  - 이벤트 → Calc 호출 → onChange 콜백 → UI 업데이트
+ *
+ * 로드 순서: config.js → store.js → calc.js → ui.js
+ */
+
+const UI = (() => {
+
+  /* ============================================================
+   * 내부 유틸
+   * ============================================================ */
+  function fmt(n) {
+    if (n === 0) return '0원';
+    if (n >= 10000) {
+      const man = Math.floor(n / 10000);
+      const rest = n % 10000;
+      return rest === 0
+        ? `${man.toLocaleString('ko-KR')}만원`
+        : `${n.toLocaleString('ko-KR')}원`;
+    }
+    return `${n.toLocaleString('ko-KR')}원`;
+  }
+
+  function cfg() {
+    return MK_CONFIG.resolve();
+  }
+
+  let _currentPageId = 'rm-overview';
+
+
+  /* ============================================================
+   * 1. 초기화 — DOMContentLoaded 에서 호출
+   * ============================================================ */
+  function init() {
+    // Calc 변경 구독 → UI 갱신
+    Calc.onChange((totals, state) => {
+      _updateTotalBoxes(totals);
+      _updateLocalTotal(_currentPageId);
+      _syncCheckboxes(state);
+      _syncGradeButtons(state.grade);
+      _syncOvCards(state);
+    });
+
+    // 렌더링
+    renderSidebar();
+    renderPages();
+    renderStudentDropdown();
+
+    // 세션 복원
+    const session = Store.loadSession();
+    if (session) Calc.fromSnapshot(session);
+
+    // 초기 페이지
+    go('rm-overview');
+  }
+
+
+  /* ============================================================
+   * 2. 페이지 전환
+   * ============================================================ */
+  function go(pageId) {
+    _currentPageId = pageId;
+
+    // 페이지 표시
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const pg = document.getElementById('pg-' + pageId);
+    if (pg) pg.classList.add('active');
+
+    // 사이드바 active
+    document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+    const navEl = document.getElementById('nav-' + pageId);
+    if (navEl) navEl.classList.add('active');
+
+    // topbar breadcrumb / title
+    const page = cfg().pages[pageId];
+    if (page) {
+      const groupLabel = cfg().groups[page.group]?.label || '';
+      document.getElementById('tb-section').textContent = groupLabel;
+      document.getElementById('tb-title').textContent   = page.title;
+    }
+
+    // autoCheck (rm-d / rm-e 첫 진입)
+    if (page && page.autoCheck) {
+      Calc.autoCheckPage(pageId);
+    }
+
+    // 로컬 합계 갱신
+    _updateLocalTotal(pageId);
+  }
+
+
+  /* ============================================================
+   * 3. 학년 버튼 토글
+   * ============================================================ */
+  function toggleGrade(n) {
+    const newGrade = Calc.setGrade(n);
+    // grade 체크박스 (data-grade 기반) 처리
+    _applyGradeCheckboxes(newGrade);
+  }
+
+  function _applyGradeCheckboxes(grade) {
+    // 상세 페이지 내 data-grade 체크박스 자동 선택
+    document.querySelectorAll('input[type=checkbox][data-grade]').forEach(cb => {
+      const grades = (cb.getAttribute('data-grade') || '')
+        .split(',').map(Number);
+      const pageId = cb.closest('.page')?.id?.replace('pg-', '');
+      if (!pageId) return;
+      const idx = parseInt(cb.getAttribute('data-item-idx'));
+      const shouldCheck = grade !== 0 && grades.includes(grade);
+      cb.checked = shouldCheck;
+      Calc.selectItem(pageId, idx, shouldCheck);
+    });
+  }
+
+  function _syncGradeButtons(grade) {
+    document.querySelectorAll('.grade-btn').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.grade) === grade);
+    });
+  }
+
+
+  /* ============================================================
+   * 4. topbar 합산 박스 업데이트
+   * ============================================================ */
+  function _updateTotalBoxes(totals) {
+    const el = id => document.getElementById(id);
+    if (el('total-roadmap'))    el('total-roadmap').textContent    = fmt(totals.roadmap);
+    if (el('total-individual')) el('total-individual').textContent = fmt(totals.individual);
+    if (el('total-strategy'))   el('total-strategy').textContent   = fmt(totals.strategy);
+  }
+
+  function _updateLocalTotal(pageId) {
+    const el = document.getElementById('local-' + pageId);
+    if (el) el.textContent = fmt(Calc.getPageTotal(pageId));
+  }
+
+
+  /* ============================================================
+   * 5. 체크박스 DOM 동기화 (fromSnapshot 후)
+   * ============================================================ */
+  function _syncCheckboxes(state) {
+    // 상세 페이지 체크박스
+    document.querySelectorAll('input[type=checkbox][data-item-idx]').forEach(cb => {
+      const pageId = cb.closest('.page')?.id?.replace('pg-', '');
+      if (!pageId) return;
+      const idx = parseInt(cb.getAttribute('data-item-idx'));
+      cb.checked = Calc.isItemSelected(pageId, idx);
+    });
+    _updateLocalTotal(_currentPageId);
+  }
+
+  function _syncOvCards(state) {
+    // 연간관리형 카드 체크박스 동기화
+    Object.keys(cfg().pages).forEach(pageId => {
+      const cb = document.getElementById('ovchk-' + pageId);
+      if (!cb) return;
+      const isSelected = Calc.isOvSelected(pageId);
+      cb.checked = isSelected;
+      const card = cb.closest('.ov-card');
+      if (card) card.classList.toggle('card-selected', isSelected);
+    });
+  }
+
+
+  /* ============================================================
+   * 6. 사이드바 동적 렌더링
+   * ============================================================ */
+  function renderSidebar() {
+    const nav = document.getElementById('sb-nav');
+    if (!nav) return;
+
+    const config   = cfg();
+    const groups   = config.groups;
+    const pages    = config.pages;
+    const order    = MK_CONFIG.pageOrder;
+    let html       = '';
+    let lastGroup  = null;
+
+    order.forEach(pageId => {
+      const page = pages[pageId];
+      if (!page) return;
+
+      // 섹션 헤더
+      if (page.group !== lastGroup && groups[page.group]?.sbSection) {
+        html += `<div class="sb-section">${groups[page.group].label}</div>`;
+        lastGroup = page.group;
+      }
+
+      html += `
+        <div class="sb-item" id="nav-${pageId}" onclick="UI.go('${pageId}')">
+          <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}
+        </div>`;
+    });
+
+    nav.innerHTML = html;
+  }
+
+
+  /* ============================================================
+   * 7. 전체 페이지 동적 렌더링
+   * ============================================================ */
+  function renderPages() {
+    const container = document.getElementById('content');
+    if (!container) return;
+
+    const config = cfg();
+    let html = '';
+
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page) return;
+
+      if (page.isOverview) {
+        html += _renderOverviewPage(config);
+      } else {
+        html += _renderDetailPage(pageId, page);
+      }
+    });
+
+    container.innerHTML = html;
+  }
+
+
+  /* ── 연간관리형 개요 페이지 ── */
+  function _renderOverviewPage(config) {
+    const order = MK_CONFIG.pageOrder.filter(id => {
+      const p = config.pages[id];
+      return p && p.group === 'roadmap' && !p.isOverview;
+    });
+
+    const cards = order.map(pageId => {
+      const page = config.pages[pageId];
+      const ov   = page.ovCard;
+      if (!ov) return '';
+
+      const checkArea = ov.fixed
+        ? `<div class="ov-check-area">
+             <label class="ov-check-label fixed" title="기본 포함 항목"></label>
+             <span class="ov-fixed-badge">기본 포함</span>
+           </div>`
+        : `<div class="ov-check-area">
+             <div class="ov-check-wrap">
+               <input type="checkbox" class="ov-checkbox" id="ovchk-${pageId}"
+                 onchange="UI.handleOvCheck('${pageId}', this)">
+               <label class="ov-check-label" for="ovchk-${pageId}"></label>
+             </div>
+           </div>`;
+
+      const treeHtml = (ov.tree || []).map(t => `
+        <div class="ov-tree-item">
+          <div class="ov-tree-dot"></div>
+          <div>
+            <div class="ov-tree-label">${t.label}</div>
+            <div class="ov-tree-sub">${t.sub}</div>
+          </div>
+        </div>`).join('');
+
+      const priceHtml = (ov.priceLabel || [])
+        .map(p => `${p}<br>`).join('');
+
+      return `
+        <div class="ov-card" id="ovcard-${pageId}">
+          ${checkArea}
+          <div class="ov-icon" style="background:${page.iconBg};color:${page.iconColor};">
+            <i class="ti ${page.iconClass}"></i>
+          </div>
+          <div class="ov-badge">${ov.badge}</div>
+          <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
+          <div class="ov-price">${priceHtml}</div>
+          <div style="flex:1;min-height:8px;"></div>
+          <div class="ov-arrow" onclick="UI.go('${pageId}')" style="cursor:pointer;">
+            <i class="ti ti-arrow-right"></i> 자세히 보기
+          </div>
+          <div class="ov-tree">${treeHtml}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div id="pg-rm-overview" class="page">
+        <div class="ov-grid">${cards}</div>
+        <div class="global-notice">
+          <i class="ti ti-alert-triangle"></i>
+          <span>${config.overviewNotice}</span>
+        </div>
+      </div>`;
+  }
+
+
+  /* ── 상세 페이지 ── */
+  function _renderDetailPage(pageId, page) {
+    const programsHtml   = _renderPrograms(page.programs || []);
+    const conditionsHtml = _renderConditions(page.conditions || []);
+    const notesHtml      = _renderNotes(page.notes || []);
+    const priceCardHtml  = _renderPriceCard(pageId, page);
+
+    return `
+      <div id="pg-${pageId}" class="page">
+        <div class="detail-header">
+          <div class="detail-icon" style="background:${page.iconBg};color:${page.iconColor};">
+            <i class="ti ${page.iconClass}"></i>
+          </div>
+          <div>
+            <div class="detail-title">${page.title}</div>
+            <div class="detail-sub">${page.subtitle || ''}</div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="d-col-label">프로그램 구성</div>
+            ${programsHtml}
+          </div>
+          <div>
+            <div class="d-col-label">제공 조건 및 세부 내용</div>
+            ${conditionsHtml}
+            ${notesHtml}
+          </div>
+          <div>
+            <div class="d-col-label">개별가 선택</div>
+            ${priceCardHtml}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function _renderPrograms(programs) {
+    return programs.map(p => `
+      <div class="p-item">
+        <div class="p-header">
+          <div class="p-num">${p.num}</div>
+          <div class="p-title">${p.title}</div>
+        </div>
+        <div class="p-desc">
+          <ul>${(p.items || []).map(i => `<li>${i}</li>`).join('')}</ul>
+        </div>
+      </div>`).join('');
+  }
+
+  function _renderConditions(conditions) {
+    return conditions.map(c => {
+      let body = '';
+      if (c.type === 'tags+text') {
+        const tags = (c.tags || []).map(t => `<span class="c-tag">${t}</span>`).join('');
+        body = `${tags}<div style="margin-top:10px;">${c.text}</div>`;
+      } else {
+        // type: 'text' — 줄바꿈을 •로 표시
+        body = c.text.split('\n').map(line => `• ${line}`).join('<br>');
+      }
+      return `
+        <div class="c-box">
+          <div class="c-title">${c.title}</div>
+          <div class="c-txt">${body}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function _renderNotes(notes) {
+    const colorMap = {
+      blue:  { cls: 'n-blue',  icon: 'ti-info-circle' },
+      amber: { cls: 'n-amber', icon: 'ti-alert-triangle' },
+      red:   { cls: 'n-red',   icon: 'ti-ban' },
+      green: { cls: 'n-green', icon: 'ti-circle-check' },
+    };
+    return notes.map(n => {
+      const cm = colorMap[n.color] || colorMap.blue;
+      const icon = n.icon || cm.icon;
+      return `
+        <div class="notice ${cm.cls}">
+          <i class="ti ${icon}"></i>
+          <span>${n.text}</span>
+        </div>`;
+    }).join('');
+  }
+
+  function _renderPriceCard(pageId, page) {
+    const prices = page.prices || [];
+    const hasGrade = prices.some(p => p.grade);
+    const label = hasGrade ? '학년 선택' : '항목 선택';
+
+    const opts = prices.map((price, idx) => {
+      const gradeAttr = price.grade ? ` data-grade="${price.grade}"` : '';
+      const noteHtml  = price.note ? `<div class="p-opt-note">${price.note}</div>` : '';
+      const badgeHtml = price.badge
+        ? ` <span style="font-size:11px;background:linear-gradient(135deg,#6c5ff5,#9b4dfc);color:#fff;padding:1px 7px;border-radius:8px;font-weight:600;vertical-align:middle;">${price.badge}</span>`
+        : '';
+
+      return `
+        <label class="p-opt">
+          <input type="checkbox"
+            data-amt="${price.amt}"
+            data-item-idx="${idx}"
+            ${gradeAttr}
+            onchange="UI.handleItemCheck('${pageId}', ${idx}, this)">
+          <div class="p-opt-lbl">
+            <div class="p-opt-grade">${price.label}${badgeHtml}</div>
+            ${noteHtml}
+          </div>
+          <span class="p-opt-amt">${fmt(price.amt)}</span>
+        </label>`;
+    }).join('');
+
+    return `
+      <div class="price-card">
+        <div class="pc-title">${label}</div>
+        ${opts}
+        <div class="pc-divider"></div>
+        <div class="pc-total">
+          <span class="pc-total-lbl">페이지 선택 합계</span>
+          <span class="pc-total-amt" id="local-${pageId}">0원</span>
+        </div>
+      </div>`;
+  }
+
+
+  /* ============================================================
+   * 8. 이벤트 핸들러 — HTML에서 직접 호출
+   * ============================================================ */
+
+  /** 연간관리형 카드 체크 */
+  function handleOvCheck(pageId, cb) {
+    const ok = Calc.selectOv(pageId, cb.checked);
+    if (!ok) {
+      cb.checked = false;
+      showToast('학년을 먼저 선택해 주세요', 'warn');
+      return;
+    }
+    const card = document.getElementById('ovcard-' + pageId);
+    if (card) card.classList.toggle('card-selected', cb.checked);
+  }
+
+  /** 상세 페이지 체크박스 */
+  function handleItemCheck(pageId, idx, cb) {
+    Calc.selectItem(pageId, idx, cb.checked);
+    _updateLocalTotal(pageId);
+  }
+
+
+  /* ============================================================
+   * 9. 학생 저장 모달
+   * ============================================================ */
+  function openSaveStudentModal() {
+    const existing = document.getElementById('student-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'student-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:400px;">
+        <div class="modal-header">
+          <span><i class="ti ti-user-plus"></i> 학생 저장</span>
+          <button class="modal-close" onclick="document.getElementById('student-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label class="modal-label">학생명 *</label>
+            <input class="admin-input" id="st-name" placeholder="예) 김수진" maxlength="10">
+          </div>
+          <div>
+            <label class="modal-label">학교 + 학년 *</label>
+            <input class="admin-input" id="st-school" placeholder="예) 대건고1" maxlength="15">
+          </div>
+          <div>
+            <label class="modal-label">진로 목표 *</label>
+            <input class="admin-input" id="st-goal" placeholder="예) 경영학" maxlength="20">
+          </div>
+          <div id="st-preview" style="font-size:12px;color:var(--text-3);padding:6px 0;">
+            저장 키: —
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="admin-cancel-btn"
+            onclick="document.getElementById('student-modal').remove()">취소</button>
+          <button class="admin-save-btn" onclick="UI.confirmSaveStudent()">
+            <i class="ti ti-device-floppy"></i> 저장
+          </button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+
+    // 실시간 키 미리보기
+    ['st-name','st-school','st-goal'].forEach(id => {
+      document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
+    });
+
+    document.getElementById('st-name').focus();
+  }
+
+  function _updateStudentKeyPreview() {
+    const name   = document.getElementById('st-name').value.trim();
+    const school = document.getElementById('st-school').value.trim();
+    const goal   = document.getElementById('st-goal').value.trim();
+    const preview = document.getElementById('st-preview');
+    if (preview) {
+      const key = (name && school && goal)
+        ? Store.buildStudentKey(name, school, goal)
+        : '—';
+      preview.textContent = `저장 키: ${key}`;
+    }
+  }
+
+  async function confirmSaveStudent() {
+    const name   = document.getElementById('st-name')?.value.trim();
+    const school = document.getElementById('st-school')?.value.trim();
+    const goal   = document.getElementById('st-goal')?.value.trim();
+
+    if (!name || !school || !goal) {
+      showToast('모든 항목을 입력해 주세요', 'warn');
+      return;
+    }
+
+    const key  = Store.buildStudentKey(name, school, goal);
+    const snap = Calc.toSnapshot();
+    const meta = { name, school, goal, grade: Calc.getGrade() };
+
+    showToast('저장 중...', 'success');
+    const ok = await Store.saveStudent(key, snap, meta);
+    document.getElementById('student-modal')?.remove();
+
+    if (ok) {
+      await renderStudentDropdown();
+      showToast(`✓ ${key} 저장 완료`, 'success');
+    } else {
+      showToast('저장 실패 — 네트워크 확인', 'error');
+    }
+  }
+
+
+  /* ============================================================
+   * 10. 학생 드롭다운 렌더링 / 로드 (비동기)
+   * ============================================================ */
+  async function renderStudentDropdown() {
+    const sel = document.getElementById('student-select');
+    if (!sel) return;
+
+    sel.innerHTML = '<option value="">불러오는 중...</option>';
+    try {
+      const list = await Store.listStudents();
+      let html = '<option value="">학생 선택...</option>';
+      list.forEach(s => {
+        const date = Store.formatDate(s.savedAt).split(' ')[0];
+        html += `<option value="${s.key}">${s.key} (${date})</option>`;
+      });
+      sel.innerHTML = html;
+    } catch (e) {
+      sel.innerHTML = '<option value="">불러오기 실패</option>';
+      showToast('학생 목록 로드 실패 — 네트워크 확인', 'error');
+    }
+  }
+
+  async function loadSelectedStudent() {
+    const sel = document.getElementById('student-select');
+    if (!sel || !sel.value) return;
+
+    showToast('불러오는 중...', 'success');
+    const data = await Store.loadStudent(sel.value);
+    if (!data) { showToast('학생 데이터를 찾을 수 없습니다', 'error'); return; }
+
+    Calc.reset();
+    Calc.fromSnapshot(data.selections);
+    _syncGradeButtons(Calc.state.grade);
+    renderPages();
+    go(_currentPageId);
+    showToast(`✓ ${sel.value} 불러오기 완료`, 'success');
+  }
+
+  function newSession() {
+    const sel = document.getElementById('student-select');
+    if (sel) sel.value = '';
+    Calc.reset();
+    renderPages();
+    go('rm-overview');
+    showToast('새 상담을 시작합니다', 'success');
+  }
+
+
+  /* ============================================================
+   * 11. 패키지 DC (기본 틀 — 추후 실계산 로직 추가)
+   * ============================================================ */
+  function applyPackage(num) {
+    const totals = Calc.getAllTotals();
+    if (num === 1) {
+      showToast('패키지 DC ①: 로드맵 + 개별 동시 가입 할인 (추후 적용)', 'warn');
+    } else {
+      showToast('패키지 DC ②: 로드맵 + 개별 + 대입전략 동시 가입 할인 (추후 적용)', 'warn');
+    }
+  }
+
+
+  /* ============================================================
+   * 12. 토스트 알림
+   * ============================================================ */
+  function showToast(msg, type = 'success') {
+    let toast = document.getElementById('mk-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'mk-toast';
+      document.body.appendChild(toast);
+    }
+
+    const colorMap = {
+      success: { bg: '#1a1d2e', color: '#fff',     border: 'transparent' },
+      warn:    { bg: '#fff',    color: '#15151A',  border: '#FFB89A' },
+      error:   { bg: '#FFD3E1',color: '#8b1c3a',  border: '#FF8FB1' },
+    };
+    const c = colorMap[type] || colorMap.success;
+
+    toast.style.cssText = `
+      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
+      background:${c.bg}; color:${c.color};
+      padding:12px 28px; border-radius:12px;
+      font-size:14px; font-weight:600;
+      box-shadow:0 8px 32px rgba(0,0,0,0.15);
+      z-index:9999; border:1.5px solid ${c.border};
+      display:flex; align-items:center; gap:10px;
+      opacity:1; transition:opacity 0.3s;
+      white-space:nowrap;`;
+
+    const iconMap = { success: 'ti-circle-check', warn: 'ti-alert-circle', error: 'ti-x' };
+    const iconColor = type === 'warn' ? '#FF8FB1' : (type === 'error' ? '#8b1c3a' : '#B79CFF');
+    toast.innerHTML = `<i class="ti ${iconMap[type] || 'ti-info-circle'}" style="font-size:18px;color:${iconColor};"></i> ${msg}`;
+
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+  }
+
+
+  /* ============================================================
+   * Public API
+   * ============================================================ */
+  return {
+    init,
+    go,
+    toggleGrade,
+    handleOvCheck,
+    handleItemCheck,
+    renderSidebar,
+    renderPages,
+    renderStudentDropdown,
+    openSaveStudentModal,
+    confirmSaveStudent,
+    loadSelectedStudent,
+    newSession,
+    applyPackage,
+    showToast,
+  };
+
+})();
+
+
+/* ============================================================
+ * DOMContentLoaded 진입점
+ * ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  UI.init();
+});

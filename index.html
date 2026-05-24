@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>마이더스K — 학생부 관리 컨설팅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ 사이드바 ═══ -->
+  <div class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-brand" id="sb-brand">MK MIDAS K</div>
+      <div class="sb-logo-name"  id="sb-name">학생부 관리 컨설팅</div>
+      <div class="sb-logo-sub"   id="sb-sub">Education Consulting</div>
+    </div>
+    <!-- 사이드바 메뉴 — ui.js renderSidebar()가 동적 생성 -->
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot" id="sb-foot"></div>
+  </div>
+
+  <!-- ═══ 메인 ═══ -->
+  <div class="main">
+
+    <!-- 탑바 -->
+    <div class="topbar">
+      <!-- 좌: 브레드크럼 + 제목 -->
+      <div>
+        <div class="tb-breadcrumb">
+          <i class="ti ti-home" style="font-size:13px;"></i>
+          <span>/</span>
+          <span id="tb-section">로드맵 컨설팅</span>
+        </div>
+        <div class="tb-title" id="tb-title">연간 관리형</div>
+      </div>
+
+      <!-- 우: 컨트롤 묶음 -->
+      <div class="tb-right">
+
+        <!-- 관리자 -->
+        <a href="admin.html" class="btn" title="관리자 페이지">
+          <i class="ti ti-settings-2"></i> 관리자
+        </a>
+
+        <div class="grade-divider"></div>
+
+        <!-- 학생 선택 / 저장 -->
+        <select class="student-select" id="student-select"
+          onchange="UI.loadSelectedStudent()">
+          <option value="">학생 선택...</option>
+        </select>
+        <button class="btn" onclick="UI.openSaveStudentModal()" title="현재 선택값을 학생으로 저장">
+          <i class="ti ti-user-plus"></i> 저장
+        </button>
+        <button class="btn" onclick="UI.newSession()" title="새 상담 시작">
+          <i class="ti ti-refresh"></i> 초기화
+        </button>
+
+        <div class="grade-divider"></div>
+
+        <!-- 학년 선택 -->
+        <div class="grade-selector">
+          <span class="grade-label">학년</span>
+          <button class="grade-btn" data-grade="1" onclick="UI.toggleGrade(1)">고1</button>
+          <button class="grade-btn" data-grade="2" onclick="UI.toggleGrade(2)">고2</button>
+          <button class="grade-btn" data-grade="3" onclick="UI.toggleGrade(3)">고3</button>
+        </div>
+
+        <div class="grade-divider"></div>
+
+        <!-- 합산 3분리 -->
+        <div class="total-boxes">
+          <div class="total-box">
+            <i class="ti ti-map"></i>
+            <div class="total-inner">
+              <div class="total-label">로드맵</div>
+              <div class="total-amt" id="total-roadmap">0원</div>
+            </div>
+          </div>
+          <div class="total-box">
+            <i class="ti ti-user-check"></i>
+            <div class="total-inner">
+              <div class="total-label">개별</div>
+              <div class="total-amt" id="total-individual">0원</div>
+            </div>
+          </div>
+          <div class="total-box">
+            <i class="ti ti-target"></i>
+            <div class="total-inner">
+              <div class="total-label">대입전략</div>
+              <div class="total-amt" id="total-strategy">0원</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 패키지 DC -->
+        <div class="pkg-btns">
+          <button class="pkg-btn pkg-btn-1" onclick="UI.applyPackage(1)">패키지 DC ①</button>
+          <button class="pkg-btn pkg-btn-2" onclick="UI.applyPackage(2)">패키지 DC ②</button>
+        </div>
+
+        <div class="grade-divider"></div>
+
+        <!-- 포트폴리오 출력 -->
+        <button class="btn btn-primary" onclick="Portfolio.open()">
+          <i class="ti ti-clipboard-list"></i> 컨설팅 포트폴리오
+        </button>
+
+      </div>
+    </div>
+
+    <!-- 콘텐츠 — ui.js renderPages()가 동적 생성 -->
+    <div class="content" id="content"></div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ JS 로드 순서 중요 ═══ -->
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/portfolio.js"></script>
+
+<!-- 사이드바 하단 정보 동적 삽입 -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const c = MK_CONFIG.app;
+    document.getElementById('sb-brand').textContent = c.brandName;
+    document.getElementById('sb-name').textContent  = c.brandSub;
+    document.getElementById('sb-sub').textContent   = c.brandEn;
+    document.getElementById('sb-foot').innerHTML    =
+      `<strong>${c.license.split(' ').slice(0,2).join(' ')}</strong><br>${c.license}<br>${c.copyright}`;
+  });
+</script>
+
+</body>
+</html>

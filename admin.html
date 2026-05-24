@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <title>마이더스K — 관리자</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── 관리자 전용 추가 스타일 ── */
+    body { background:var(--bg); }
+    .admin-wrap {
+      min-height:100vh; display:flex; flex-direction:column;
+    }
+
+    /* 헤더 */
+    .admin-topbar {
+      background:linear-gradient(160deg,#1A1A2E 0%,#0F3460 100%);
+      padding:16px 36px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .admin-topbar-title { font-size:17px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; }
+    .admin-topbar-title i { font-size:20px; color:var(--accent); }
+    .admin-topbar-back {
+      display:inline-flex; align-items:center; gap:6px;
+      color:rgba(255,255,255,0.6); font-size:13px; text-decoration:none;
+      transition:color 0.14s;
+    }
+    .admin-topbar-back:hover { color:#fff; }
+
+    /* PIN 화면 */
+    #pin-screen {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:16px;
+      padding:60px 20px;
+    }
+    .pin-card {
+      background:var(--surface); border-radius:var(--radius-lg);
+      padding:40px 48px; box-shadow:var(--shadow-lg);
+      display:flex; flex-direction:column; align-items:center; gap:16px;
+      min-width:320px;
+    }
+    .pin-title  { font-size:16px; font-weight:700; color:var(--text-1); }
+    .pin-input  {
+      width:200px; height:48px; text-align:center;
+      font-size:22px; font-weight:700; letter-spacing:.4em;
+      border:1.5px solid var(--border); border-radius:var(--radius-md);
+      font-family:inherit; color:var(--text-1); background:var(--surface2); outline:none;
+    }
+    .pin-input:focus { border-color:var(--accent); }
+    .pin-btn {
+      padding:10px 32px; border-radius:var(--radius-md);
+      background:var(--grad-main); color:#fff; border:none;
+      font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+    }
+    .pin-err { font-size:13px; color:var(--red-tx); display:none; }
+
+    /* 관리자 본문 */
+    #admin-body { display:none; flex:1; flex-direction:column; }
+
+    /* 탭 바 */
+    .admin-tabs {
+      background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0 32px; display:flex; gap:0;
+    }
+    .admin-tab {
+      padding:14px 20px; font-size:13.5px; font-weight:600;
+      color:var(--text-3); cursor:pointer;
+      border-bottom:2px solid transparent; margin-bottom:-1px;
+      transition:all 0.12s; font-family:inherit;
+      background:none; border-top:none; border-left:none; border-right:none;
+      display:flex; align-items:center; gap:6px;
+    }
+    .admin-tab:hover { color:var(--text-2); }
+    .admin-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    /* 탭 콘텐츠 */
+    .admin-content { flex:1; overflow-y:auto; padding:28px 36px; }
+    .tab-content   { display:none; }
+
+    /* 관리자 공용 */
+    .admin-section { margin-bottom:28px; }
+    .admin-section-title {
+      font-size:11px; font-weight:700; color:var(--text-3);
+      letter-spacing:.12em; text-transform:uppercase;
+      margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border);
+    }
+    .admin-price-row {
+      display:flex; align-items:center; gap:8px;
+      padding:8px 0; border-bottom:1px dashed var(--border);
+    }
+    .admin-price-row:last-child { border-bottom:none; }
+    .admin-name-row {
+      display:flex; align-items:center; gap:8px;
+      padding:8px 0; border-bottom:1px dashed var(--border);
+    }
+    .admin-name-id { font-size:11px; font-weight:700; color:var(--accent); min-width:90px; }
+    .admin-add-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 14px; border-radius:var(--radius-sm);
+      background:var(--blue-bg); color:var(--blue-tx);
+      border:1px solid rgba(91,53,196,0.2);
+      font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
+      margin-top:10px; transition:background 0.12s;
+    }
+    .admin-add-btn:hover { background:#d0c6ff; }
+    .admin-del-btn {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:6px 10px; border-radius:var(--radius-sm);
+      background:var(--red-bg); color:var(--red-tx);
+      border:1px solid rgba(139,28,58,0.15);
+      font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;
+      white-space:nowrap; transition:background 0.12s;
+    }
+    .admin-del-btn:hover { background:#ffc0d0; }
+    .admin-label { font-size:13px; font-weight:600; color:var(--text-2); display:block; margin-bottom:5px; }
+    .content-item { background:var(--surface2); border-radius:var(--radius-sm); padding:12px; margin-bottom:6px; }
+
+    /* 이력 테이블 */
+    .admin-log-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .admin-log-table th {
+      background:var(--surface2); padding:8px 12px; text-align:left;
+      font-size:11px; font-weight:700; color:var(--text-3);
+      letter-spacing:.08em; text-transform:uppercase;
+      border-bottom:1px solid var(--border);
+    }
+    .admin-log-table td { padding:8px 12px; border-bottom:1px solid var(--border); color:var(--text-2); }
+    .admin-log-table tr:last-child td { border-bottom:none; }
+    .log-badge {
+      font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;
+    }
+    .log-price   { background:var(--blue-bg);  color:var(--blue-tx); }
+    .log-name    { background:var(--amber-bg); color:var(--amber-tx); }
+    .log-content { background:var(--green-bg); color:var(--green-tx); }
+    .log-pin     { background:var(--red-bg);   color:var(--red-tx); }
+
+    /* 하단 푸터 */
+    .admin-footer {
+      background:var(--surface); border-top:1px solid var(--border);
+      padding:14px 36px; display:flex; align-items:center; justify-content:space-between;
+      flex-shrink:0;
+    }
+    #admin-save-msg { font-size:13px; }
+  </style>
+</head>
+<body>
+<div class="admin-wrap">
+
+  <!-- 상단 헤더 -->
+  <div class="admin-topbar">
+    <div class="admin-topbar-title">
+      <i class="ti ti-shield-lock"></i>
+      마이더스K 관리자 설정
+    </div>
+    <a href="index.html" class="admin-topbar-back">
+      <i class="ti ti-arrow-left"></i> 메인으로 돌아가기
+    </a>
+  </div>
+
+  <!-- PIN 입력 화면 -->
+  <div id="pin-screen">
+    <div class="pin-card">
+      <i class="ti ti-lock" style="font-size:36px;color:var(--accent);"></i>
+      <div class="pin-title">관리자 PIN을 입력하세요</div>
+      <input class="pin-input" id="pin-input" type="password" maxlength="6" placeholder="••••">
+      <div class="pin-err" id="pin-err">PIN이 올바르지 않습니다.</div>
+      <button class="pin-btn" onclick="Admin.checkPin()">확인</button>
+    </div>
+  </div>
+
+  <!-- 관리자 본문 -->
+  <div id="admin-body">
+
+    <!-- 탭 네비게이션 -->
+    <div class="admin-tabs">
+      <button class="admin-tab" data-tab="tab-price"    onclick="Admin.switchTab('tab-price')">
+        <i class="ti ti-currency-won"></i> 금액 단가
+      </button>
+      <button class="admin-tab" data-tab="tab-name"     onclick="Admin.switchTab('tab-name')">
+        <i class="ti ti-tag"></i> 프로그램명
+      </button>
+      <button class="admin-tab" data-tab="tab-content"  onclick="Admin.switchTab('tab-content')">
+        <i class="ti ti-file-text"></i> 콘텐츠 편집
+      </button>
+      <button class="admin-tab" data-tab="tab-pin"      onclick="Admin.switchTab('tab-pin')">
+        <i class="ti ti-key"></i> PIN 변경
+      </button>
+      <button class="admin-tab" data-tab="tab-log"      onclick="Admin.switchTab('tab-log')">
+        <i class="ti ti-history"></i> 변경 이력
+      </button>
+      <button class="admin-tab" data-tab="tab-students" onclick="Admin.switchTab('tab-students')">
+        <i class="ti ti-users"></i> 학생 관리
+      </button>
+    </div>
+
+    <!-- 탭 콘텐츠 -->
+    <div class="admin-content">
+      <div class="tab-content" id="tab-price"></div>
+      <div class="tab-content" id="tab-name"></div>
+      <div class="tab-content" id="tab-content"></div>
+      <div class="tab-content" id="tab-pin"></div>
+      <div class="tab-content" id="tab-log"></div>
+      <div class="tab-content" id="tab-students"></div>
+    </div>
+
+  </div><!-- /admin-body -->
+
+  <!-- 하단 푸터 (저장 버튼) -->
+  <div class="admin-footer">
+    <span id="admin-save-msg"></span>
+    <div style="display:flex;gap:10px;">
+      <a href="index.html" class="admin-cancel-btn">취소 / 돌아가기</a>
+      <button class="admin-save-btn" onclick="Admin.saveAll()">
+        <i class="ti ti-device-floppy"></i> 전체 저장
+      </button>
+    </div>
+  </div>
+
+</div><!-- /admin-wrap -->
+
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
