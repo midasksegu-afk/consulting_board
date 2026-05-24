@@ -30,6 +30,7 @@ const Calc = (() => {
     ov:          {},  // 연간관리형 카드 선택 { 'rm-a': { amt:2300000 }, ... }
     pages:       {},  // 상세 페이지 체크 { 'rm-a': Set([0,1,...]), 'rm-d': Set([0,1]) }
     pageVisited: {},  // 첫 진입 여부 { 'rm-d': true }
+    dc:          { roadmap: false, individual: false }, // DC 토글 상태
   };
 
 
@@ -296,6 +297,7 @@ const Calc = (() => {
     state.ov          = {};
     state.pages       = {};
     state.pageVisited = {};
+    state.dc          = { roadmap: false, individual: false };
     Store.clearSession();
     _notifyChange();
   }
@@ -318,6 +320,50 @@ const Calc = (() => {
 
 
   /* ============================================================
+   * DC 할인 토글
+   * ============================================================ */
+
+  /**
+   * DC 토글 — 같은 그룹 재클릭 시 해제
+   * @param {'roadmap'|'individual'} group
+   */
+  function toggleDc(group) {
+    state.dc[group] = !state.dc[group];
+    _notifyChange();
+    return state.dc[group];
+  }
+
+  function isDcActive(group) {
+    return !!state.dc[group];
+  }
+
+  /**
+   * DC 적용된 그룹 합계 반환
+   * 관리자 설정 할인율 적용
+   */
+  function getDcTotal(group) {
+    const base = getGroupTotal(group);
+    if (!state.dc[group]) return base;
+    const rate = (cfg().discount || {})[group] || 0;
+    return Math.round(base * (1 - rate / 100));
+  }
+
+  /**
+   * DC 적용된 전체 합계
+   */
+  function getAllTotalsDc() {
+    const roadmap    = getDcTotal('roadmap');
+    const individual = getDcTotal('individual');
+    const strategy   = getGroupTotal('strategy');
+    return {
+      roadmap,
+      individual,
+      strategy,
+      grand: roadmap + individual + strategy,
+    };
+  }
+
+  /* ============================================================
    * Public API
    * ============================================================ */
   return {
@@ -335,6 +381,8 @@ const Calc = (() => {
     toSnapshot, fromSnapshot,
     // 초기화
     reset,
+    // DC 할인
+    toggleDc, isDcActive, getDcTotal, getAllTotalsDc,
     // 변경 구독
     onChange,
     // state 직접 참조 (읽기 전용)
