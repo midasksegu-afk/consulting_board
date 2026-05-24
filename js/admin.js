@@ -64,62 +64,119 @@ const Admin = (() => {
   /* ============================================================
    * 3. 탭1 — 금액 단가 CRUD
    * ============================================================ */
-  function renderPriceTab() {
-    const el   = document.getElementById('tab-price');
-    const cfg  = _draft;
-    let html   = '';
+  /* 금액 단가 탭 현재 선택 페이지 */
+  let _pricePageId = null;
 
-    // DC 할인율 섹션
-    const disc = cfg.discount || {};
-    html += `
-      <div class="admin-section">
-        <div class="admin-section-title">DC 할인율 설정</div>
-        <div class="admin-price-row">
-          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">로드맵 DC (%)</span>
-          <input class="admin-input" style="width:80px;text-align:right;"
-            type="number" min="0" max="100"
-            value="${disc.roadmap ?? 10}"
-            onchange="Admin.updateDiscountField('roadmap', this.value)">
-          <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
-        </div>
-        <div class="admin-price-row">
-          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">개별 DC (%)</span>
-          <input class="admin-input" style="width:80px;text-align:right;"
-            type="number" min="0" max="100"
-            value="${disc.individual ?? 0}"
-            onchange="Admin.updateDiscountField('individual', this.value)">
-          <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
-        </div>
-        <div style="margin-top:12px;">
-          <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
-            <i class="ti ti-device-floppy"></i> DC 할인율 저장
-          </button>
-        </div>
+  function renderPriceTab() {
+    const el  = document.getElementById('tab-price');
+    const cfg = _draft;
+
+    // 그룹별 사이드 메뉴
+    const groups = [
+      { key: 'roadmap',    label: '로드맵 컨설팅' },
+      { key: 'individual', label: '개별 컨설팅' },
+      { key: 'strategy',   label: '대입 전략 컨설팅' },
+    ];
+
+    // DC 설정은 special 항목
+    let sideHtml = `
+      <div class="ct-side-item ${!_pricePageId ? 'ct-side-active' : ''}"
+        onclick="Admin.loadPricePage('__dc__')" style="font-weight:600;">
+        <i class="ti ti-percentage" style="font-size:14px;"></i> DC 할인율
       </div>`;
 
-    MK_CONFIG.pageOrder.forEach(pageId => {
-      const page = cfg.pages[pageId];
-      if (!page || page.isOverview) return;
-
-      html += `
-        <div class="admin-section">
-          <div class="admin-section-title">${page.sbLabel}</div>
-          <div id="price-list-${pageId}">
-            ${_renderPriceList(pageId, page.prices || [])}
-          </div>
-          <button class="admin-add-btn" onclick="Admin.addPriceItem('${pageId}')">
-            <i class="ti ti-plus"></i> 가격 항목 추가
-          </button>
-        </div>`;
+    groups.forEach(g => {
+      const pages = MK_CONFIG.pageOrder.filter(id => {
+        const p = cfg.pages[id];
+        return p && p.group === g.key && !p.isOverview;
+      });
+      if (!pages.length) return;
+      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
+      pages.forEach(id => {
+        const p = cfg.pages[id];
+        const active = id === _pricePageId ? 'ct-side-active' : '';
+        sideHtml += `
+          <div class="ct-side-item ${active}" onclick="Admin.loadPricePage('${id}')">
+            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i>
+            ${p.sbLabel}
+          </div>`;
+      });
     });
 
-    html += `
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <button class="admin-save-btn" onclick="Admin.savePriceTab()">
-          <i class="ti ti-device-floppy"></i> 금액 단가 저장
+    el.innerHTML = `
+      <div style="display:flex;gap:0;min-height:500px;">
+        <div class="ct-sidebar">${sideHtml}</div>
+        <div class="ct-editor" id="price-editor">
+          <div style="color:var(--text-3);font-size:13px;padding:24px;">
+            좌측에서 편집할 항목을 선택하세요.
+          </div>
+        </div>
+      </div>`;
+
+    if (_pricePageId) loadPricePage(_pricePageId);
+    else loadPricePage('__dc__');
+  }
+
+  function loadPricePage(pageId) {
+    _pricePageId = pageId === '__dc__' ? null : pageId;
+    const el = document.getElementById('price-editor');
+    if (!el) return;
+
+    // 사이드 active 갱신
+    document.querySelectorAll('.ct-sidebar .ct-side-item').forEach(item => {
+      item.classList.remove('ct-side-active');
+    });
+    const sel = pageId === '__dc__'
+      ? document.querySelector('.ct-sidebar .ct-side-item:first-child')
+      : document.querySelector(`.ct-sidebar .ct-side-item[onclick*="${pageId}"]`);
+    if (sel) sel.classList.add('ct-side-active');
+
+    if (pageId === '__dc__') {
+      const disc = _draft.discount || {};
+      el.innerHTML = `
+        <div class="admin-section" style="max-width:400px;">
+          <div class="admin-section-title">DC 할인율 설정</div>
+          <div class="admin-price-row">
+            <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:130px;">로드맵 DC (%)</span>
+            <input class="admin-input" style="width:90px;text-align:right;"
+              type="number" min="0" max="100"
+              value="${disc.roadmap ?? 10}"
+              onchange="Admin.updateDiscountField('roadmap', this.value)">
+            <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
+          </div>
+          <div class="admin-price-row">
+            <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:130px;">개별 DC (%)</span>
+            <input class="admin-input" style="width:90px;text-align:right;"
+              type="number" min="0" max="100"
+              value="${disc.individual ?? 0}"
+              onchange="Admin.updateDiscountField('individual', this.value)">
+            <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
+              <i class="ti ti-device-floppy"></i> DC 할인율 저장
+            </button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const page = _draft.pages[pageId];
+    if (!page) return;
+
+    el.innerHTML = `
+      <div class="admin-section-title">${page.sbLabel} — 금액 단가</div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;">
+        금액 입력 예시: <strong>230만원</strong> 또는 <strong>2300000</strong>
+      </div>
+      <div id="price-list-${pageId}">
+        ${_renderPriceList(pageId, page.prices || [])}
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+        <button class="admin-add-btn" onclick="Admin.addPriceItem('${pageId}')" style="margin-top:0;">
+          <i class="ti ti-plus"></i> 항목 추가
         </button>
       </div>`;
-    el.innerHTML = html;
   }
 
   function savePriceTab() {
@@ -136,12 +193,12 @@ const Admin = (() => {
       <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
         <input class="admin-input" style="flex:2;min-width:80px;"
           value="${price.label}"
-          onchange="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
+          oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
           placeholder="항목명">
         <input class="admin-input" style="flex:1;min-width:60px;text-align:right;"
           value="${manwon}"
-          onchange="Admin.updatePriceField('${pageId}', ${idx}, 'amt', this.value)"
-          placeholder="금액">
+          oninput="Admin.updatePriceField('${pageId}', ${idx}, 'amt', this.value)"
+          placeholder="만원 단위 입력 (예: 230)">
         <select class="admin-input" style="flex:0.8;min-width:60px;"
           onchange="Admin.updatePriceField('${pageId}', ${idx}, 'grade', this.value)">
           <option value="" ${!price.grade ? 'selected' : ''}>무관</option>
@@ -177,7 +234,17 @@ const Admin = (() => {
     if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
     const old = { ..._draft.pages[pageId].prices[idx] };
     if (field === 'amt') {
-      value = parseInt(value.replace(/,/g,'')) || 0;
+      // 만원 단위 통일
+      // "230" → 2,300,000 / "230만원" → 2,300,000 / "2300000" → 2,300,000
+      const str = String(value).replace(/,/g, '').trim();
+      if (str.includes('만')) {
+        const num = parseFloat(str.replace(/만원|만/g, '')) || 0;
+        value = Math.round(num * 10000);
+      } else {
+        const num = parseInt(str) || 0;
+        // 10000 미만 입력 → 만원 단위로 간주
+        value = num > 0 && num < 10000 ? num * 10000 : num;
+      }
     }
     _draft.pages[pageId].prices[idx][field] = value;
     Store.addLog('price', `${pageId} > ${old.label} ${field}`, old[field], value);
@@ -186,8 +253,8 @@ const Admin = (() => {
   function addPriceItem(pageId) {
     if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
     _draft.pages[pageId].prices.push({ label: '새 항목', amt: 0 });
-    document.getElementById(`price-list-${pageId}`).innerHTML =
-      _renderPriceList(pageId, _draft.pages[pageId].prices);
+    const el = document.getElementById(`price-list-${pageId}`);
+    if (el) el.innerHTML = _renderPriceList(pageId, _draft.pages[pageId].prices);
   }
 
   function deletePriceItem(pageId, idx) {
@@ -244,15 +311,15 @@ const Admin = (() => {
           <div class="admin-name-id">${pageId}</div>
           <input class="admin-input" style="flex:1.2;"
             value="${page.sbLabel}"
-            onchange="Admin.updateNameField('${pageId}', 'sbLabel', this.value)"
+            oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)"
             placeholder="사이드바 메뉴명">
           <input class="admin-input" style="flex:2;"
             value="${page.title}"
-            onchange="Admin.updateNameField('${pageId}', 'title', this.value)"
+            oninput="Admin.updateNameField('${pageId}', 'title', this.value)"
             placeholder="페이지 제목">
           <input class="admin-input" style="flex:2;"
             value="${page.subtitle || ''}"
-            onchange="Admin.updateNameField('${pageId}', 'subtitle', this.value)"
+            oninput="Admin.updateNameField('${pageId}', 'subtitle', this.value)"
             placeholder="부제목">
           <button class="admin-save-btn" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
             onclick="Admin.saveNameItem('${pageId}')" title="이 항목 저장">
@@ -679,7 +746,7 @@ const Admin = (() => {
   return {
     checkPin, switchTab,
     // 금액
-    renderPriceTab, updatePriceField, addPriceItem, deletePriceItem,
+    renderPriceTab, loadPricePage, updatePriceField, addPriceItem, deletePriceItem,
     updateDiscountField, saveDcDiscount,
     savePriceTab, saveNameTab, saveContentTab,
     savePriceItem, saveNameItem,
