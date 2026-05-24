@@ -154,6 +154,9 @@ const UI = (() => {
     // 고3 추가 옵션 섹션 show/hide
     const aocSection = document.getElementById('aoc-section');
     if (aocSection) aocSection.style.display = grade === 3 ? 'block' : 'none';
+    // 하단 global-notice — 고3 선택 시 숨김 (aoc-notice-card로 대체)
+    const globalNotice = document.querySelector('#pg-rm-overview .global-notice');
+    if (globalNotice) globalNotice.style.display = grade === 3 ? 'none' : 'flex';
   }
 
 
