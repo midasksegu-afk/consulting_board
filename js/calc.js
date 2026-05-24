@@ -47,10 +47,34 @@ const Calc = (() => {
     } else {
       state.grade = n;
     }
-    // 학년 바뀌면 연간관리형 카드 선택 초기화
-    state.ov = {};
+    // 학년 바뀌면 전체 선택 초기화
+    state.ov          = {};
+    state.pages       = {};
+    state.pageVisited = {};
+
+    // 학년 선택 시 rm-d/e isDefault 항목 즉시 자동 체크
+    if (state.grade !== 0) {
+      _autoCheckDefaults();
+    }
+
     _notifyChange();
     return state.grade;
+  }
+
+  /**
+   * autoCheck 페이지의 isDefault 항목을 즉시 체크 (페이지 진입 불필요)
+   */
+  function _autoCheckDefaults() {
+    const config = cfg();
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page || !page.autoCheck) return;
+      state.pageVisited[pageId] = true;
+      if (!state.pages[pageId]) state.pages[pageId] = new Set();
+      (page.prices || []).forEach((price, idx) => {
+        if (price.isDefault) state.pages[pageId].add(idx);
+      });
+    });
   }
 
   function getGrade() {
@@ -162,11 +186,13 @@ const Calc = (() => {
       if (!page || page.group !== group || page.isOverview) return;
 
       // 연간관리형 카드 체크 금액 (rm-a/b/c)
+      // ov 선택 시 pages 금액은 무시 (이중 합산 방지)
       if (state.ov[pageId]) {
         sum += state.ov[pageId].amt;
+        return; // pages 금액 합산 건너뜀
       }
 
-      // 상세 페이지 체크 금액
+      // ov 미선택 시만 상세 페이지 체크 금액 합산
       const sel = state.pages[pageId];
       if (sel && sel.size > 0) {
         sel.forEach(idx => {
