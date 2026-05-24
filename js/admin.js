@@ -206,6 +206,41 @@ const Admin = (() => {
       </div>`;
   }
 
+  function updatePriceField(pageId, idx, field, value) {
+    if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
+    const old = { ..._draft.pages[pageId].prices[idx] };
+    if (field === 'amt') {
+      const str = String(value).replace(/,/g, '').trim();
+      if (str.includes('만')) {
+        value = Math.round(parseFloat(str.replace(/만원|만/g, '')) * 10000) || 0;
+      } else {
+        const num = parseInt(str) || 0;
+        value = num > 0 && num < 10000 ? num * 10000 : num;
+      }
+    }
+    _draft.pages[pageId].prices[idx][field] = value;
+    Store.addLog('price', `${pageId} > ${old.label || ''} ${field}`, old[field], value);
+  }
+
+  function addPriceItem(pageId) {
+    if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
+    _draft.pages[pageId].prices.push({ label: '새 항목', amt: 0 });
+    loadProgramPage(pageId);
+  }
+
+  function deletePriceItem(pageId, idx) {
+    if (!confirm('이 가격 항목을 삭제할까요?')) return;
+    const removed = _draft.pages[pageId].prices.splice(idx, 1)[0];
+    Store.addLog('price', `${pageId} 항목 삭제`, removed.label, '—');
+    loadProgramPage(pageId);
+  }
+
+  function updateNameField(pageId, field, value) {
+    const old = _draft.pages[pageId][field];
+    _draft.pages[pageId][field] = value;
+    Store.addLog('name', `${pageId} ${field}`, old, value);
+  }
+
   function saveProgram(pageId) {
     Store.saveConfig(_draft);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
