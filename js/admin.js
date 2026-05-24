@@ -1,776 +1,740 @@
-/**
- * admin.js — 마이더스K 관리자 기능
- * admin.html 전용. index.html에서는 로드하지 않음.
- *
- * 로드 순서: config.js → store.js → admin.js
- */
-
-const Admin = (() => {
-
-  let _unlocked = false;
-  let _currentTab = 'tab-price';
-  // 관리자가 편집 중인 config 임시 복사본
-  let _draft = null;
-
-  function fmt(n) { return n.toLocaleString('ko-KR'); }
-
-
-  /* ============================================================
-   * 1. PIN 인증
-   * ============================================================ */
-  function checkPin() {
-    const input = document.getElementById('pin-input')?.value;
-    if (Store.verifyPin(input)) {
-      _unlocked = true;
-      _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve())); // 깊은 복사
-      document.getElementById('pin-screen').style.display = 'none';
-      document.getElementById('admin-body').style.display = 'flex';
-      switchTab('tab-price');
-    } else {
-      const err = document.getElementById('pin-err');
-      if (err) { err.style.display = 'block'; }
-      document.getElementById('pin-input').value = '';
-      document.getElementById('pin-input').focus();
-    }
-  }
-
-
-  /* ============================================================
-   * 2. 탭 전환
-   * ============================================================ */
-  function switchTab(tabId) {
-    _currentTab = tabId;
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-
-    const btn = document.querySelector(`.admin-tab[data-tab="${tabId}"]`);
-    const pane = document.getElementById(tabId);
-    if (btn)  btn.classList.add('active');
-    if (pane) pane.style.display = 'block';
-
-    // 탭별 렌더
-    const renderMap = {
-      'tab-price':   renderPriceTab,
-      'tab-name':    renderNameTab,
-      'tab-content': renderContentTab,
-      'tab-pin':     renderPinTab,
-      'tab-log':     renderLogTab,
-      'tab-students':renderStudentsTab,
-    };
-    if (renderMap[tabId]) renderMap[tabId]();
-  }
-
-
-  /* ============================================================
-   * 3. 탭1 — 금액 단가 CRUD
-   * ============================================================ */
-  /* 금액 단가 탭 현재 선택 페이지 */
-  let _pricePageId = null;
-
-  function renderPriceTab() {
-    const el  = document.getElementById('tab-price');
-    const cfg = _draft;
-
-    // 그룹별 사이드 메뉴
-    const groups = [
-      { key: 'roadmap',    label: '로드맵 컨설팅' },
-      { key: 'individual', label: '개별 컨설팅' },
-      { key: 'strategy',   label: '대입 전략 컨설팅' },
-    ];
-
-    // DC 설정은 special 항목
-    let sideHtml = `
-      <div class="ct-side-item ${!_pricePageId ? 'ct-side-active' : ''}"
-        onclick="Admin.loadPricePage('__dc__')" style="font-weight:600;">
-        <i class="ti ti-percentage" style="font-size:14px;"></i> DC 할인율
-      </div>`;
-
-    groups.forEach(g => {
-      const pages = MK_CONFIG.pageOrder.filter(id => {
-        const p = cfg.pages[id];
-        return p && p.group === g.key && !p.isOverview;
-      });
-      if (!pages.length) return;
-      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
-      pages.forEach(id => {
-        const p = cfg.pages[id];
-        const active = id === _pricePageId ? 'ct-side-active' : '';
-        sideHtml += `
-          <div class="ct-side-item ${active}" onclick="Admin.loadPricePage('${id}')">
-            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i>
-            ${p.sbLabel}
-          </div>`;
-      });
-    });
-
-    el.innerHTML = `
-      <div style="display:flex;gap:0;min-height:500px;">
-        <div class="ct-sidebar">${sideHtml}</div>
-        <div class="ct-editor" id="price-editor">
-          <div style="color:var(--text-3);font-size:13px;padding:24px;">
-            좌측에서 편집할 항목을 선택하세요.
-          </div>
-        </div>
-      </div>`;
-
-    if (_pricePageId) loadPricePage(_pricePageId);
-    else loadPricePage('__dc__');
-  }
-
-  function loadPricePage(pageId) {
-    _pricePageId = pageId === '__dc__' ? null : pageId;
-    const el = document.getElementById('price-editor');
-    if (!el) return;
-
-    // 사이드 active 갱신
-    document.querySelectorAll('.ct-sidebar .ct-side-item').forEach(item => {
-      item.classList.remove('ct-side-active');
-    });
-    const sel = pageId === '__dc__'
-      ? document.querySelector('.ct-sidebar .ct-side-item:first-child')
-      : document.querySelector(`.ct-sidebar .ct-side-item[onclick*="${pageId}"]`);
-    if (sel) sel.classList.add('ct-side-active');
-
-    if (pageId === '__dc__') {
-      const disc = _draft.discount || {};
-      el.innerHTML = `
-        <div class="admin-section" style="max-width:400px;">
-          <div class="admin-section-title">DC 할인율 설정</div>
-          <div class="admin-price-row">
-            <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:130px;">로드맵 DC (%)</span>
-            <input class="admin-input" style="width:90px;text-align:right;"
-              type="number" min="0" max="100"
-              value="${disc.roadmap ?? 10}"
-              onchange="Admin.updateDiscountField('roadmap', this.value)">
-            <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
-          </div>
-          <div class="admin-price-row">
-            <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:130px;">개별 DC (%)</span>
-            <input class="admin-input" style="width:90px;text-align:right;"
-              type="number" min="0" max="100"
-              value="${disc.individual ?? 0}"
-              onchange="Admin.updateDiscountField('individual', this.value)">
-            <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
-          </div>
-          <div style="margin-top:16px;">
-            <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
-              <i class="ti ti-device-floppy"></i> DC 할인율 저장
-            </button>
-          </div>
-        </div>`;
-      return;
-    }
-
-    const page = _draft.pages[pageId];
-    if (!page) return;
-
-    el.innerHTML = `
-      <div class="admin-section-title">${page.sbLabel} — 금액 단가</div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;">
-        금액 입력 예시: <strong>230만원</strong> 또는 <strong>2300000</strong>
-      </div>
-      <div id="price-list-${pageId}">
-        ${_renderPriceList(pageId, page.prices || [])}
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
-        <button class="admin-add-btn" onclick="Admin.addPriceItem('${pageId}')" style="margin-top:0;">
-          <i class="ti ti-plus"></i> 항목 추가
-        </button>
-      </div>`;
-  }
-
-  function savePriceTab() {
-    if (!confirm('금액 단가를 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ 금액 단가가 저장되었습니다.', true);
-  }
-
-  function _renderPriceList(pageId, prices) {
-    if (!prices.length) return '<div style="font-size:13px;color:var(--text-3);padding:8px 0;">항목 없음</div>';
-    return prices.map((price, idx) => {
-      const manwon = price.amt ? Math.round(price.amt / 10000) + '만원' : '0원';
-      return `
-      <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
-        <input class="admin-input" style="flex:2;min-width:80px;"
-          value="${price.label}"
-          oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
-          placeholder="항목명">
-        <input class="admin-input" style="flex:1;min-width:60px;text-align:right;"
-          value="${manwon}"
-          oninput="Admin.updatePriceField('${pageId}', ${idx}, 'amt', this.value)"
-          placeholder="만원 단위 입력 (예: 230)">
-        <select class="admin-input" style="flex:0.8;min-width:60px;"
-          onchange="Admin.updatePriceField('${pageId}', ${idx}, 'grade', this.value)">
-          <option value="" ${!price.grade ? 'selected' : ''}>무관</option>
-          <option value="1" ${price.grade == 1 ? 'selected' : ''}>고1</option>
-          <option value="2" ${price.grade == 2 ? 'selected' : ''}>고2</option>
-          <option value="3" ${price.grade == 3 ? 'selected' : ''}>고3</option>
-          <option value="1,2,3" ${price.grade == '1,2,3' ? 'selected' : ''}>전학년</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:3px;font-size:11px;white-space:nowrap;cursor:pointer;">
-          <input type="checkbox" ${price.isDefault ? 'checked' : ''}
-            onchange="Admin.updatePriceField('${pageId}', ${idx}, 'isDefault', this.checked)">
-          기본
-        </label>
-        <button class="admin-save-btn" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
-          onclick="Admin.savePriceItem('${pageId}', ${idx})" title="이 항목 저장">
-          <i class="ti ti-device-floppy"></i>
-        </button>
-        <button class="admin-del-btn" onclick="Admin.deletePriceItem('${pageId}', ${idx})" title="삭제">
-          <i class="ti ti-trash"></i>
-        </button>
-      </div>`;
-    }).join('');
-  }
-
-  function savePriceItem(pageId, idx) {
-    const price = _draft.pages[pageId]?.prices?.[idx];
-    if (!price) return;
-    Store.saveConfig(_draft);
-    showMsg(`✓ "${price.label}" 항목이 저장되었습니다.`, true);
-  }
-
-  function updatePriceField(pageId, idx, field, value) {
-    if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
-    const old = { ..._draft.pages[pageId].prices[idx] };
-    if (field === 'amt') {
-      // 만원 단위 통일
-      // "230" → 2,300,000 / "230만원" → 2,300,000 / "2300000" → 2,300,000
-      const str = String(value).replace(/,/g, '').trim();
-      if (str.includes('만')) {
-        const num = parseFloat(str.replace(/만원|만/g, '')) || 0;
-        value = Math.round(num * 10000);
-      } else {
-        const num = parseInt(str) || 0;
-        // 10000 미만 입력 → 만원 단위로 간주
-        value = num > 0 && num < 10000 ? num * 10000 : num;
-      }
-    }
-    _draft.pages[pageId].prices[idx][field] = value;
-    Store.addLog('price', `${pageId} > ${old.label} ${field}`, old[field], value);
-  }
-
-  function addPriceItem(pageId) {
-    if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
-    _draft.pages[pageId].prices.push({ label: '새 항목', amt: 0 });
-    const el = document.getElementById(`price-list-${pageId}`);
-    if (el) el.innerHTML = _renderPriceList(pageId, _draft.pages[pageId].prices);
-  }
-
-  function deletePriceItem(pageId, idx) {
-    if (!confirm('이 가격 항목을 삭제할까요?')) return;
-    const removed = _draft.pages[pageId].prices.splice(idx, 1)[0];
-    Store.addLog('price', `${pageId} 항목 삭제`, removed.label, '—');
-    document.getElementById(`price-list-${pageId}`).innerHTML =
-      _renderPriceList(pageId, _draft.pages[pageId].prices);
-  }
-
-
-  /* ============================================================
-   * 4. 탭2 — 프로그램명 CRUD
-   * ============================================================ */
-  function renderNameTab() {
-    const el  = document.getElementById('tab-name');
-    const cfg = _draft;
-    let html  = '';
-
-    // DC 할인율 섹션
-    const disc = cfg.discount || {};
-    html += `
-      <div class="admin-section">
-        <div class="admin-section-title">DC 할인율 설정</div>
-        <div class="admin-price-row">
-          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">로드맵 DC (%)</span>
-          <input class="admin-input" style="width:80px;text-align:right;"
-            type="number" min="0" max="100"
-            value="${disc.roadmap ?? 10}"
-            onchange="Admin.updateDiscountField('roadmap', this.value)">
-          <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
-        </div>
-        <div class="admin-price-row">
-          <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:120px;">개별 DC (%)</span>
-          <input class="admin-input" style="width:80px;text-align:right;"
-            type="number" min="0" max="100"
-            value="${disc.individual ?? 0}"
-            onchange="Admin.updateDiscountField('individual', this.value)">
-          <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
-        </div>
-        <div style="margin-top:12px;">
-          <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
-            <i class="ti ti-device-floppy"></i> DC 할인율 저장
-          </button>
-        </div>
-      </div>`;
-
-    MK_CONFIG.pageOrder.forEach(pageId => {
-      const page = cfg.pages[pageId];
-      if (!page || page.isOverview) return;
-
-      html += `
-        <div class="admin-name-row">
-          <div class="admin-name-id">${pageId}</div>
-          <input class="admin-input" style="flex:1.2;"
-            value="${page.sbLabel}"
-            oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)"
-            placeholder="사이드바 메뉴명">
-          <input class="admin-input" style="flex:2;"
-            value="${page.title}"
-            oninput="Admin.updateNameField('${pageId}', 'title', this.value)"
-            placeholder="페이지 제목">
-          <input class="admin-input" style="flex:2;"
-            value="${page.subtitle || ''}"
-            oninput="Admin.updateNameField('${pageId}', 'subtitle', this.value)"
-            placeholder="부제목">
-          <button class="admin-save-btn" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
-            onclick="Admin.saveNameItem('${pageId}')" title="이 항목 저장">
-            <i class="ti ti-device-floppy"></i>
-          </button>
-        </div>`;
-    });
-
-    html += `
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <button class="admin-save-btn" onclick="Admin.saveNameTab()">
-          <i class="ti ti-device-floppy"></i> 프로그램명 저장
-        </button>
-      </div>`;
-    el.innerHTML = html || '<div style="color:var(--text-3);font-size:13px;">페이지가 없습니다.</div>';
-  }
-
-  function saveNameItem(pageId) {
-    const page = _draft.pages[pageId];
-    if (!page) return;
-    Store.saveConfig(_draft);
-    showMsg(`✓ "${page.sbLabel}" 프로그램명이 저장되었습니다.`, true);
-  }
-
-  function saveNameTab() {
-    if (!confirm('프로그램명을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ 프로그램명이 저장되었습니다.', true);
-  }
-
-  function updateNameField(pageId, field, value) {
-    const old = _draft.pages[pageId][field];
-    _draft.pages[pageId][field] = value;
-    Store.addLog('name', `${pageId} ${field}`, old, value);
-  }
-
-
-  /* ============================================================
-   * 5. 탭3 — 콘텐츠 편집 CRUD (3섹션)
-   * ============================================================ */
-  let _contentPageId = null;
-
-  function renderContentTab() {
-    const el = document.getElementById('tab-content');
-
-    // 그룹별 사이드 메뉴 구성
-    const groups = [
-      { key: 'roadmap',    label: '로드맵 컨설팅' },
-      { key: 'individual', label: '개별 컨설팅' },
-      { key: 'strategy',   label: '대입 전략 컨설팅' },
-    ];
-
-    let sideHtml = '';
-    groups.forEach(g => {
-      const pages = MK_CONFIG.pageOrder.filter(id => {
-        const p = _draft.pages[id];
-        return p && p.group === g.key && !p.isOverview;
-      });
-      if (!pages.length) return;
-      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
-      pages.forEach(id => {
-        const p = _draft.pages[id];
-        const active = id === _contentPageId ? 'ct-side-active' : '';
-        sideHtml += `
-          <div class="ct-side-item ${active}" onclick="Admin.loadContentPage('${id}')">
-            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i>
-            ${p.sbLabel}
-          </div>`;
-      });
-    });
-
-    el.innerHTML = `
-      <div style="display:flex;gap:0;height:100%;min-height:500px;">
-        <div class="ct-sidebar">${sideHtml}</div>
-        <div class="ct-editor" id="content-editor">
-          <div style="color:var(--text-3);font-size:13px;padding:24px;">
-            좌측에서 편집할 페이지를 선택하세요.
-          </div>
-        </div>
-      </div>`;
-
-    if (_contentPageId) loadContentPage(_contentPageId);
-  }
-
-  function loadContentPage(pageId) {
-    _contentPageId = pageId;
-    const page = _draft.pages[pageId];
-    if (!page) return;
-    const el = document.getElementById('content-editor');
-    if (!el) return;
-
-    // 사이드 메뉴 active 갱신
-    document.querySelectorAll('.ct-side-item').forEach(item => {
-      item.classList.remove('ct-side-active');
-    });
-    const activeItem = document.querySelector(`.ct-side-item[onclick*="${pageId}"]`);
-    if (activeItem) activeItem.classList.add('ct-side-active');
-
-    el.innerHTML = `
-      ${_renderContentSection(pageId, 'programs',   '프로그램 구성', page.programs   || [])}
-      ${_renderContentSection(pageId, 'conditions', '제공 조건',     page.conditions || [])}
-      ${_renderNotesSection(pageId,                 '참고 노트',     page.notes      || [])}
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <button class="admin-save-btn" onclick="Admin.saveContentTab()">
-          <i class="ti ti-device-floppy"></i> 콘텐츠 저장
-        </button>
-      </div>`;
-  }
-
-  function _renderContentSection(pageId, section, label, items) {
-    const rows = items.map((item, idx) => `
-      <div class="content-item" id="ci-${section}-${idx}">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-          <input class="admin-input" style="flex:0.3;" value="${item.num || ''}"
-            onchange="Admin.updateContentField('${pageId}','${section}',${idx},'num',this.value)"
-            placeholder="번호">
-          <input class="admin-input" style="flex:1;" value="${item.title || ''}"
-            onchange="Admin.updateContentField('${pageId}','${section}',${idx},'title',this.value)"
-            placeholder="제목">
-          <button class="admin-del-btn" onclick="Admin.deleteContentItem('${pageId}','${section}',${idx})">
-            <i class="ti ti-trash"></i>
-          </button>
-        </div>
-        <textarea class="admin-input" rows="3" style="resize:vertical;"
-          onchange="Admin.updateContentField('${pageId}','${section}',${idx},'items',this.value)"
-          placeholder="내용 (줄바꿈으로 항목 구분)">${(item.items || []).join('\n')}</textarea>
-        <input class="admin-input" style="margin-top:6px;" value="${item.text || ''}"
-          onchange="Admin.updateContentField('${pageId}','${section}',${idx},'text',this.value)"
-          placeholder="요약 텍스트 (조건 섹션)">
-      </div>`).join('<hr style="border:none;border-top:1px dashed var(--border);margin:10px 0;">');
-
-    return `
-      <div class="content-section" style="margin-bottom:20px;">
-        <div class="admin-section-title">${label}</div>
-        <div id="ci-list-${section}">${rows || '<div style="color:var(--text-3);font-size:13px;">항목 없음</div>'}</div>
-        <button class="admin-add-btn" onclick="Admin.addContentItem('${pageId}','${section}')">
-          <i class="ti ti-plus"></i> 항목 추가
-        </button>
-      </div>`;
-  }
-
-  function _renderNotesSection(pageId, label, notes) {
-    const colorOpts = ['blue','amber','red','green'].map(c =>
-      `<option value="${c}">${c}</option>`).join('');
-
-    const rows = notes.map((note, idx) => `
-      <div class="content-item" style="display:flex;gap:8px;align-items:flex-start;">
-        <select class="admin-input" style="flex:0.5;"
-          onchange="Admin.updateNoteField('${pageId}',${idx},'color',this.value)">
-          ${['blue','amber','red','green'].map(c =>
-            `<option value="${c}" ${note.color===c?'selected':''}>${c}</option>`).join('')}
-        </select>
-        <textarea class="admin-input" rows="2" style="flex:3;resize:vertical;"
-          onchange="Admin.updateNoteField('${pageId}',${idx},'text',this.value)"
-          placeholder="노트 내용">${note.text || ''}</textarea>
-        <button class="admin-del-btn" onclick="Admin.deleteNote('${pageId}',${idx})">
-          <i class="ti ti-trash"></i>
-        </button>
-      </div>`).join('<hr style="border:none;border-top:1px dashed var(--border);margin:8px 0;">');
-
-    return `
-      <div class="content-section" style="margin-bottom:20px;">
-        <div class="admin-section-title">${label} (색깔 박스)</div>
-        <div id="ci-list-notes">${rows || '<div style="color:var(--text-3);font-size:13px;">항목 없음</div>'}</div>
-        <button class="admin-add-btn" onclick="Admin.addNote('${pageId}')">
-          <i class="ti ti-plus"></i> 노트 추가
-        </button>
-      </div>`;
-  }
-
-  function updateContentField(pageId, section, idx, field, value) {
-    const item = _draft.pages[pageId][section][idx];
-    if (!item) return;
-    if (field === 'items') {
-      item.items = value.split('\n').map(s => s.trim()).filter(Boolean);
-    } else {
-      item[field] = value;
-    }
-    Store.addLog('content', `${pageId} ${section}[${idx}] ${field}`, '—', value.substring(0,30));
-  }
-
-  function addContentItem(pageId, section) {
-    if (!_draft.pages[pageId][section]) _draft.pages[pageId][section] = [];
-    _draft.pages[pageId][section].push({ num:'', title:'새 항목', items:[], text:'' });
-    loadContentPage(pageId);
-  }
-
-  function deleteContentItem(pageId, section, idx) {
-    if (!confirm('이 항목을 삭제할까요?')) return;
-    _draft.pages[pageId][section].splice(idx, 1);
-    Store.addLog('content', `${pageId} ${section}[${idx}] 삭제`, '—', '—');
-    loadContentPage(pageId);
-  }
-
-  function saveContentTab() {
-    const page = _draft.pages[_contentPageId];
-    const label = page ? page.sbLabel : '콘텐츠';
-    if (!confirm(`"${label}" 콘텐츠를 저장하시겠습니까?`)) return;
-    Store.saveConfig(_draft);
-    showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true);
-  }
-
-  function updateNoteField(pageId, idx, field, value) {
-    _draft.pages[pageId].notes[idx][field] = value;
-  }
-  function addNote(pageId) {
-    if (!_draft.pages[pageId].notes) _draft.pages[pageId].notes = [];
-    _draft.pages[pageId].notes.push({ color:'blue', icon:'ti-info-circle', text:'' });
-    loadContentPage(pageId);
-  }
-  function deleteNote(pageId, idx) {
-    if (!confirm('이 노트를 삭제할까요?')) return;
-    _draft.pages[pageId].notes.splice(idx, 1);
-    loadContentPage(pageId);
-  }
-
-
-  /* ============================================================
-   * 6. 탭4 — PIN 변경
-   * ============================================================ */
-  function renderPinTab() {
-    document.getElementById('tab-pin').innerHTML = `
-      <div style="max-width:300px;display:flex;flex-direction:column;gap:14px;padding-top:8px;">
-        <div>
-          <label class="admin-label">현재 PIN</label>
-          <input class="admin-input" type="password" id="pin-cur" maxlength="6" placeholder="현재 PIN">
-        </div>
-        <div>
-          <label class="admin-label">새 PIN</label>
-          <input class="admin-input" type="password" id="pin-new" maxlength="6" placeholder="새 PIN (4~6자리)">
-        </div>
-        <div>
-          <label class="admin-label">새 PIN 확인</label>
-          <input class="admin-input" type="password" id="pin-con" maxlength="6" placeholder="새 PIN 재입력">
-        </div>
-        <div id="pin-change-msg" style="font-size:13px;min-height:18px;"></div>
-        <button class="admin-add-btn" onclick="Admin.changePin()">PIN 변경</button>
-      </div>`;
-  }
-
-  function changePin() {
-    const cur = document.getElementById('pin-cur')?.value;
-    const nw  = document.getElementById('pin-new')?.value;
-    const con = document.getElementById('pin-con')?.value;
-    const msg = document.getElementById('pin-change-msg');
-    const show = (text, ok) => {
-      if (msg) { msg.textContent = text; msg.style.color = ok ? 'var(--green-tx)' : 'var(--red-tx)'; }
-    };
-    if (!Store.verifyPin(cur)) return show('현재 PIN이 틀립니다.', false);
-    if (nw.length < 4)        return show('PIN은 4자리 이상이어야 합니다.', false);
-    if (nw !== con)           return show('새 PIN이 일치하지 않습니다.', false);
-
-    // _draft에 직접 저장 후 즉시 persist
-    _draft.adminPin = nw;
-    if (!_draft.app) _draft.app = {};
-    _draft.app.adminPin = nw;
-    Store.saveConfig(_draft);
-    Store.addLog('pin', '관리자 PIN', '****', '****');
-
-    show('PIN이 변경되었습니다.', true);
-    showMsg('✓ PIN이 변경되었습니다.', true);
-    ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  }
-
-
-  /* ============================================================
-   * 7. 탭5 — 변경 이력 로그
-   * ============================================================ */
-  function renderLogTab() {
-    const log = Store.getLog();
-    const el  = document.getElementById('tab-log');
-
-    if (!log.length) {
-      el.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:16px 0;">변경 이력이 없습니다.</div>';
-      return;
-    }
-
-    const categoryLabel = { price:'금액', name:'프로그램명', content:'콘텐츠', pin:'PIN' };
-    const rows = log.map(entry => `
-      <tr>
-        <td>${Store.formatDate(entry.at)}</td>
-        <td><span class="log-badge log-${entry.category}">${categoryLabel[entry.category]||entry.category}</span></td>
-        <td>${entry.label}</td>
-        <td style="color:var(--red-tx);">${String(entry.before).substring(0,20)}</td>
-        <td style="color:var(--green-tx);">${String(entry.after).substring(0,20)}</td>
-      </tr>`).join('');
-
-    el.innerHTML = `
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-        <button class="admin-del-btn" onclick="Admin.clearLog()" style="padding:6px 14px;">
-          <i class="ti ti-trash"></i> 이력 전체 삭제
-        </button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="admin-log-table">
-          <thead><tr><th>일시</th><th>분류</th><th>항목</th><th>변경 전</th><th>변경 후</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
-  }
-
-  function clearLog() {
-    if (!confirm('변경 이력을 전체 삭제할까요?')) return;
-    Store.clearLog();
-    renderLogTab();
-  }
-
-
-  /* ============================================================
-   * 8. 탭6 — 학생 데이터 관리
-   * ============================================================ */
-  async function renderStudentsTab() {
-    const el = document.getElementById('tab-students');
-    el.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:16px 0;">불러오는 중...</div>';
-
-    const list = await Store.listStudents();
-
-    if (!list.length) {
-      el.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:16px 0;">저장된 학생이 없습니다.</div>';
-      return;
-    }
-
-    const rows = list.map(s => `
-      <tr>
-        <td><strong>${s.key}</strong></td>
-        <td>${s.meta?.school || '—'}</td>
-        <td>${s.meta?.goal   || '—'}</td>
-        <td>${Store.formatDate(s.savedAt)}</td>
-        <td>
-          <button class="admin-del-btn" onclick="Admin.deleteStudent('${s.key}')">
-            <i class="ti ti-trash"></i> 삭제
-          </button>
-        </td>
-      </tr>`).join('');
-
-    el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="font-size:13px;color:var(--text-3);">총 ${list.length}명</span>
-        <button class="admin-add-btn" onclick="Admin.renderStudentsTab()" style="margin-top:0;">
-          <i class="ti ti-refresh"></i> 새로고침
-        </button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="admin-log-table">
-          <thead><tr><th>학생 키</th><th>학교/학년</th><th>진로목표</th><th>저장일시</th><th></th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
-  }
-
-  async function deleteStudent(key) {
-    if (!confirm(`${key} 데이터를 삭제할까요?`)) return;
-    const ok = await Store.deleteStudent(key);
-    if (ok) renderStudentsTab();
-    else showMsg('삭제 실패 — 네트워크 확인', false);
-  }
-
-  function clearAllStudents() {
-    alert('개별 삭제를 이용해 주세요.\n(구글 시트에서 직접 행 삭제도 가능합니다)');
-  }
-
-
-  /* ============================================================
-   * 8-1. DC 할인율 업데이트
-   * ============================================================ */
-  function updateDiscountField(group, value) {
-    if (!_draft.discount) _draft.discount = {};
-    const old = _draft.discount[group];
-    _draft.discount[group] = parseInt(value) || 0;
-    Store.addLog('price', `DC 할인율 ${group}`, old, value);
-  }
-
-  function saveDcDiscount() {
-    if (!confirm('DC 할인율을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ DC 할인율이 저장되었습니다.', true);
-  }
-
-  /* ============================================================
-   * 9. 전체 저장
-   * ============================================================ */
-  function saveAll() {
-    if (!confirm('전체 설정을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true);
-  }
-
-  function showMsg(text, ok) {
-    // 하단 푸터 텍스트
-    const el = document.getElementById('admin-save-msg');
-    if (el) { el.textContent = text; el.style.color = ok ? 'var(--green-tx)' : 'var(--red-tx)'; }
-
-    // 토스트 팝업
-    let toast = document.getElementById('admin-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'admin-toast';
-      document.body.appendChild(toast);
-    }
-    const bg     = ok ? '#1a1d2e' : '#FFD3E1';
-    const color  = ok ? '#fff'    : '#8b1c3a';
-    const border = ok ? 'transparent' : '#FF8FB1';
-    const icon   = ok ? 'ti-circle-check' : 'ti-alert-circle';
-    const icolor = ok ? '#B79CFF' : '#8b1c3a';
-    toast.style.cssText = `
-      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
-      background:${bg}; color:${color};
-      padding:12px 28px; border-radius:12px;
-      font-size:14px; font-weight:600;
-      box-shadow:0 8px 32px rgba(0,0,0,0.15);
-      z-index:9999; border:1.5px solid ${border};
-      display:flex; align-items:center; gap:10px;
-      opacity:1; transition:opacity 0.3s;
-      white-space:nowrap;`;
-    toast.innerHTML = `<i class="ti ${icon}" style="font-size:18px;color:${icolor};"></i> ${text}`;
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
-  }
-
-
-  /* ============================================================
-   * Public API
-   * ============================================================ */
-  return {
-    checkPin, switchTab,
-    // 금액
-    renderPriceTab, loadPricePage, updatePriceField, addPriceItem, deletePriceItem,
-    updateDiscountField, saveDcDiscount,
-    savePriceTab, saveNameTab, saveContentTab,
-    savePriceItem, saveNameItem,
-    // 프로그램명
-    renderNameTab, updateNameField,
-    // 콘텐츠
-    renderContentTab, loadContentPage,
-    updateContentField, addContentItem, deleteContentItem,
-    updateNoteField, addNote, deleteNote,
-    // PIN
-    renderPinTab, changePin,
-    // 로그
-    renderLogTab, clearLog,
-    // 학생
-    renderStudentsTab, deleteStudent, clearAllStudents,
-    // 저장
-    saveAll,
-  };
-
-})();
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('pin-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') Admin.checkPin();
-  });
-  document.getElementById('pin-input')?.focus();
-});
+/* ================================================================
+   style.css — 마이더스K 공통 스타일
+   v7 인라인 <style> 이관 + v8 신규 컴포넌트 추가
+================================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── CSS 변수 ── */
+:root {
+  --sb-from:      #1A1A2E;
+  --sb-via:       #16213E;
+  --sb-to:        #0F3460;
+
+  --accent:       #B79CFF;
+  --accent-lt:    #D4ECFF;
+  --accent-rose:  #FF8FB1;
+  --accent-peach: #FFB89A;
+
+  --bg:           #F6F4F1;
+  --surface:      #FFFFFF;
+  --surface2:     #F2EEF8;
+  --border:       rgba(0,0,0,0.09);
+
+  --text-1:       #15151A;
+  --text-2:       #43434A;
+  --text-3:       #86868B;
+
+  --blue-bg:      #E1D6FF;
+  --blue-tx:      #5b35c4;
+  --amber-bg:     #FFE3D4;
+  --amber-tx:     #8a4020;
+  --red-bg:       #FFD3E1;
+  --red-tx:       #8b1c3a;
+  --green-bg:     #D4ECFF;
+  --green-tx:     #0a4a7a;
+
+  --grad-main:    linear-gradient(120deg, #FFB89A 0%, #FF8FB1 35%, #B79CFF 68%, #7BC2FF 100%);
+  --grad-soft:    linear-gradient(120deg, #FFE3D4 0%, #FFD3E1 35%, #E1D6FF 68%, #D4ECFF 100%);
+
+  --radius-sm:    6px;
+  --radius-md:    10px;
+  --radius-lg:    16px;
+  --shadow:       0 2px 8px rgba(21,21,26,.06), 0 4px 16px rgba(21,21,26,.05);
+  --shadow-lg:    0 6px 28px rgba(21,21,26,.11);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ================================================================
+   레이아웃
+================================================================ */
+.app { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
+
+/* ── 사이드바 ── */
+.sb {
+  width: 260px; min-width: 260px;
+  background: linear-gradient(160deg, #1A1A2E 0%, #16213E 55%, #0F3460 100%);
+  display: flex; flex-direction: column;
+  overflow: hidden; z-index: 10; position: relative;
+}
+.sb::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 200px 140px at 25% 12%, rgba(255,160,120,0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 140px 200px at 85% 72%, rgba(183,156,255,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 100px 100px at 60% 40%, rgba(123,194,255,0.15) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.sb > * { position: relative; z-index: 1; }
+
+.sb-logo {
+  padding: 28px 22px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.sb-logo-brand { font-size:11px; font-weight:600; color:#FFB89A; letter-spacing:.18em; text-transform:uppercase; margin-bottom:6px; }
+.sb-logo-name  { font-size:17px; font-weight:700; color:#fff; line-height:1.3; }
+.sb-logo-sub   { font-size:12px; color:rgba(255,255,255,0.38); margin-top:4px; }
+
+.sb-nav {
+  flex: 1; overflow-y: auto; padding: 12px 0 20px;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.sb-nav::-webkit-scrollbar { width:4px; }
+.sb-nav::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+
+.sb-section {
+  padding: 16px 22px 6px;
+  font-size:10.5px; font-weight:600; color:rgba(200,190,255,0.35);
+  letter-spacing:.15em; text-transform:uppercase;
+}
+.sb-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 22px; cursor:pointer;
+  border-left:3px solid transparent;
+  color:rgba(255,255,255,0.52); font-size:14px; font-weight:400;
+  transition:all 0.15s; user-select:none;
+}
+.sb-item:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.9); }
+.sb-item.active {
+  background:rgba(183,156,255,0.2); color:#fff;
+  border-left-color:#B79CFF; font-weight:500;
+}
+.sb-item i { font-size:17px; flex-shrink:0; }
+
+.sb-foot {
+  padding:16px 22px;
+  border-top:1px solid rgba(255,255,255,0.07);
+  font-size:11.5px; color:rgba(255,255,255,0.25); line-height:1.7;
+}
+.sb-foot strong { color:rgba(255,255,255,0.4); font-weight:500; }
+
+/* ── 메인 ── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+
+/* ── 탑바 ── */
+.topbar {
+  background:rgba(246,244,241,0.96); backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(0,0,0,0.07);
+  padding:0 28px; height:68px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.tb-breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-3); margin-bottom:2px; }
+.tb-breadcrumb span { color:var(--text-2); }
+.tb-title { font-size:16px; font-weight:700; color:var(--text-1); }
+.tb-right { display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:nowrap; }
+
+/* 합산 박스 */
+.total-boxes { display:flex; align-items:center; gap:6px; }
+.total-box {
+  display:flex; align-items:center; gap:8px;
+  background:#1A1A2E; border:1px solid rgba(255,255,255,0.08);
+  border-radius:var(--radius-md); padding:8px 14px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.18);
+}
+.total-box i { font-size:15px; color:rgba(255,255,255,0.45); }
+.total-inner { display:flex; flex-direction:column; gap:1px; }
+.total-label { font-size:10px; color:rgba(255,255,255,0.42); letter-spacing:.05em; white-space:nowrap; text-transform:uppercase; }
+.total-amt   { font-size:15px; font-weight:700; color:rgba(255,255,255,0.92); white-space:nowrap; min-width:70px; text-align:right; }
+
+/* 학년 선택 */
+.grade-selector { display:flex; align-items:center; gap:6px; }
+.grade-label    { font-size:12px; font-weight:600; color:var(--text-3); letter-spacing:.06em; white-space:nowrap; }
+.grade-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:48px; height:36px; border-radius:var(--radius-md);
+  font-size:14px; font-weight:600; font-family:inherit;
+  cursor:pointer; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text-2); transition:all 0.16s;
+}
+.grade-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--blue-bg); }
+.grade-btn.active {
+  background:linear-gradient(135deg,#6c5ff5 0%,#9b4dfc 100%);
+  border-color:transparent; color:#fff;
+  box-shadow:0 3px 12px rgba(124,111,247,0.38);
+}
+
+/* 구분선 */
+.grade-divider { width:1px; height:36px; background:var(--border); margin:0 4px; }
+
+/* 패키지 DC */
+.pkg-btns { display:flex; flex-direction:column; gap:3px; }
+.pkg-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:4px; padding:0 10px; height:26px; border-radius:6px;
+  font-size:11px; font-weight:600; font-family:inherit;
+  cursor:pointer; white-space:nowrap; transition:all 0.14s;
+}
+.pkg-btn-1 { background:rgba(255,184,154,0.15); color:#15151A; border:1px solid rgba(255,143,177,0.35); }
+.pkg-btn-1:hover { background:rgba(255,143,177,0.2); border-color:#FF8FB1; }
+.pkg-btn-2 { background:rgba(183,156,255,0.13); color:#15151A; border:1px solid rgba(183,156,255,0.35); }
+.pkg-btn-2:hover { background:rgba(183,156,255,0.22); border-color:#B79CFF; }
+
+/* 버튼 공통 */
+.btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 18px; border-radius:var(--radius-md);
+  font-size:13px; font-weight:500; font-family:inherit;
+  cursor:pointer; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text-1); transition:all 0.14s; white-space:nowrap;
+}
+.btn:hover { background:var(--surface2); border-color:#b0bcd4; }
+.btn-primary {
+  background:var(--grad-main); color:#fff; border-color:transparent;
+  box-shadow:0 3px 14px rgba(183,156,255,0.4);
+}
+.btn-primary:hover {
+  background:linear-gradient(120deg,#FF8FB1 0%,#B79CFF 60%,#7BC2FF 100%);
+  box-shadow:0 4px 18px rgba(183,156,255,0.5);
+}
+.btn i { font-size:16px; }
+
+/* 학생 선택 드롭다운 */
+.student-select {
+  height:36px; padding:0 10px;
+  border:1.5px solid var(--border); border-radius:var(--radius-md);
+  font-size:13px; font-family:inherit; color:var(--text-1);
+  background:var(--surface); cursor:pointer; min-width:160px; max-width:200px;
+  transition:border-color 0.14s;
+}
+.student-select:focus { outline:none; border-color:var(--accent); }
+
+/* ── 콘텐츠 영역 ── */
+.content { flex:1; overflow-y:auto; padding:28px 32px; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* ================================================================
+   연간관리형 개요
+================================================================ */
+.ov-grid {
+  display:grid; grid-template-columns:repeat(5,1fr);
+  gap:16px; margin-bottom:20px;
+}
+.ov-card {
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:var(--radius-lg); padding:24px 22px;
+  cursor:pointer; transition:all 0.16s; box-shadow:var(--shadow);
+  display:flex; flex-direction:column;
+  position:relative;          /* ★ v8: 체크박스 absolute 기준 */
+}
+.ov-card:hover {
+  border-color:var(--accent);
+  box-shadow:0 8px 28px rgba(183,156,255,0.25);
+  transform:translateY(-2px);
+}
+.ov-card.card-selected {
+  border-color:#B79CFF;
+  box-shadow:0 4px 20px rgba(183,156,255,0.28);
+}
+
+/* ★ v8: 체크박스 우측 상단 고정 */
+.ov-check-area {
+  position:absolute; top:14px; right:14px;
+  display:flex; align-items:center; gap:4px;
+  z-index:2;
+}
+
+.ov-check-wrap { position:relative; display:inline-block; }
+.ov-checkbox   { display:none; }
+.ov-check-label {
+  display:flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:50%;
+  border:2px solid var(--border); background:var(--surface);
+  cursor:pointer; transition:all 0.15s; position:relative;
+}
+.ov-check-label::after {
+  content:''; width:9px; height:9px;
+  border-radius:50%; background:transparent; transition:all 0.15s;
+}
+.ov-checkbox:checked + .ov-check-label {
+  border-color:#B79CFF;
+  background:linear-gradient(120deg,#FFB89A,#FF8FB1,#B79CFF);
+  box-shadow:0 2px 10px rgba(183,156,255,0.4);
+}
+.ov-checkbox:checked + .ov-check-label::after { background:#fff; }
+
+.ov-check-label.fixed {
+  border-color:#B79CFF;
+  background:linear-gradient(120deg,#FFB89A,#FF8FB1,#B79CFF);
+  box-shadow:0 2px 10px rgba(183,156,255,0.3);
+  cursor:not-allowed;
+}
+.ov-check-label.fixed::after { background:#fff; }
+.ov-fixed-badge { font-size:10px; font-weight:600; color:#B79CFF; white-space:nowrap; }
+
+.ov-icon { width:44px; height:44px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:19px; margin-bottom:14px; }
+.ov-badge { font-size:11px; font-weight:600; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
+.ov-name  { font-size:16px; font-weight:700; color:var(--text-1); margin-bottom:8px; }
+.ov-price { font-size:13px; color:var(--text-2); line-height:1.8; }
+.ov-price strong { color:#2a1450; font-weight:700; }
+.ov-arrow { display:flex; align-items:center; gap:4px; font-size:12px; color:#B79CFF; margin-top:12px; font-weight:500; }
+
+/* 트리 */
+.ov-tree { margin-top:16px; padding-top:14px; border-top:1.5px solid var(--border); }
+.ov-tree-item { display:flex; align-items:flex-start; gap:10px; padding:5px 0; position:relative; padding-left:18px; }
+.ov-tree-item::before { content:''; position:absolute; left:5px; top:0; bottom:0; width:1.5px; background:var(--border); }
+.ov-tree-item:last-child::before { bottom:50%; }
+.ov-tree-item::after  { content:''; position:absolute; left:5px; top:14px; width:10px; height:1.5px; background:var(--border); }
+.ov-tree-dot   { flex-shrink:0; width:8px; height:8px; border-radius:50%; background:linear-gradient(120deg,#FFB89A,#B79CFF); margin-top:5px; }
+.ov-tree-label { font-size:13px; font-weight:600; color:#15151A; line-height:1.5; }
+.ov-tree-sub   { font-size:11px; color:#43434A; margin-top:2px; line-height:1.5; }
+
+.global-notice {
+  background:#FFE3D4; border:1px solid #FFB89A; border-radius:var(--radius-md);
+  padding:14px 18px; font-size:13.5px; color:#8a4020;
+  display:flex; gap:10px; align-items:flex-start;
+}
+.global-notice i { font-size:16px; flex-shrink:0; margin-top:1px; }
+
+/* ================================================================
+   상세 페이지
+================================================================ */
+.detail-header {
+  display:flex; align-items:center; gap:14px;
+  margin-bottom:24px; padding-bottom:20px;
+  border-bottom:1.5px solid var(--border);
+}
+.detail-icon { width:52px; height:52px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.detail-title { font-size:19px; font-weight:700; color:var(--text-1); }
+.detail-sub   { font-size:14px; color:var(--text-2); margin-top:3px; }
+
+.detail-grid { display:grid; grid-template-columns:1fr 1fr 260px; gap:20px; align-items:start; }
+.d-col-label { font-size:11.5px; font-weight:600; color:var(--text-3); letter-spacing:.1em; text-transform:uppercase; margin-bottom:14px; }
+
+/* 프로그램 항목 */
+.p-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:12px; box-shadow:var(--shadow); }
+.p-item:last-child { margin-bottom:0; }
+.p-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.p-num {
+  display:inline-flex; width:26px; height:26px; border-radius:50%;
+  background:linear-gradient(120deg,#FFB89A,#FF8FB1,#B79CFF);
+  color:#fff; font-size:12px; font-weight:700;
+  align-items:center; justify-content:center; flex-shrink:0;
+}
+.p-title { font-size:15px; font-weight:700; color:var(--text-1); }
+.p-desc  { font-size:13.5px; color:var(--text-2); line-height:1.8; }
+.p-desc ul { padding-left:16px; }
+.p-desc li { margin-bottom:3px; list-style:disc; }
+
+/* 조건 박스 */
+.c-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:12px; box-shadow:var(--shadow); }
+.c-title { font-size:14px; font-weight:700; color:var(--text-1); margin-bottom:10px; }
+.c-txt   { font-size:13.5px; color:var(--text-2); line-height:1.85; }
+.c-tag   { display:inline-block; background:#E1D6FF; color:#5b35c4; font-size:12px; font-weight:500; padding:3px 10px; border-radius:20px; margin:2px 3px 4px 0; }
+
+/* 노티스 */
+.notice { border-radius:var(--radius-md); padding:12px 16px; font-size:13px; line-height:1.75; display:flex; gap:10px; margin-bottom:12px; }
+.notice i { font-size:17px; flex-shrink:0; margin-top:1px; }
+.notice:last-child { margin-bottom:0; }
+.n-amber { background:var(--amber-bg); color:#8a4020; }
+.n-red   { background:var(--red-bg);   color:var(--red-tx); }
+.n-blue  { background:var(--blue-bg);  color:var(--blue-tx); }
+.n-green { background:var(--green-bg); color:var(--green-tx); }
+
+/* 가격 카드 */
+.price-card {
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px; box-shadow:var(--shadow);
+  position:sticky; top:0;
+}
+.pc-title { font-size:12px; font-weight:600; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; }
+.p-opt {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 0; border-bottom:1px solid var(--border);
+  cursor:pointer; transition:background 0.1s;
+}
+.p-opt:last-of-type { border-bottom:none; }
+.p-opt:hover { background:var(--surface2); margin:0 -4px; padding:12px 4px; border-radius:var(--radius-sm); }
+.p-opt input[type=checkbox] { width:17px; height:17px; cursor:pointer; flex-shrink:0; margin-top:2px; accent-color:#6c5ff5; }
+.p-opt-lbl   { flex:1; }
+.p-opt-grade { font-size:15px; font-weight:600; color:var(--text-1); }
+.p-opt-note  { font-size:12px; color:var(--text-3); margin-top:2px; }
+.p-opt-amt   { font-size:15px; font-weight:700; color:#2a1450; white-space:nowrap; flex-shrink:0; }
+.pc-divider  { height:1px; background:var(--border); margin:14px 0; }
+.pc-total    { display:flex; justify-content:space-between; align-items:center; padding-top:4px; }
+.pc-total-lbl { font-size:13px; color:var(--text-2); }
+.pc-total-amt { font-size:18px; font-weight:700; color:#2a1450; }
+
+/* ================================================================
+   공용 모달
+================================================================ */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(10,10,30,0.55); backdrop-filter:blur(4px);
+  z-index:1000; align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; }
+.modal-box {
+  background:var(--surface); border-radius:var(--radius-lg);
+  max-height:88vh; display:flex; flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;
+  width:520px;
+}
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 22px; border-bottom:1px solid var(--border);
+  background:#1A1A2E; flex-shrink:0;
+  font-size:15px; font-weight:700; color:#fff;
+}
+.modal-header i { font-size:16px; color:var(--accent-lt); margin-right:6px; }
+.modal-close {
+  width:30px; height:30px; border-radius:50%; border:none;
+  background:rgba(255,255,255,0.1); color:#fff; font-size:15px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background 0.12s; font-family:inherit;
+}
+.modal-close:hover { background:rgba(255,255,255,0.2); }
+.modal-body { flex:1; overflow-y:auto; padding:20px 22px; }
+.modal-footer {
+  padding:14px 22px; border-top:1px solid var(--border);
+  display:flex; justify-content:flex-end; gap:10px;
+  flex-shrink:0; background:var(--surface2);
+}
+.modal-label { font-size:13px; font-weight:600; color:var(--text-2); display:block; margin-bottom:5px; }
+
+/* 관리자 공용 input */
+.admin-input {
+  padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
+  font-size:13.5px; font-family:inherit; color:var(--text-1);
+  background:var(--surface2); outline:none; width:100%; transition:border-color 0.12s;
+}
+.admin-input:focus { border-color:var(--accent); background:#fff; }
+
+.admin-save-btn {
+  padding:9px 22px; border-radius:var(--radius-md);
+  background:var(--grad-main); color:#fff; border:none;
+  font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.admin-cancel-btn {
+  padding:9px 18px; border-radius:var(--radius-md);
+  background:var(--surface); color:var(--text-2);
+  border:1px solid var(--border); font-size:14px; font-weight:500;
+  cursor:pointer; font-family:inherit;
+}
+
+/* ================================================================
+   포트폴리오 출력
+================================================================ */
+.pf-modal-box { width: 680px; }
+.pf-preview   { padding:24px 32px; background:#fafafa; }
+
+.pf-doc { font-family:'Noto Sans KR',sans-serif; color:#15151A; max-width:580px; margin:0 auto; }
+
+.pf-header { text-align:center; padding-bottom:18px; border-bottom:2px solid #15151A; margin-bottom:18px; }
+.pf-brand  { font-size:12px; font-weight:700; letter-spacing:.2em; color:#B79CFF; text-transform:uppercase; margin-bottom:6px; }
+.pf-main-title { font-size:20px; font-weight:700; margin-bottom:6px; }
+.pf-license    { font-size:11px; color:#86868B; }
+
+.pf-info-row { display:flex; flex-wrap:wrap; gap:6px 20px; padding:12px 0; border-bottom:1px solid #e0e0e0; margin-bottom:16px; }
+.pf-info-item { display:flex; gap:6px; font-size:13px; }
+.pf-info-label { color:#86868B; }
+.pf-info-value { font-weight:600; }
+
+.pf-programs-title { font-size:13px; font-weight:700; letter-spacing:.05em; color:#43434A; margin-bottom:12px; }
+.pf-section { margin-bottom:16px; }
+.pf-section-title { font-size:13px; font-weight:700; color:#15151A; border-left:3px solid #B79CFF; padding-left:8px; margin-bottom:8px; }
+.pf-subtotal { text-align:right; font-size:13px; font-weight:600; color:#5b35c4; padding-top:6px; border-top:1px dashed #e0e0e0; margin-top:4px; }
+
+.pf-total-row {
+  display:flex; justify-content:space-between; align-items:center;
+  border-top:2px solid #15151A; border-bottom:1px solid #e0e0e0;
+  padding:12px 0; margin-top:8px;
+}
+.pf-total-label { font-size:15px; font-weight:700; }
+.pf-total-amt   { font-size:20px; font-weight:700; color:#5b35c4; }
+.pf-tax { font-size:11px; color:#86868B; text-align:right; margin-bottom:24px; }
+
+.pf-sign { border-top:1px solid #e0e0e0; padding-top:20px; }
+.pf-sign p { font-size:13px; margin-bottom:16px; }
+.pf-sign-row { display:flex; justify-content:space-between; font-size:13px; }
+.pf-sign-line { display:inline-block; border-bottom:1px solid #15151A; vertical-align:bottom; }
+
+/* ================================================================
+   @media print — 포트폴리오 인쇄 레이아웃
+================================================================ */
+@media print {
+  body > *:not(#pf-modal) { display:none !important; }
+  #pf-modal { display:block !important; position:static !important; background:none !important; }
+  .modal-header, .modal-footer, .modal-close { display:none !important; }
+  .pf-preview { padding:0 !important; background:none !important; }
+  .pf-doc     { max-width:100% !important; }
+}
+
+/* ================================================================
+   v8 카드 스타일 개선
+================================================================ */
+
+/* 카드 프로그램명 크게 */
+.ov-name {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: var(--text-1) !important;
+  margin-bottom: 10px !important;
+  line-height: 1.3 !important;
+}
+
+/* 카드 금액 강조 */
+.ov-price {
+  font-size: 15px !important;
+  color: var(--text-2) !important;
+  line-height: 2 !important;
+  min-height: 48px;
+}
+.ov-price strong {
+  font-size: 18px !important;
+  color: #2a1450 !important;
+  font-weight: 800 !important;
+}
+
+/* 자세히 보기 버튼 박스형 */
+.ov-detail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 0;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid var(--accent);
+  background: var(--blue-bg);
+  color: var(--blue-tx);
+  transition: all 0.15s;
+}
+.ov-detail-btn:hover {
+  background: var(--grad-main);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(183,156,255,0.35);
+}
+.ov-detail-btn i { font-size: 15px; }
+
+/* 카드 선택 시 금액 강조 */
+.ov-card.card-selected .ov-price strong {
+  color: #5b35c4 !important;
+}
+
+/* ================================================================
+   v8 버그수정 — 합산 관련 추가 스타일
+================================================================ */
+
+/* ov 선택 시 상세 체크박스 비활성화 */
+.p-opt-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* rm-c 할인 구독 카드 */
+.p-opt-discount { align-items: flex-start; }
+.p-opt-origin {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+.p-opt-origin s { color: var(--red-tx); }
+.p-opt-save {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0a5c35;
+  background: #d4ecff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+/* rm-c 참고 섹션 */
+.p-ref-section { padding: 4px 0; }
+.p-ref-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.p-ref-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-3);
+  padding: 3px 0;
+}
+.p-ref-label { font-weight: 500; }
+.p-ref-val   { font-weight: 600; color: var(--text-2); }
+
+/* DC 버튼 활성 상태 */
+.pkg-btn-active {
+  background: linear-gradient(135deg, #6c5ff5, #9b4dfc) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 3px 12px rgba(124,111,247,0.4);
+}
+
+/* ================================================================
+   관리자 UI 개선 — 콘텐츠 탭 2컬럼 레이아웃
+================================================================ */
+
+/* 콘텐츠 편집 사이드바 */
+.ct-sidebar {
+  width: 200px;
+  min-width: 200px;
+  border-right: 1px solid var(--border);
+  padding: 8px 0;
+  overflow-y: auto;
+  background: var(--surface2);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+.ct-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 14px 14px 4px;
+}
+.ct-side-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.12s;
+  border-left: 3px solid transparent;
+}
+.ct-side-item:hover {
+  background: rgba(183,156,255,0.1);
+  color: var(--text-1);
+}
+.ct-side-active {
+  background: rgba(183,156,255,0.15) !important;
+  color: var(--accent) !important;
+  border-left-color: var(--accent) !important;
+  font-weight: 600;
+}
+
+/* 콘텐츠 편집 영역 */
+.ct-editor {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+/* 금액 단가 탭 컴팩트 */
+.admin-price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.admin-price-row:last-child { border-bottom: none; }
+
+/* ================================================================
+   관리자 UI 전면 개선 — 폰트 / 섹션 타이틀 / 입력 필드
+================================================================ */
+
+/* 섹션 타이틀 — 진하고 명확하게 */
+.admin-section-title {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: var(--text-1) !important;
+  letter-spacing: .10em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 12px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 2px solid var(--accent) !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 편집 영역 타이틀 — 박스형 */
+.admin-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+  background: var(--surface2);
+  border-left: 4px solid var(--accent);
+  padding: 12px 16px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 20px;
+}
+.admin-editor-title i { font-size: 18px; color: var(--accent); }
+
+/* 필드 그룹 */
+.admin-field-group {
+  margin-bottom: 14px;
+}
+.admin-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 5px;
+  letter-spacing: .04em;
+}
+
+/* 입력 크기 변형 */
+.admin-input-sm  { width: 80px !important; }
+.admin-input-md  { width: 200px !important; }
+.admin-input-lg  { width: 100% !important; max-width: 480px !important; }
+
+/* 가격 행 개선 */
+.admin-price-row {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border) !important;
+  padding: 8px 10px !important;
+  margin-bottom: 6px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+.admin-price-row:hover {
+  border-color: var(--accent) !important;
+  background: var(--surface2);
+}
+
+/* 이름 행 */
+.admin-name-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+/* 관리자 탭 폰트 개선 */
+.admin-tab {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+.admin-tab.active {
+  color: var(--accent) !important;
+}
+
+/* 관리자 전체 폰트 */
+.admin-content {
+  font-size: 13.5px;
+}
+
+/* 가격 행 학년 툴팁 표시 */
+select[title] { cursor: help; }
