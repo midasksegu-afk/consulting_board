@@ -357,6 +357,7 @@ html, body {
   font-size: 13px; color: #8a4020; line-height: 1.7;
   display: flex; flex-direction: column; gap: 8px;
   align-self: start;
+  grid-column: 4 / 6;
 }
 .aoc-notice-card i { font-size: 16px; flex-shrink: 0; color: #c45000; }
 .aoc-link {
