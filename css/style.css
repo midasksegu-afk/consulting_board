@@ -584,3 +584,64 @@ html, body {
   color: #fff !important;
   box-shadow: 0 3px 12px rgba(124,111,247,0.4);
 }
+
+/* ================================================================
+   관리자 UI 개선 — 콘텐츠 탭 2컬럼 레이아웃
+================================================================ */
+
+/* 콘텐츠 편집 사이드바 */
+.ct-sidebar {
+  width: 200px;
+  min-width: 200px;
+  border-right: 1px solid var(--border);
+  padding: 8px 0;
+  overflow-y: auto;
+  background: var(--surface2);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+.ct-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 14px 14px 4px;
+}
+.ct-side-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.12s;
+  border-left: 3px solid transparent;
+}
+.ct-side-item:hover {
+  background: rgba(183,156,255,0.1);
+  color: var(--text-1);
+}
+.ct-side-active {
+  background: rgba(183,156,255,0.15) !important;
+  color: var(--accent) !important;
+  border-left-color: var(--accent) !important;
+  font-weight: 600;
+}
+
+/* 콘텐츠 편집 영역 */
+.ct-editor {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+/* 금액 단가 탭 컴팩트 */
+.admin-price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.admin-price-row:last-child { border-bottom: none; }
