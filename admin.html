@@ -174,20 +174,23 @@
 
     <!-- 탭 네비게이션 -->
     <div class="admin-tabs">
-      <button class="admin-tab" data-tab="tab-program" onclick="Admin.switchTab('tab-program')">
+      <button class="admin-tab" data-tab="tab-program"  onclick="Admin.switchTab('tab-program')">
         <i class="ti ti-layout-list"></i> 프로그램 관리
       </button>
       <button class="admin-tab" data-tab="tab-content"  onclick="Admin.switchTab('tab-content')">
         <i class="ti ti-file-text"></i> 콘텐츠 편집
       </button>
-      <button class="admin-tab" data-tab="tab-pin"      onclick="Admin.switchTab('tab-pin')">
-        <i class="ti ti-key"></i> PIN 변경
+      <button class="admin-tab" data-tab="tab-discount" onclick="Admin.switchTab('tab-discount')">
+        <i class="ti ti-percentage"></i> 할인율 관리
+      </button>
+      <button class="admin-tab" data-tab="tab-students" onclick="Admin.switchTab('tab-students')">
+        <i class="ti ti-users"></i> 학생 관리
       </button>
       <button class="admin-tab" data-tab="tab-log"      onclick="Admin.switchTab('tab-log')">
         <i class="ti ti-history"></i> 변경 이력
       </button>
-      <button class="admin-tab" data-tab="tab-students" onclick="Admin.switchTab('tab-students')">
-        <i class="ti ti-users"></i> 학생 관리
+      <button class="admin-tab" data-tab="tab-pin"      onclick="Admin.switchTab('tab-pin')">
+        <i class="ti ti-key"></i> PIN 변경
       </button>
     </div>
 
@@ -195,9 +198,10 @@
     <div class="admin-content">
       <div class="tab-content" id="tab-program"></div>
       <div class="tab-content" id="tab-content"></div>
-      <div class="tab-content" id="tab-pin"></div>
-      <div class="tab-content" id="tab-log"></div>
+      <div class="tab-content" id="tab-discount"></div>
       <div class="tab-content" id="tab-students"></div>
+      <div class="tab-content" id="tab-log"></div>
+      <div class="tab-content" id="tab-pin"></div>
     </div>
 
   </div><!-- /admin-body -->
