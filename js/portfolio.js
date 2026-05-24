@@ -215,23 +215,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-brand{font-size:11px;font-weight:700;letter-spacing:.2em;color:#8870C8;text-transform:uppercase;margin-bottom:6px}
 .pf-main-title{font-size:20px;font-weight:700;margin-bottom:6px}
 .pf-license{font-size:11px;color:#A8A4AB}
-.pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:linear-gradient(105deg,rgba(244,184,154,0.12),rgba(232,143,177,0.12),rgba(183,156,255,0.12));border-radius:8px;margin-bottom:20px;border:1px solid rgba(183,156,255,0.2)}
+.pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#f8f6ff;border-radius:8px;margin-bottom:20px;border:1px solid #e0d8ff}
 .pf-info-item{display:flex;gap:6px;font-size:12.5px;margin-right:20px}
 .pf-info-label{color:#A8A4AB}
 .pf-info-value{font-weight:700;color:#15151A}
 .pf-programs-title{font-size:11px;font-weight:700;letter-spacing:.1em;color:#A8A4AB;text-transform:uppercase;margin-bottom:12px}
 .pf-section{margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)}
-.pf-section-header{padding:10px 16px;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(105deg,#FFB89A,#FF8FB1,#B79CFF)}
+.pf-section-header{padding:10px 16px;font-size:13px;font-weight:700;color:#5b35c4;background:#f3f0ff;border-left:4px solid #B79CFF}
 .pf-section table{width:100%;border-collapse:collapse;background:#fff}
 .pf-section td{padding:8px 16px;font-size:13px;border-bottom:1px solid #f5f5f5}
 .pf-section td:last-child{text-align:right;font-weight:600;white-space:nowrap}
 .pf-section tr:last-child td{border-bottom:none}
 .pf-subtotal{text-align:right;padding:8px 16px;font-size:13px;font-weight:600;color:#5b35c4;background:#faf8ff;border-top:1px solid rgba(183,156,255,0.2)}
-.pf-total-box{margin:16px 0;padding:16px 20px;background:#15151A;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
-.pf-total-label{font-size:15px;font-weight:700;color:#fff}
+.pf-total-box{margin:16px 0;padding:16px 20px;background:#fff;border:2px solid #15151A;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+.pf-total-label{font-size:15px;font-weight:700;color:#15151A}
 .pf-total-right{text-align:right}
-.pf-total-raw{font-size:12px;color:rgba(255,255,255,0.45);text-decoration:line-through;margin-bottom:2px}
-.pf-total-amt{font-size:22px;font-weight:700;background:linear-gradient(105deg,#FFB89A,#FF8FB1,#B79CFF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.pf-total-raw{font-size:12px;color:#A8A4AB;text-decoration:line-through;margin-bottom:2px}
+.pf-total-amt{font-size:22px;font-weight:700;color:#5b35c4}
 .pf-tax{font-size:11px;color:#A8A4AB;text-align:right;margin-bottom:20px}
 .pf-footer{border-top:1px solid #e8e8e8;padding-top:16px;margin-top:8px;font-size:12.5px;color:#6B6970;line-height:1.8}
 .print-btn{position:fixed;bottom:24px;right:24px;padding:12px 24px;background:linear-gradient(105deg,#FFB89A,#FF8FB1,#B79CFF);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(183,156,255,0.4)}
