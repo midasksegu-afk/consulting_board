@@ -207,6 +207,7 @@ const Portfolio = (() => {
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding:0}
 @page{margin:12mm 14mm;size:A4}
 .pf-doc{max-width:680px;margin:0 auto;padding:24px 32px}
