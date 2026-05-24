@@ -470,13 +470,22 @@ const UI = (() => {
   }
 
   function _renderPrograms(programs) {
-    return programs.map(p => `
+    return programs.map(p => {
+      const hasLink = p.title.includes('세특구원자');
+      const titleHtml = hasLink
+        ? `${p.title} <a href="https://naver.me/GfMeckyJ" target="_blank" rel="noopener"
+            style="font-size:11px;font-weight:600;color:#B79CFF;text-decoration:none;
+            border:1px solid rgba(183,156,255,0.4);border-radius:4px;padding:1px 7px;margin-left:6px;vertical-align:middle;">
+            <i class="ti ti-external-link" style="font-size:11px;"></i> 바로가기</a>`
+        : p.title;
+      return `
       <div class="p-item">
-        <div class="p-title">${p.title}</div>
+        <div class="p-title">${titleHtml}</div>
         <div class="p-desc">
           <ul>${(p.items || []).map(i => `<li>${i}</li>`).join('')}</ul>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function _renderConditions(conditions) {
