@@ -50,8 +50,7 @@ const Admin = (() => {
 
     // 탭별 렌더
     const renderMap = {
-      'tab-price':   renderPriceTab,
-      'tab-name':    renderNameTab,
+      'tab-program': renderProgramTab,
       'tab-content': renderContentTab,
       'tab-pin':     renderPinTab,
       'tab-log':     renderLogTab,
@@ -62,225 +61,13 @@ const Admin = (() => {
 
 
   /* ============================================================
-   * 3. 탭1 — 금액 단가 CRUD
+   * 3. 탭1 — 프로그램 관리 (이름 + 단가 통합)
    * ============================================================ */
-  /* 금액 단가 탭 현재 선택 페이지 */
-  let _pricePageId = null;
+  let _programPageId = null;
 
-  function renderPriceTab() {
-    const el  = document.getElementById('tab-price');
+  function renderProgramTab() {
+    const el  = document.getElementById('tab-program');
     const cfg = _draft;
-
-    // 그룹별 사이드 메뉴
-    const groups = [
-      { key: 'roadmap',    label: '로드맵 컨설팅' },
-      { key: 'individual', label: '개별 컨설팅' },
-      { key: 'strategy',   label: '대입 전략 컨설팅' },
-    ];
-
-    // DC 설정은 special 항목
-    let sideHtml = `
-      <div class="ct-side-item ${!_pricePageId ? 'ct-side-active' : ''}"
-        onclick="Admin.loadPricePage('__dc__')" style="font-weight:600;">
-        <i class="ti ti-percentage" style="font-size:14px;"></i> DC 할인율
-      </div>`;
-
-    groups.forEach(g => {
-      const pages = MK_CONFIG.pageOrder.filter(id => {
-        const p = cfg.pages[id];
-        return p && p.group === g.key && !p.isOverview;
-      });
-      if (!pages.length) return;
-      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
-      pages.forEach(id => {
-        const p = cfg.pages[id];
-        const active = id === _pricePageId ? 'ct-side-active' : '';
-        sideHtml += `
-          <div class="ct-side-item ${active}" onclick="Admin.loadPricePage('${id}')">
-            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i>
-            ${p.sbLabel}
-          </div>`;
-      });
-    });
-
-    el.innerHTML = `
-      <div style="display:flex;gap:0;min-height:500px;">
-        <div class="ct-sidebar">${sideHtml}</div>
-        <div class="ct-editor" id="price-editor">
-          <div style="color:var(--text-3);font-size:13px;padding:24px;">
-            좌측에서 편집할 항목을 선택하세요.
-          </div>
-        </div>
-      </div>`;
-
-    if (_pricePageId) loadPricePage(_pricePageId);
-    else loadPricePage('__dc__');
-  }
-
-  function loadPricePage(pageId) {
-    _pricePageId = pageId === '__dc__' ? null : pageId;
-    const el = document.getElementById('price-editor');
-    if (!el) return;
-
-    // 사이드 active 갱신
-    document.querySelectorAll('.ct-sidebar .ct-side-item').forEach(item => {
-      item.classList.remove('ct-side-active');
-    });
-    const sel = pageId === '__dc__'
-      ? document.querySelector('.ct-sidebar .ct-side-item:first-child')
-      : document.querySelector(`.ct-sidebar .ct-side-item[onclick*="${pageId}"]`);
-    if (sel) sel.classList.add('ct-side-active');
-
-    if (pageId === '__dc__') {
-      const disc = _draft.discount || {};
-      el.innerHTML = `
-        <div class="admin-section" style="max-width:400px;">
-          <div class="admin-section-title">DC 할인율 설정</div>
-          <div class="admin-price-row">
-            <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:130px;">로드맵 DC (%)</span>
-            <input class="admin-input" style="width:90px;text-align:right;"
-              type="number" min="0" max="100"
-              value="${disc.roadmap ?? 10}"
-              onchange="Admin.updateDiscountField('roadmap', this.value)">
-            <span style="font-size:12px;color:var(--text-3);">항상 표시</span>
-          </div>
-          <div class="admin-price-row">
-            <span style="font-size:13px;font-weight:600;color:var(--text-2);min-width:130px;">개별 DC (%)</span>
-            <input class="admin-input" style="width:90px;text-align:right;"
-              type="number" min="0" max="100"
-              value="${disc.individual ?? 0}"
-              onchange="Admin.updateDiscountField('individual', this.value)">
-            <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
-          </div>
-          <div style="margin-top:16px;">
-            <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
-              <i class="ti ti-device-floppy"></i> DC 할인율 저장
-            </button>
-          </div>
-        </div>`;
-      return;
-    }
-
-    const page = _draft.pages[pageId];
-    if (!page) return;
-
-    el.innerHTML = `
-      <div class="admin-section-title">${page.sbLabel} — 금액 단가</div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;">
-        금액 입력 예시: <strong>230만원</strong> 또는 <strong>2300000</strong>
-      </div>
-      <div id="price-list-${pageId}">
-        ${_renderPriceList(pageId, page.prices || [])}
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
-        <button class="admin-add-btn" onclick="Admin.addPriceItem('${pageId}')" style="margin-top:0;">
-          <i class="ti ti-plus"></i> 항목 추가
-        </button>
-      </div>`;
-  }
-
-  function savePriceTab() {
-    if (!confirm('금액 단가를 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ 금액 단가가 저장되었습니다.', true);
-  }
-
-  function _renderPriceList(pageId, prices) {
-    if (!prices.length) return '<div style="font-size:13px;color:var(--text-3);padding:8px 0;">항목 없음</div>';
-    return prices.map((price, idx) => {
-      const manwon  = price.amt ? Math.round(price.amt / 10000) + '만원' : '0원';
-      const numOnly = price.amt ? Math.round(price.amt / 10000) : 0;
-      return `
-      <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
-        <input class="admin-input" style="flex:1;min-width:80px;max-width:200px;"
-          value="${price.label}"
-          oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
-          placeholder="항목명">
-        <div style="display:flex;align-items:center;gap:4px;flex:0.8;">
-          <input class="admin-input" style="width:70px;text-align:right;"
-            value="${numOnly}"
-            oninput="Admin.updatePriceField('${pageId}', ${idx}, 'amt', this.value)"
-            placeholder="예:230"
-            type="number" min="0">
-          <span style="font-size:13px;color:var(--text-2);white-space:nowrap;font-weight:600;">만원</span>
-        </div>
-        <select class="admin-input" style="width:68px;flex-shrink:0;"
-          title="이 항목이 표시될 학년 (무관=항상 표시)"
-          onchange="Admin.updatePriceField('${pageId}', ${idx}, 'grade', this.value)">
-          <option value="" ${!price.grade ? 'selected' : ''}>무관</option>
-          <option value="1" ${price.grade == 1 ? 'selected' : ''}>고1</option>
-          <option value="2" ${price.grade == 2 ? 'selected' : ''}>고2</option>
-          <option value="3" ${price.grade == 3 ? 'selected' : ''}>고3</option>
-          <option value="1,2,3" ${price.grade == '1,2,3' ? 'selected' : ''}>전학년</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:3px;font-size:11px;white-space:nowrap;cursor:pointer;">
-          <input type="checkbox" ${price.isDefault ? 'checked' : ''}
-            onchange="Admin.updatePriceField('${pageId}', ${idx}, 'isDefault', this.checked)">
-          기본
-        </label>
-        <button class="admin-save-btn" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
-          onclick="Admin.savePriceItem('${pageId}', ${idx})" title="이 항목 저장">
-          <i class="ti ti-device-floppy"></i>
-        </button>
-        <button class="admin-del-btn" onclick="Admin.deletePriceItem('${pageId}', ${idx})" title="삭제">
-          <i class="ti ti-trash"></i>
-        </button>
-      </div>`;
-    }).join('');
-  }
-
-  function savePriceItem(pageId, idx) {
-    const price = _draft.pages[pageId]?.prices?.[idx];
-    if (!price) return;
-    Store.saveConfig(_draft);
-    showMsg(`✓ "${price.label}" 항목이 저장되었습니다.`, true);
-  }
-
-  function updatePriceField(pageId, idx, field, value) {
-    if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
-    const old = { ..._draft.pages[pageId].prices[idx] };
-    if (field === 'amt') {
-      // 만원 단위 통일
-      // "230" → 2,300,000 / "230만원" → 2,300,000 / "2300000" → 2,300,000
-      const str = String(value).replace(/,/g, '').trim();
-      if (str.includes('만')) {
-        const num = parseFloat(str.replace(/만원|만/g, '')) || 0;
-        value = Math.round(num * 10000);
-      } else {
-        const num = parseInt(str) || 0;
-        // 10000 미만 입력 → 만원 단위로 간주
-        value = num > 0 && num < 10000 ? num * 10000 : num;
-      }
-    }
-    _draft.pages[pageId].prices[idx][field] = value;
-    Store.addLog('price', `${pageId} > ${old.label} ${field}`, old[field], value);
-  }
-
-  function addPriceItem(pageId) {
-    if (!_draft.pages[pageId].prices) _draft.pages[pageId].prices = [];
-    _draft.pages[pageId].prices.push({ label: '새 항목', amt: 0 });
-    const el = document.getElementById(`price-list-${pageId}`);
-    if (el) el.innerHTML = _renderPriceList(pageId, _draft.pages[pageId].prices);
-  }
-
-  function deletePriceItem(pageId, idx) {
-    if (!confirm('이 가격 항목을 삭제할까요?')) return;
-    const removed = _draft.pages[pageId].prices.splice(idx, 1)[0];
-    Store.addLog('price', `${pageId} 항목 삭제`, removed.label, '—');
-    document.getElementById(`price-list-${pageId}`).innerHTML =
-      _renderPriceList(pageId, _draft.pages[pageId].prices);
-  }
-
-
-  /* ============================================================
-   * 4. 탭2 — 프로그램명 CRUD
-   * ============================================================ */
-  let _namePageId = null;
-
-  function renderNameTab() {
-    const el  = document.getElementById('tab-name');
-    const cfg = _draft;
-
     const groups = [
       { key: 'roadmap',    label: '로드맵 컨설팅' },
       { key: 'individual', label: '개별 컨설팅' },
@@ -293,90 +80,206 @@ const Admin = (() => {
         const p = cfg.pages[id];
         return p && p.group === g.key && !p.isOverview;
       });
-      if (!pages.length) return;
-      sideHtml += '<div class="ct-group-label">' + g.label + '</div>';
+      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
       pages.forEach(id => {
         const p = cfg.pages[id];
-        const active = id === _namePageId ? 'ct-side-active' : '';
-        sideHtml += `<div class="ct-side-item ${active}" onclick="Admin.loadNamePage('${id}')">
-          <i class="ti ${p.sbIcon}" style="font-size:14px;"></i> ${p.sbLabel}
+        const active = id === _programPageId ? 'ct-side-active' : '';
+        sideHtml += `
+          <div class="ct-side-item ${active}" onclick="Admin.loadProgramPage('${id}')">
+            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i> ${p.sbLabel}
           </div>`;
       });
+      sideHtml += `
+        <div style="padding:4px 10px 10px;">
+          <button class="admin-add-btn" style="margin-top:0;width:100%;justify-content:center;"
+            onclick="Admin.addProgram('${g.key}')">
+            <i class="ti ti-plus"></i> 새 프로그램
+          </button>
+        </div>`;
     });
 
-    el.innerHTML = '<div style="display:flex;gap:0;min-height:500px;">'
-      + '<div class="ct-sidebar">' + sideHtml + '</div>'
-      + '<div class="ct-editor" id="name-editor">'
-      + '<div style="color:var(--text-3);font-size:13px;padding:24px;">좌측에서 편집할 페이지를 선택하세요.</div>'
-      + '</div></div>';
+    el.innerHTML = `
+      <div style="display:flex;gap:0;min-height:500px;">
+        <div class="ct-sidebar">${sideHtml}</div>
+        <div class="ct-editor" id="program-editor">
+          <div style="color:var(--text-3);font-size:13px;padding:24px;">좌측에서 편집할 프로그램을 선택하세요.</div>
+        </div>
+      </div>`;
 
-    if (_namePageId) loadNamePage(_namePageId);
+    if (_programPageId) loadProgramPage(_programPageId);
   }
 
-  function loadNamePage(pageId) {
-    _namePageId = pageId;
+  function loadProgramPage(pageId) {
+    _programPageId = pageId;
     const page = _draft.pages[pageId];
-    const el   = document.getElementById('name-editor');
+    const el   = document.getElementById('program-editor');
     if (!page || !el) return;
 
     // 사이드 active 갱신
-    document.querySelectorAll('#tab-name .ct-side-item').forEach(function(item) {
-      item.classList.remove('ct-side-active');
-    });
-    const sel = document.querySelector(`#tab-name .ct-side-item[onclick*="${pageId}"]`);
+    document.querySelectorAll('#tab-program .ct-side-item').forEach(i => i.classList.remove('ct-side-active'));
+    const sel = document.querySelector(`#tab-program .ct-side-item[onclick*="${pageId}"]`);
     if (sel) sel.classList.add('ct-side-active');
+
+    const prices = page.prices || [];
+    const priceRows = prices.map((price, idx) => {
+      const numOnly = price.amt ? Math.round(price.amt / 10000) : 0;
+      return `
+        <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
+          <input class="admin-input" style="flex:1;min-width:80px;max-width:200px;"
+            value="${price.label}"
+            oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
+            placeholder="항목명">
+          <div style="display:flex;align-items:center;gap:4px;flex:0.8;">
+            <input class="admin-input" style="width:70px;text-align:right;"
+              value="${numOnly}" type="number" min="0"
+              oninput="Admin.updatePriceField('${pageId}', ${idx}, 'amt', this.value)"
+              placeholder="예:230">
+            <span style="font-size:13px;color:var(--text-2);white-space:nowrap;font-weight:600;">만원</span>
+          </div>
+          <select class="admin-input" style="width:68px;flex-shrink:0;"
+            title="이 항목이 표시될 학년 (무관=항상 표시)"
+            onchange="Admin.updatePriceField('${pageId}', ${idx}, 'grade', this.value)">
+            <option value="" ${!price.grade ? 'selected' : ''}>무관</option>
+            <option value="1" ${price.grade == 1 ? 'selected' : ''}>고1</option>
+            <option value="2" ${price.grade == 2 ? 'selected' : ''}>고2</option>
+            <option value="3" ${price.grade == 3 ? 'selected' : ''}>고3</option>
+            <option value="1,2,3" ${price.grade == '1,2,3' ? 'selected' : ''}>전학년</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:3px;font-size:11px;white-space:nowrap;cursor:pointer;">
+            <input type="checkbox" ${price.isDefault ? 'checked' : ''}
+              onchange="Admin.updatePriceField('${pageId}', ${idx}, 'isDefault', this.checked)">
+            기본
+          </label>
+          <button class="admin-add-btn" style="margin-top:0;padding:6px 10px;"
+            onclick="Admin.saveProgram('${pageId}')" title="저장">
+            <i class="ti ti-device-floppy"></i>
+          </button>
+          <button class="admin-del-btn" onclick="Admin.deletePriceItem('${pageId}', ${idx})" title="삭제">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>`;
+    }).join('');
 
     el.innerHTML = `
       <div class="admin-editor-title">
-        <i class="ti ${page.sbIcon}"></i> ${page.sbLabel} — 프로그램명 편집
+        <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}
       </div>
+
       <div class="admin-field-group">
         <label class="admin-field-label">사이드바 메뉴명</label>
         <input class="admin-input admin-input-md"
           value="${page.sbLabel || ''}"
-          oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)"
-          placeholder="사이드바에 표시될 짧은 이름">
+          oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)">
       </div>
       <div class="admin-field-group">
         <label class="admin-field-label">페이지 제목</label>
         <input class="admin-input admin-input-lg"
           value="${page.title || ''}"
-          oninput="Admin.updateNameField('${pageId}', 'title', this.value)"
-          placeholder="상세 페이지 상단 제목">
+          oninput="Admin.updateNameField('${pageId}', 'title', this.value)">
       </div>
       <div class="admin-field-group">
         <label class="admin-field-label">부제목</label>
         <input class="admin-input admin-input-lg"
           value="${page.subtitle || ''}"
-          oninput="Admin.updateNameField('${pageId}', 'subtitle', this.value)"
-          placeholder="제목 아래 설명 텍스트">
+          oninput="Admin.updateNameField('${pageId}', 'subtitle', this.value)">
       </div>
-      <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
-        <button class="admin-add-btn" onclick="Admin.saveNameItem('${pageId}')">
+
+      <div class="admin-section-title" style="margin-top:20px;">가격 항목</div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">숫자만 입력 (만원 단위). 예: 230 → 230만원</div>
+      <div id="price-list-${pageId}">${priceRows}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.addPriceItem('${pageId}')">
+          <i class="ti ti-plus"></i> 항목 추가
+        </button>
+      </div>
+
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveProgram('${pageId}')">
           <i class="ti ti-device-floppy"></i> 저장
+        </button>
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.switchTab('tab-content');Admin.loadContentPage('${pageId}')">
+          <i class="ti ti-file-text"></i> 콘텐츠 편집으로 이동
+        </button>
+        <button class="admin-del-btn" style="margin-left:auto;" onclick="Admin.deleteProgram('${pageId}')">
+          <i class="ti ti-trash"></i> 프로그램 삭제
         </button>
       </div>`;
   }
 
-  function saveNameItem(pageId) {
-    const page = _draft.pages[pageId];
-    if (!page) return;
+  function saveProgram(pageId) {
     Store.saveConfig(_draft);
-    showMsg(`✓ "${page.sbLabel}" 프로그램명이 저장되었습니다.`, true);
+    showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
   }
 
-  function saveNameTab() {
-    if (!confirm('프로그램명을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ 프로그램명이 저장되었습니다.', true);
+  function addProgram(group) {
+    const id = 'pg-' + Date.now();
+    _draft.pages[id] = {
+      group,
+      sbIcon:   'ti-circle',
+      sbLabel:  '새 프로그램',
+      title:    '새 프로그램',
+      subtitle: '',
+      prices:   [],
+    };
+    if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
+    renderProgramTab();
+    loadProgramPage(id);
   }
 
-  function updateNameField(pageId, field, value) {
-    const old = _draft.pages[pageId][field];
-    _draft.pages[pageId][field] = value;
-    Store.addLog('name', `${pageId} ${field}`, old, value);
+  function deleteProgram(pageId) {
+    const label = _draft.pages[pageId]?.sbLabel || pageId;
+    if (!confirm(`"${label}"을 삭제하시겠습니까?
+이 작업은 되돌릴 수 없습니다.`)) return;
+    _confirmWithPin(() => {
+      delete _draft.pages[pageId];
+      const idx = MK_CONFIG.pageOrder.indexOf(pageId);
+      if (idx > -1) MK_CONFIG.pageOrder.splice(idx, 1);
+      _programPageId = null;
+      Store.saveConfig(_draft);
+      showMsg(`✓ "${label}" 삭제되었습니다.`, true);
+      renderProgramTab();
+    });
   }
 
+  function _confirmWithPin(callback) {
+    const existing = document.getElementById('pin-confirm-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'pin-confirm-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,30,0.55);backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:32px 40px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;align-items:center;gap:14px;min-width:280px;">
+        <i class="ti ti-shield-lock" style="font-size:32px;color:var(--accent);"></i>
+        <div style="font-size:15px;font-weight:700;color:var(--text-1);">관리자 PIN을 입력하세요</div>
+        <input class="admin-input" id="pin-confirm-input" type="password" maxlength="6"
+          placeholder="••••" style="text-align:center;font-size:20px;letter-spacing:.3em;width:160px;">
+        <div id="pin-confirm-err" style="font-size:12px;color:var(--red-tx);min-height:16px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-add-btn" style="margin-top:0;" onclick="Admin._pinConfirmSubmit()">확인</button>
+          <button class="admin-del-btn" onclick="document.getElementById('pin-confirm-modal').remove()">취소</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    document.getElementById('pin-confirm-input').focus();
+    document.getElementById('pin-confirm-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') Admin._pinConfirmSubmit();
+    });
+    window._pinConfirmCallback = callback;
+  }
+
+  function _pinConfirmSubmit() {
+    const val = document.getElementById('pin-confirm-input')?.value;
+    if (Store.verifyPin(val)) {
+      document.getElementById('pin-confirm-modal')?.remove();
+      if (window._pinConfirmCallback) window._pinConfirmCallback();
+      window._pinConfirmCallback = null;
+    } else {
+      const err = document.getElementById('pin-confirm-err');
+      if (err) err.textContent = 'PIN이 올바르지 않습니다.';
+      document.getElementById('pin-confirm-input').value = '';
+      document.getElementById('pin-confirm-input').focus();
+    }
+  }
 
   /* ============================================================
    * 5. 탭3 — 콘텐츠 편집 CRUD (3섹션)
@@ -644,8 +547,11 @@ const Admin = (() => {
 
   function clearLog() {
     if (!confirm('변경 이력을 전체 삭제할까요?')) return;
-    Store.clearLog();
-    renderLogTab();
+    _confirmWithPin(() => {
+      Store.clearLog();
+      renderLogTab();
+      showMsg('✓ 변경 이력이 삭제되었습니다.', true);
+    });
   }
 
 
@@ -693,9 +599,11 @@ const Admin = (() => {
 
   async function deleteStudent(key) {
     if (!confirm(`${key} 데이터를 삭제할까요?`)) return;
-    const ok = await Store.deleteStudent(key);
-    if (ok) renderStudentsTab();
-    else showMsg('삭제 실패 — 네트워크 확인', false);
+    _confirmWithPin(async () => {
+      const ok = await Store.deleteStudent(key);
+      if (ok) { renderStudentsTab(); showMsg(`✓ ${key} 삭제되었습니다.`, true); }
+      else showMsg('삭제 실패 — 네트워크 확인', false);
+    });
   }
 
   function clearAllStudents() {
@@ -766,13 +674,17 @@ const Admin = (() => {
    * ============================================================ */
   return {
     checkPin, switchTab,
-    // 금액
-    renderPriceTab, loadPricePage, updatePriceField, addPriceItem, deletePriceItem,
+    // 프로그램 관리 (통합)
+    renderProgramTab, loadProgramPage, saveProgram,
+    addProgram, deleteProgram,
+    _confirmWithPin, _pinConfirmSubmit,
+    // 가격 필드
+    updatePriceField, addPriceItem, deletePriceItem,
     updateDiscountField, saveDcDiscount,
-    savePriceTab, saveNameTab, saveContentTab,
-    savePriceItem, saveNameItem,
-    // 프로그램명
-    renderNameTab, loadNamePage, updateNameField,
+    // 콘텐츠
+    saveContentTab,
+    // 프로그램명 필드 (공용)
+    updateNameField,
     // 콘텐츠
     renderContentTab, loadContentPage,
     updateContentField, addContentItem, deleteContentItem,
