@@ -235,10 +235,36 @@ const Portfolio = (() => {
 
 
   /* ============================================================
-   * 4. 인쇄
+   * 4. 인쇄 — 동적 스타일 삽입 후 인쇄, 완료 후 제거
    * ============================================================ */
   function print() {
+    const styleId = 'pf-print-style';
+    const existing = document.getElementById(styleId);
+    if (existing) existing.remove();
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      @page { margin:12mm 14mm; size:A4; }
+      @media print {
+        body > *:not(#pf-modal) { display:none !important; }
+        #pf-modal { display:block !important; position:static !important;
+          background:none !important; box-shadow:none !important; }
+        .modal-box { box-shadow:none !important; border:none !important; }
+        .modal-header, .modal-footer, .modal-close { display:none !important; }
+        .pf-preview { padding:0 !important; background:#fff !important; }
+        .pf-doc { max-width:100% !important; }
+        .pf-section { box-shadow:none !important; }
+      }
+    `;
+    document.head.appendChild(style);
+
     window.print();
+
+    // 인쇄 완료/취소 후 스타일 제거
+    window.addEventListener('afterprint', () => {
+      document.getElementById(styleId)?.remove();
+    }, { once: true });
   }
 
 
