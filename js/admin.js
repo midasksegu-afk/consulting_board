@@ -351,8 +351,8 @@ const Admin = (() => {
           oninput="Admin.updateNameField('${pageId}', 'subtitle', this.value)"
           placeholder="제목 아래 설명 텍스트">
       </div>
-      <div style="margin-top:20px;">
-        <button class="admin-save-btn" onclick="Admin.saveNameItem('${pageId}')">
+      <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
+        <button class="admin-add-btn" onclick="Admin.saveNameItem('${pageId}')">
           <i class="ti ti-device-floppy"></i> 저장
         </button>
       </div>`;
