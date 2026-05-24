@@ -99,21 +99,48 @@ const UI = (() => {
    * ============================================================ */
   function toggleGrade(n) {
     const newGrade = Calc.setGrade(n);
-    // grade 체크박스 (data-grade 기반) 처리
-    _applyGradeCheckboxes(newGrade);
+    _updateOvCardPrices(newGrade);
+    _autoCheckOvCards(newGrade);
   }
 
-  function _applyGradeCheckboxes(grade) {
-    // 상세 페이지 내 data-grade 체크박스 자동 선택
-    document.querySelectorAll('input[type=checkbox][data-grade]').forEach(cb => {
-      const grades = (cb.getAttribute('data-grade') || '')
-        .split(',').map(Number);
-      const pageId = cb.closest('.page')?.id?.replace('pg-', '');
-      if (!pageId) return;
-      const idx = parseInt(cb.getAttribute('data-item-idx'));
-      const shouldCheck = grade !== 0 && grades.includes(grade);
-      cb.checked = shouldCheck;
-      Calc.selectItem(pageId, idx, shouldCheck);
+  // 연간관리형 카드 금액 — 선택된 학년만 표시
+  function _updateOvCardPrices(grade) {
+    const config = cfg();
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page || !page.ovCard || page.isOverview) return;
+      const priceEl = document.getElementById('ov-price-' + pageId);
+      if (!priceEl) return;
+      if (grade === 0) {
+        priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+      } else {
+        const amt = (page.ovCard.ovPrices || {})[grade];
+        if (amt) {
+          priceEl.innerHTML = '<strong>고' + grade + ' ' + fmt(amt) + '</strong>';
+        } else {
+          priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+        }
+      }
+    });
+  }
+
+  // 학년 선택 시 A/B/C 카드 자동 전체 체크
+  function _autoCheckOvCards(grade) {
+    const config = cfg();
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page || !page.ovCard || page.ovCard.fixed || page.isOverview) return;
+      const cb   = document.getElementById('ovchk-' + pageId);
+      const card = document.getElementById('ovcard-' + pageId);
+      if (grade === 0) {
+        if (cb) cb.checked = false;
+        if (card) card.classList.remove('card-selected');
+        Calc.selectOv(pageId, false);
+      } else {
+        if (cb) cb.checked = true;
+        if (card) card.classList.add('card-selected');
+        Calc.selectOv(pageId, true);
+      }
     });
   }
 
@@ -261,7 +288,7 @@ const UI = (() => {
         </div>`).join('');
 
       const priceHtml = (ov.priceLabel || [])
-        .map(p => `${p}<br>`).join('');
+        .map(p => p + '<br>').join('');
 
       return `
         <div class="ov-card" id="ovcard-${pageId}">
@@ -271,11 +298,11 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          <div class="ov-price">${priceHtml}</div>
+          <div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>
           <div style="flex:1;min-height:8px;"></div>
-          <div class="ov-arrow" onclick="UI.go('${pageId}')" style="cursor:pointer;">
+          <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
-          </div>
+          </button>
           <div class="ov-tree">${treeHtml}</div>
         </div>`;
     }).join('');
