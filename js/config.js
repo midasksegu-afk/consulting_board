@@ -172,18 +172,37 @@ const MK_CONFIG = {
       iconColor:  '#5b35c4',
       iconClass:  'ti-bulb',
       ovCard: {
-        badge:    '프로그램 C',
-        priceLabel: ['건당 5,500~7,500원', '월 구독 95,000원'],
+        badge:       '프로그램 C',
+        noAutoCheck: true,   // 학년 선택 시 자동 체크 안 함
+        priceLabel:  ['6개월 342,000원 (40% 할인)', '1년 570,000원 (50% 할인)'],
         tree: [
           { label: '❶ 탐구 주제 + 설계도', sub: '도서·논문·참고자료 포함 패키지' },
           { label: '❷ 방향성 코칭',        sub: '학생 주도 활동 시 무료 지원' },
           { label: '❸ 세특구원자 플랫폼',   sub: '24시간 키워드 검색 / 할인 구독' },
         ],
-        ovPrices: { 1: 95000, 2: 95000, 3: 95000 },
+        // ovPrices 없음 → 학년 자동 체크 완전 차단
       },
       prices: [
-        { label: '건당 구매', amt: 7500,  note: '최대 7,500원' },
-        { label: '월 구독',  amt: 95000 },
+        {
+          label:        '6개월 구독',
+          amt:          342000,
+          origAmt:      570000,   // 원가 (95,000 × 6)
+          discountRate: 40,
+          saveAmt:      228000,
+          note:         '월 95,000원 × 6개월 → 40% 할인',
+        },
+        {
+          label:        '1년 구독',
+          amt:          570000,
+          origAmt:      1140000,  // 원가 (95,000 × 12)
+          discountRate: 50,
+          saveAmt:      570000,
+          note:         '월 95,000원 × 12개월 → 50% 할인',
+        },
+      ],
+      priceRef: [
+        { label: '건당 구매', ref: '7,500원/건' },
+        { label: '월 구독',   ref: '95,000원/월' },
       ],
       programs: [
         { num: '❶', title: '탐구 주제 + 보고서 설계도 제공', items: ['탐구 동기, 과정, 도서·논문 등 참고자료 포함 패키지', '건당 5,500~7,500원 / 월구독 95,000원'] },
