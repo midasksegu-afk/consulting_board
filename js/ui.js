@@ -206,36 +206,79 @@ const UI = (() => {
 
 
   /* ============================================================
-   * 6. 사이드바 동적 렌더링
+   * 6. 사이드바 동적 렌더링 (아코디언)
    * ============================================================ */
+
+  // 그룹별 접힘 상태 (기본: 모두 펼침)
+  const _sbCollapsed = {};
+
   function renderSidebar() {
     const nav = document.getElementById('sb-nav');
     if (!nav) return;
 
-    const config   = cfg();
-    const groups   = config.groups;
-    const pages    = config.pages;
-    const order    = MK_CONFIG.pageOrder;
-    let html       = '';
-    let lastGroup  = null;
+    const config  = cfg();
+    const groups  = config.groups;
+    const pages   = config.pages;
+    const order   = MK_CONFIG.pageOrder;
+
+    // 그룹별로 페이지 묶기
+    const grouped = {}; // { groupKey: [pageId, ...] }
+    const groupOrder = [];
 
     order.forEach(pageId => {
       const page = pages[pageId];
       if (!page) return;
+      const gk = page.group;
+      if (!grouped[gk]) { grouped[gk] = []; groupOrder.push(gk); }
+      grouped[gk].push(pageId);
+    });
 
-      // 섹션 헤더
-      if (page.group !== lastGroup && groups[page.group]?.sbSection) {
-        html += `<div class="sb-section">${groups[page.group].label}</div>`;
-        lastGroup = page.group;
-      }
+    let html = '';
+
+    groupOrder.forEach((gk, gIdx) => {
+      const group = groups[gk];
+      if (!group?.sbSection) return;
+
+      const isCollapsed = !!_sbCollapsed[gk];
+      const arrowCls    = isCollapsed ? 'sb-arrow collapsed' : 'sb-arrow';
+      const itemsCls    = isCollapsed ? 'sb-group-items collapsed' : 'sb-group-items';
+      const borderTop   = gIdx > 0 ? 'sb-section-divider' : '';
 
       html += `
-        <div class="sb-item" id="nav-${pageId}" onclick="UI.go('${pageId}')">
-          <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}
-        </div>`;
+        <div class="sb-section ${borderTop}" onclick="UI.toggleSbGroup('${gk}')" data-group="${gk}">
+          <span class="sb-section-label">${group.label}</span>
+          <i class="ti ti-chevron-down ${arrowCls}"></i>
+        </div>
+        <div class="${itemsCls}" data-group-items="${gk}">`;
+
+      grouped[gk].forEach(pageId => {
+        const page = pages[pageId];
+        html += `
+          <div class="sb-item" id="nav-${pageId}" onclick="UI.go('${pageId}')">
+            <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}
+          </div>`;
+      });
+
+      html += `</div>`;
     });
 
     nav.innerHTML = html;
+  }
+
+  function toggleSbGroup(gk) {
+    _sbCollapsed[gk] = !_sbCollapsed[gk];
+
+    const section   = document.querySelector(`.sb-section[data-group="${gk}"]`);
+    const itemsEl   = document.querySelector(`[data-group-items="${gk}"]`);
+    const arrow     = section?.querySelector('.sb-arrow');
+
+    if (_sbCollapsed[gk]) {
+      itemsEl?.classList.add('collapsed');
+      arrow?.classList.add('collapsed');
+    } else {
+      itemsEl?.classList.remove('collapsed');
+      arrow?.classList.remove('collapsed');
+    }
   }
 
 
@@ -933,6 +976,7 @@ const UI = (() => {
     handleOvCheck,
     handleItemCheck,
     renderSidebar,
+    toggleSbGroup,
     renderPages,
     renderStudentDropdown,
     openSaveStudentModal,
