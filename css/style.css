@@ -515,25 +515,25 @@ html, body {
 /* ================================================================
    포트폴리오 출력
 ================================================================ */
-.pf-modal-box { width: 680px; }
-.pf-preview   { padding:24px 32px; background:#fafafa; }
+.pf-modal-box { width:720px; max-height:90vh; box-shadow:none; }
+.pf-preview   { padding:32px 40px; background:#fff; }
 
-.pf-doc { font-family:'Noto Sans KR',sans-serif; color:#15151A; max-width:580px; margin:0 auto; }
+.pf-doc { font-family:'Noto Sans KR',sans-serif; color:#15151A; max-width:600px; margin:0 auto; }
 
-.pf-header { text-align:center; padding-bottom:18px; border-bottom:2px solid #15151A; margin-bottom:18px; }
-.pf-brand  { font-size:12px; font-weight:700; letter-spacing:.2em; color:#B79CFF; text-transform:uppercase; margin-bottom:6px; }
-.pf-main-title { font-size:20px; font-weight:700; margin-bottom:6px; }
-.pf-license    { font-size:11px; color:#86868B; }
+.pf-header { text-align:center; padding-bottom:16px; border-bottom:1px solid #15151A; margin-bottom:20px; }
+.pf-brand  { font-size:11px; font-weight:700; letter-spacing:.18em; color:#8870C8; text-transform:uppercase; margin-bottom:8px; }
+.pf-main-title { font-size:19px; font-weight:700; margin-bottom:6px; letter-spacing:-.01em; }
+.pf-license    { font-size:11px; color:#A8A4AB; }
 
-.pf-info-row { display:flex; flex-wrap:wrap; gap:6px 20px; padding:12px 0; border-bottom:1px solid #e0e0e0; margin-bottom:16px; }
+.pf-info-row { display:flex; flex-wrap:wrap; gap:6px 24px; padding:12px 0; border-bottom:1px solid #e8e8e8; margin-bottom:20px; }
 .pf-info-item { display:flex; gap:6px; font-size:13px; }
-.pf-info-label { color:#86868B; }
-.pf-info-value { font-weight:600; }
+.pf-info-label { color:#A8A4AB; }
+.pf-info-value { font-weight:600; color:#15151A; }
 
-.pf-programs-title { font-size:13px; font-weight:700; letter-spacing:.05em; color:#43434A; margin-bottom:12px; }
-.pf-section { margin-bottom:16px; }
-.pf-section-title { font-size:13px; font-weight:700; color:#15151A; border-left:3px solid #B79CFF; padding-left:8px; margin-bottom:8px; }
-.pf-subtotal { text-align:right; font-size:13px; font-weight:600; color:#5b35c4; padding-top:6px; border-top:1px dashed #e0e0e0; margin-top:4px; }
+.pf-programs-title { font-size:12px; font-weight:700; letter-spacing:.08em; color:#A8A4AB; text-transform:uppercase; margin-bottom:14px; }
+.pf-section { margin-bottom:20px; padding:14px 16px; background:#fafafa; border-radius:8px; border:1px solid #f0f0f0; }
+.pf-section-title { font-size:13px; font-weight:700; color:#15151A; border-left:2px solid #8870C8; padding-left:8px; margin-bottom:10px; }
+.pf-subtotal { text-align:right; font-size:13px; font-weight:600; color:#5b35c4; padding-top:8px; border-top:1px solid #ececec; margin-top:6px; }
 
 .pf-total-row {
   display:flex; justify-content:space-between; align-items:center;
@@ -552,13 +552,7 @@ html, body {
 /* ================================================================
    @media print — 포트폴리오 인쇄 레이아웃
 ================================================================ */
-@media print {
-  body > *:not(#pf-modal) { display:none !important; }
-  #pf-modal { display:block !important; position:static !important; background:none !important; }
-  .modal-header, .modal-footer, .modal-close { display:none !important; }
-  .pf-preview { padding:0 !important; background:none !important; }
-  .pf-doc     { max-width:100% !important; }
-}
+/* @media print — portfolio.js print() 함수에서 동적 삽입 */
 
 /* ================================================================
    v8 카드 스타일 개선
