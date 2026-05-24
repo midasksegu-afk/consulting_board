@@ -2,7 +2,7 @@
  * store.js — 마이더스K 저장소 통합 래퍼
  *
  * 저장소 분리:
- *  - 학생 데이터  → Google Sheets API JSONP (CORS 우회, 여러 기기 공유)
+ *  - 학생 데이터  → Supabase REST API
  *  - 관리자 설정  → localStorage
  *  - 세션/로그    → localStorage
  *
@@ -12,9 +12,11 @@
 const Store = (() => {
 
   /* ============================================================
-   * 1. 상수
+   * 1. Supabase 설정
    * ============================================================ */
-  const SHEETS_API = 'https://script.google.com/macros/s/AKfycbxpiju5yZc08gQx0DI1skuVJ5lP_ZgucVJ8xDYFTl9zfvn7iDwKdEcStCaJThCJ6cG03w/exec';
+  const SUPABASE_URL = 'https://rigdvsxjqzaojwhvucpr.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_FcoQJ-2-LU5ctB-JVzFfEQ_4DvLWt9n';
+  const TABLE        = 'students';
 
   const KEYS = {
     CONFIG:  'mk_config',
@@ -53,36 +55,46 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 3. Google Sheets API 호출 — JSONP 방식 (CORS 우회)
+   * 3. Supabase REST API 공통 호출
    * ============================================================ */
-  function _sheetsCall(params) {
-    return new Promise((resolve, reject) => {
-      const cbName = '_mkCb_' + Math.random().toString(36).slice(2);
+  function _headers(extra = {}) {
+    return {
+      'Content-Type':  'application/json',
+      'apikey':        SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...extra,
+    };
+  }
 
-      const timer = setTimeout(() => {
-        delete window[cbName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        reject(new Error('Sheets API 타임아웃'));
-      }, 10000);
-
-      window[cbName] = function(data) {
-        clearTimeout(timer);
-        delete window[cbName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        resolve(data);
-      };
-
-      const script = document.createElement('script');
-      const p = Object.assign({}, params, { callback: cbName });
-      script.src = SHEETS_API + '?' + new URLSearchParams(p).toString();
-      script.onerror = () => {
-        clearTimeout(timer);
-        delete window[cbName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        reject(new Error('Sheets API 로드 실패'));
-      };
-      document.head.appendChild(script);
+  async function _sbGet(query = '') {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}${query}`, {
+      method:  'GET',
+      headers: _headers({ 'Accept': 'application/json' }),
     });
+    if (!res.ok) throw new Error(`Supabase GET 실패: ${res.status}`);
+    return res.json();
+  }
+
+  async function _sbUpsert(row) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+      method:  'POST',
+      headers: _headers({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
+      body:    JSON.stringify(row),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Supabase UPSERT 실패: ${res.status} ${err}`);
+    }
+    return true;
+  }
+
+  async function _sbDelete(key) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE}?key=eq.${encodeURIComponent(key)}`,
+      { method: 'DELETE', headers: _headers() }
+    );
+    if (!res.ok) throw new Error(`Supabase DELETE 실패: ${res.status}`);
+    return true;
   }
 
 
@@ -95,7 +107,7 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 5. 학생 프로필 — Google Sheets JSONP
+   * 5. 학생 프로필 — Supabase
    * ============================================================ */
   function buildStudentKey(name, school, goal) {
     const base  = `${name}_${school}_${goal}`;
@@ -110,22 +122,24 @@ const Store = (() => {
   async function saveStudent(key, selections, meta) {
     const savedAt = new Date().toISOString();
     try {
-      await _sheetsCall({
-        action:     'save',
+      await _sbUpsert({
         key,
         name:       meta.name,
         school:     meta.school,
         goal:       meta.goal,
         grade:      meta.grade,
-        selections: JSON.stringify(selections),
-        savedAt,
+        selections: selections,   // jsonb — 객체 그대로 전달
+        saved_at:   savedAt,
       });
+
+      // 로컬 캐시 갱신
       const cache = _read(KEYS.CACHE) || [];
       const idx   = cache.findIndex(s => s.key === key);
-      const entry = { key, meta, savedAt };
+      const entry = { key, meta, savedAt, _selections: selections };
       if (idx >= 0) cache[idx] = entry;
       else cache.unshift(entry);
       _write(KEYS.CACHE, cache);
+
       return true;
     } catch (e) {
       console.error('[Store] saveStudent 실패:', e);
@@ -135,14 +149,13 @@ const Store = (() => {
 
   async function listStudents() {
     try {
-      const data = await _sheetsCall({ action: 'list' });
-      const list = (data.students || []).map(s => ({
-        key:    s.key,
-        meta:   { name: s.name, school: s.school, goal: s.goal, grade: s.grade },
-        savedAt: s.savedAt,
-        _selections: s.selections,
+      const rows = await _sbGet('?select=*&order=saved_at.desc');
+      const list = rows.map(r => ({
+        key:         r.key,
+        meta:        { name: r.name, school: r.school, goal: r.goal, grade: r.grade },
+        savedAt:     r.saved_at,
+        _selections: r.selections,
       }));
-      list.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
       _write(KEYS.CACHE, list);
       return list;
     } catch (e) {
@@ -152,27 +165,28 @@ const Store = (() => {
   }
 
   async function loadStudent(key) {
+    // 1) 캐시 우선
     const cache = _read(KEYS.CACHE) || [];
     const hit   = cache.find(s => s.key === key);
     if (hit && hit._selections) {
       return {
         meta:       hit.meta,
-        selections: typeof hit._selections === 'string'
-          ? JSON.parse(hit._selections)
-          : hit._selections,
-        savedAt: hit.savedAt,
+        selections: hit._selections,
+        savedAt:    hit.savedAt,
       };
     }
+
+    // 2) Supabase 직접 조회
     try {
-      const data  = await _sheetsCall({ action: 'list' });
-      const found = (data.students || []).find(s => s.key === key);
-      if (!found) return null;
+      const rows = await _sbGet(
+        `?key=eq.${encodeURIComponent(key)}&select=*&limit=1`
+      );
+      if (!rows || rows.length === 0) return null;
+      const r = rows[0];
       return {
-        meta:       { name: found.name, school: found.school, goal: found.goal, grade: found.grade },
-        selections: typeof found.selections === 'string'
-          ? JSON.parse(found.selections)
-          : found.selections,
-        savedAt: found.savedAt,
+        meta:       { name: r.name, school: r.school, goal: r.goal, grade: r.grade },
+        selections: r.selections,
+        savedAt:    r.saved_at,
       };
     } catch (e) {
       console.error('[Store] loadStudent 실패:', e);
@@ -182,7 +196,7 @@ const Store = (() => {
 
   async function deleteStudent(key) {
     try {
-      await _sheetsCall({ action: 'delete', key });
+      await _sbDelete(key);
       const cache = (_read(KEYS.CACHE) || []).filter(s => s.key !== key);
       _write(KEYS.CACHE, cache);
       return true;
