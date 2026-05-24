@@ -758,7 +758,11 @@ const UI = (() => {
             <i class="ti ti-x"></i>
           </button>
         </div>
-        <div class="modal-body" style="padding:20px;">
+        <div style="padding:12px 20px 0;">
+          <input class="admin-input" id="student-search" placeholder="이름 검색..."
+            oninput="UI._filterStudentList(this.value)" style="width:100%;">
+        </div>
+        <div class="modal-body" style="padding:12px 20px 20px;max-height:360px;overflow-y:auto;">
           <div id="student-modal-list" style="display:flex;flex-direction:column;gap:8px;">
             <div style="color:var(--text-3);font-size:13px;">불러오는 중...</div>
           </div>
@@ -770,31 +774,51 @@ const UI = (() => {
     document.body.appendChild(modal);
     try {
       const list = await Store.listStudents();
+      _studentListCache = list || [];
       const listEl = document.getElementById('student-modal-list');
       if (!listEl) return;
-      if (!list || list.length === 0) {
+      if (_studentListCache.length === 0) {
         listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">저장된 학생이 없습니다.</div>';
         return;
       }
-      listEl.innerHTML = list.map(s => {
-        const date = Store.formatDate(s.savedAt).split(' ')[0];
-        return `<div style="display:flex;align-items:center;justify-content:space-between;
-          padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
-          <div>
-            <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
-            <div style="font-size:12px;color:var(--text-3);">${date}</div>
-          </div>
-          <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;"
-            onclick="UI.loadStudentByKey('${s.key}')">
-            <i class="ti ti-download"></i> 불러오기
-          </button>
-        </div>`;
-      }).join('');
+      _renderStudentItems(_studentListCache);
+      document.getElementById('student-search')?.focus();
     } catch (e) {
       const listEl = document.getElementById('student-modal-list');
       if (listEl) listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">목록 로드 실패</div>';
       showToast('학생 목록 로드 실패 — 네트워크 확인', 'error');
     }
+  }
+
+  let _studentListCache = [];
+
+  function _renderStudentItems(list) {
+    const listEl = document.getElementById('student-modal-list');
+    if (!listEl) return;
+    if (!list || list.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">검색 결과가 없습니다.</div>';
+      return;
+    }
+    listEl.innerHTML = list.map(s => {
+      const date = Store.formatDate(s.savedAt).split(' ')[0];
+      return `<div style="display:flex;align-items:center;justify-content:space-between;
+        padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
+          <div style="font-size:12px;color:var(--text-3);">${date}</div>
+        </div>
+        <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;"
+          onclick="UI.loadStudentByKey('${s.key}')">
+          <i class="ti ti-download"></i> 불러오기
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  function _filterStudentList(query) {
+    const q = query.trim().toLowerCase();
+    const filtered = q ? _studentListCache.filter(s => s.key.toLowerCase().includes(q)) : _studentListCache;
+    _renderStudentItems(filtered);
   }
 
   async function loadStudentByKey(key) {
@@ -808,7 +832,12 @@ const UI = (() => {
     renderPages();
     go(_currentPageId);
     const labelEl = document.getElementById('student-select-label');
-    if (labelEl) labelEl.textContent = key;
+    if (labelEl) labelEl.textContent = data.meta?.name || key;
+    const infoBar = document.getElementById('student-info-bar');
+    if (infoBar && data.meta) {
+      infoBar.textContent = `${data.meta.school || ''} · ${data.meta.goal || ''}`;
+      infoBar.style.display = 'block';
+    }
     showToast(`✓ ${key} 불러오기 완료`, 'success');
   }
 
@@ -1083,6 +1112,7 @@ const UI = (() => {
     loadSelectedStudent,
     openStudentSelectModal,
     loadStudentByKey,
+    _filterStudentList,
     newSession,
     applyPackage,
     showToast,
