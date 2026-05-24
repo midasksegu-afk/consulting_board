@@ -90,6 +90,11 @@ const Admin = (() => {
             onchange="Admin.updateDiscountField('individual', this.value)">
           <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
         </div>
+        <div style="margin-top:12px;">
+          <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
+            <i class="ti ti-device-floppy"></i> DC 할인율 저장
+          </button>
+        </div>
       </div>`;
 
     MK_CONFIG.pageOrder.forEach(pageId => {
@@ -108,7 +113,19 @@ const Admin = (() => {
         </div>`;
     });
 
+    html += `
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <button class="admin-save-btn" onclick="Admin.savePriceTab()">
+          <i class="ti ti-device-floppy"></i> 금액 단가 저장
+        </button>
+      </div>`;
     el.innerHTML = html;
+  }
+
+  function savePriceTab() {
+    if (!confirm('금액 단가를 저장하시겠습니까?')) return;
+    Store.saveConfig(_draft);
+    showMsg('✓ 금액 단가가 저장되었습니다.', true);
   }
 
   function _renderPriceList(pageId, prices) {
@@ -197,6 +214,11 @@ const Admin = (() => {
             onchange="Admin.updateDiscountField('individual', this.value)">
           <span style="font-size:12px;color:var(--text-3);">0이면 버튼 숨김</span>
         </div>
+        <div style="margin-top:12px;">
+          <button class="admin-save-btn" onclick="Admin.saveDcDiscount()">
+            <i class="ti ti-device-floppy"></i> DC 할인율 저장
+          </button>
+        </div>
       </div>`;
 
     MK_CONFIG.pageOrder.forEach(pageId => {
@@ -221,7 +243,19 @@ const Admin = (() => {
         </div>`;
     });
 
+    html += `
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <button class="admin-save-btn" onclick="Admin.saveNameTab()">
+          <i class="ti ti-device-floppy"></i> 프로그램명 저장
+        </button>
+      </div>`;
     el.innerHTML = html || '<div style="color:var(--text-3);font-size:13px;">페이지가 없습니다.</div>';
+  }
+
+  function saveNameTab() {
+    if (!confirm('프로그램명을 저장하시겠습니까?')) return;
+    Store.saveConfig(_draft);
+    showMsg('✓ 프로그램명이 저장되었습니다.', true);
   }
 
   function updateNameField(pageId, field, value) {
@@ -267,7 +301,12 @@ const Admin = (() => {
     el.innerHTML = `
       ${_renderContentSection(pageId, 'programs',   '프로그램 구성', page.programs   || [])}
       ${_renderContentSection(pageId, 'conditions', '제공 조건',     page.conditions || [])}
-      ${_renderNotesSection(pageId,                 '참고 노트',     page.notes      || [])}`;
+      ${_renderNotesSection(pageId,                 '참고 노트',     page.notes      || [])}
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <button class="admin-save-btn" onclick="Admin.saveContentTab()">
+          <i class="ti ti-device-floppy"></i> 콘텐츠 저장
+        </button>
+      </div>`;
   }
 
   function _renderContentSection(pageId, section, label, items) {
@@ -355,6 +394,12 @@ const Admin = (() => {
     loadContentPage(pageId);
   }
 
+  function saveContentTab() {
+    if (!confirm('콘텐츠를 저장하시겠습니까?')) return;
+    Store.saveConfig(_draft);
+    showMsg('✓ 콘텐츠가 저장되었습니다.', true);
+  }
+
   function updateNoteField(pageId, idx, field, value) {
     _draft.pages[pageId].notes[idx][field] = value;
   }
@@ -406,6 +451,7 @@ const Admin = (() => {
     if (nw !== con)           return show('새 PIN이 일치하지 않습니다.', false);
     Store.savePin(nw);
     show('PIN이 변경되었습니다.', true);
+    showMsg('✓ PIN이 변경되었습니다.', true);
     ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   }
 
@@ -517,17 +563,51 @@ const Admin = (() => {
     Store.addLog('price', `DC 할인율 ${group}`, old, value);
   }
 
+  function saveDcDiscount() {
+    if (!confirm('DC 할인율을 저장하시겠습니까?')) return;
+    Store.saveConfig(_draft);
+    showMsg('✓ DC 할인율이 저장되었습니다.', true);
+  }
+
   /* ============================================================
    * 9. 전체 저장
    * ============================================================ */
   function saveAll() {
+    if (!confirm('전체 설정을 저장하시겠습니까?')) return;
     Store.saveConfig(_draft);
-    showMsg('✓ 저장되었습니다. index.html을 새로고침하면 반영됩니다.', true);
+    showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true);
   }
 
   function showMsg(text, ok) {
+    // 하단 푸터 텍스트
     const el = document.getElementById('admin-save-msg');
     if (el) { el.textContent = text; el.style.color = ok ? 'var(--green-tx)' : 'var(--red-tx)'; }
+
+    // 토스트 팝업
+    let toast = document.getElementById('admin-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'admin-toast';
+      document.body.appendChild(toast);
+    }
+    const bg     = ok ? '#1a1d2e' : '#FFD3E1';
+    const color  = ok ? '#fff'    : '#8b1c3a';
+    const border = ok ? 'transparent' : '#FF8FB1';
+    const icon   = ok ? 'ti-circle-check' : 'ti-alert-circle';
+    const icolor = ok ? '#B79CFF' : '#8b1c3a';
+    toast.style.cssText = `
+      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
+      background:${bg}; color:${color};
+      padding:12px 28px; border-radius:12px;
+      font-size:14px; font-weight:600;
+      box-shadow:0 8px 32px rgba(0,0,0,0.15);
+      z-index:9999; border:1.5px solid ${border};
+      display:flex; align-items:center; gap:10px;
+      opacity:1; transition:opacity 0.3s;
+      white-space:nowrap;`;
+    toast.innerHTML = `<i class="ti ${icon}" style="font-size:18px;color:${icolor};"></i> ${text}`;
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
   }
 
 
@@ -538,7 +618,8 @@ const Admin = (() => {
     checkPin, switchTab,
     // 금액
     renderPriceTab, updatePriceField, addPriceItem, deletePriceItem,
-    updateDiscountField,
+    updateDiscountField, saveDcDiscount,
+    savePriceTab, saveNameTab, saveContentTab,
     // 프로그램명
     renderNameTab, updateNameField,
     // 콘텐츠
