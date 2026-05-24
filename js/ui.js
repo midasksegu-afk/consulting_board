@@ -151,6 +151,9 @@ const UI = (() => {
     document.querySelectorAll('.grade-btn').forEach(btn => {
       btn.classList.toggle('active', parseInt(btn.dataset.grade) === grade);
     });
+    // 고3 추가 옵션 섹션 show/hide
+    const aocSection = document.getElementById('aoc-section');
+    if (aocSection) aocSection.style.display = grade === 3 ? 'block' : 'none';
   }
 
 
@@ -370,9 +373,46 @@ const UI = (() => {
         </div>`;
     }).join('');
 
+    // 고3 추가 옵션 카드 — sc-suisi / sc-interview / sc-jeongsi
+    const addOnPageIds = ['sc-suisi', 'sc-interview', 'sc-jeongsi'];
+    const addOnCards = addOnPageIds.map(pageId => {
+      const page = config.pages[pageId];
+      if (!page) return '';
+      const priceRows = (page.prices || []).map((pr, idx) => {
+        const amtStr = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
+        const noteStr = pr.note ? `<span class="aoc-note">${pr.note}</span>` : '';
+        return `
+          <label class="aoc-price-row">
+            <input type="checkbox" class="ov-checkbox" id="aoc-${pageId}-${idx}"
+              onchange="UI.handleItemCheck('${pageId}', ${idx}, this)">
+            <label class="ov-check-label" for="aoc-${pageId}-${idx}"></label>
+            <span class="aoc-label">${pr.label}</span>
+            <span class="aoc-amt">${amtStr}</span>
+            ${noteStr}
+          </label>`;
+      }).join('');
+      return `
+        <div class="aoc-card" id="aoc-card-${pageId}">
+          <div class="ov-check-area">
+            <button class="aoc-link" onclick="UI.go('${pageId}')">
+              <i class="ti ti-arrow-right"></i> 자세히
+            </button>
+          </div>
+          <div class="ov-icon" style="background:${page.iconBg};color:${page.iconColor};">
+            <i class="ti ${page.iconClass}"></i>
+          </div>
+          <div class="ov-name">${page.title}</div>
+          <div class="aoc-prices">${priceRows}</div>
+        </div>`;
+    }).join('');
+
     return `
       <div id="pg-rm-overview" class="page">
         <div class="ov-grid">${cards}</div>
+        <div class="aoc-section" id="aoc-section" style="display:none;">
+          <div class="aoc-header"><i class="ti ti-plus"></i> 고3 추가 선택 항목</div>
+          <div class="aoc-grid">${addOnCards}</div>
+        </div>
         <div class="global-notice">
           <i class="ti ti-alert-triangle"></i>
           <span>${config.overviewNotice}</span>
