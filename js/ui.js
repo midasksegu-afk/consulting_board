@@ -74,12 +74,13 @@ const UI = (() => {
     const navEl = document.getElementById('nav-' + pageId);
     if (navEl) navEl.classList.add('active');
 
-    // topbar breadcrumb / title
+    // topbar title
     const page = cfg().pages[pageId];
     if (page) {
-      const groupLabel = cfg().groups[page.group]?.label || '';
-      document.getElementById('tb-section').textContent = groupLabel;
-      document.getElementById('tb-title').textContent   = page.title;
+      const tbTitle = document.getElementById('tb-title');
+      if (tbTitle) tbTitle.textContent = page.title;
+      const tbSection = document.getElementById('tb-section');
+      if (tbSection) tbSection.textContent = cfg().groups[page.group]?.label || '';
     }
 
     // autoCheck (rm-d / rm-e 첫 진입)
@@ -829,14 +830,15 @@ const UI = (() => {
     Calc.reset();
     Calc.fromSnapshot(data.selections);
     _syncGradeButtons(Calc.state.grade);
+    _updateOvCardPrices(Calc.state.grade);
+    _autoCheckOvCards(Calc.state.grade);
     renderPages();
     go(_currentPageId);
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = data.meta?.name || key;
-    const infoBar = document.getElementById('student-info-bar');
-    if (infoBar && data.meta) {
-      infoBar.textContent = `${data.meta.school || ''} · ${data.meta.goal || ''}`;
-      infoBar.style.display = 'block';
+    const tbTitle = document.getElementById('tb-title');
+    if (tbTitle && data.meta) {
+      tbTitle.textContent = `${data.meta.name || ''} · ${data.meta.school || ''} · ${data.meta.goal || ''}`;
     }
     showToast(`✓ ${key} 불러오기 완료`, 'success');
   }
@@ -848,6 +850,10 @@ const UI = (() => {
   function newSession() {
     const sel = document.getElementById('student-select');
     if (sel) sel.value = '';
+    const tbTitle = document.getElementById('tb-title');
+    if (tbTitle) tbTitle.textContent = '';
+    const labelEl = document.getElementById('student-select-label');
+    if (labelEl) labelEl.textContent = '학생 선택';
     Calc.reset();
     renderPages();
     go('rm-overview');
