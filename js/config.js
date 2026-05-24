@@ -42,7 +42,7 @@ const MK_CONFIG = {
    *    group 값은 calc.js / portfolio.js 에서 합산 키로 사용
    * ============================================================ */
   groups: {
-    roadmap:    { label: '로드맵 컨설팅',    sbSection: true },
+    roadmap:    { label: '학년 관리 로드맵',  sbSection: true },
     individual: { label: '개별 컨설팅',      sbSection: true },
     strategy:   { label: '대입 전략 컨설팅', sbSection: true },
   },
@@ -56,22 +56,22 @@ const MK_CONFIG = {
     /* ── 연간 관리형 개요 (합산 없음, 카드 뷰) ── */
     'rm-overview': {
       group:    'roadmap',
-      sbIcon:   'ti-layout-dashboard',
-      sbLabel:  '학년 관리 로드맵',
-      title:    '연간 관리형',
+      sbIcon:   'ti-grid-dots',
+      sbLabel:  '전체 보기',
+      title:    '전체 보기',
       isOverview: true,   // 카드 그리드 페이지 플래그
     },
 
     /* ── 로드맵 A ── */
     'rm-a': {
       group:      'roadmap',
-      sbIcon:     'ti-file-text',
+      sbIcon:     'ti-pencil',
       sbLabel:    'A. 세특 관리',
       title:      'A. 세특 관리',
       subtitle:   '생기부 기재 관리 (자기평가서 / 세특) — 심화 확장 스토리 구축',
       iconBg:     '#FFE3D4',
       iconColor:  '#C45000',
-      iconClass:  'ti-file-text',
+      iconClass:  'ti-pencil',
       ovCard: {                       // 연간관리형 카드 정보
         badge:    '프로그램 A',
         priceLabel: ['고1 230만원', '고2 250만원', '고3 200만원'],
@@ -139,13 +139,13 @@ const MK_CONFIG = {
     /* ── 로드맵 B ── */
     'rm-b': {
       group:      'roadmap',
-      sbIcon:     'ti-clipboard-list',
+      sbIcon:     'ti-layout-list',
       sbLabel:    'B. 수행 관리',
       title:      'B. 수행 관리',
       subtitle:   '수행 조건 분석 / 방향성 코칭 / 보고서 설계도',
       iconBg:     '#FFD3E1',
       iconColor:  '#b01a4e',
-      iconClass:  'ti-clipboard-list',
+      iconClass:  'ti-layout-list',
       ovCard: {
         badge:    '프로그램 B',
         priceLabel: ['고1 220만원', '고2 240만원', '고3 200만원'],
