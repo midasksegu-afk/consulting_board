@@ -138,38 +138,55 @@ const Admin = (() => {
   function renderProgramTab() {
     const el  = document.getElementById('tab-program');
     const cfg = _draft;
-
     const sideHtml = _buildSideMenu(cfg, 'program', true);
 
-    const gKeys = ['roadmap','individual','strategy'];
-    const groupRows = gKeys.map(k => {
-      const val = cfg.groups?.[k]?.label || '';
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:12px;color:var(--text-3);min-width:80px;">
-          ${k === 'roadmap' ? '로드맵' : k === 'individual' ? '개별' : '대입전략'}
-        </span>
-        <input class="admin-input" style="flex:1;" value="${val}"
-          oninput="Admin.updateGroupLabel('${k}', this.value)"
-          placeholder="그룹 헤더명">
-      </div>`;
-    }).join('');
-
     el.innerHTML = `
-      <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);">
-        <div class="admin-section-title" style="margin-bottom:10px;">그룹 헤더명 수정</div>
-        ${groupRows}
-        <button class="admin-add-btn" style="margin-top:4px;" onclick="Admin.saveGroupLabels()">
-          <i class="ti ti-device-floppy"></i> 헤더명 저장
-        </button>
-      </div>
       <div style="display:flex;gap:0;min-height:500px;">
-        <div class="ct-sidebar">${sideHtml}</div>
+        <div class="ct-sidebar">
+          <div style="padding:8px 10px 6px;border-bottom:1px solid rgba(0,0,0,0.07);">
+            <button class="admin-add-btn" style="margin:0;width:100%;justify-content:center;font-size:12px;padding:6px 10px;"
+              onclick="Admin.loadGroupLabelEditor()">
+              <i class="ti ti-edit"></i> 그룹명 수정
+            </button>
+          </div>
+          ${sideHtml}
+        </div>
         <div class="ct-editor" id="program-editor">
           <div style="color:var(--text-3);font-size:13px;padding:24px;">좌측에서 편집할 프로그램을 선택하세요.</div>
         </div>
       </div>`;
 
     if (_programPageId) loadProgramPage(_programPageId);
+  }
+
+  function loadGroupLabelEditor() {
+    _programPageId = null;
+    document.querySelectorAll('#tab-program .ct-side-item').forEach(i => i.classList.remove('ct-side-active'));
+    const el = document.getElementById('program-editor');
+    if (!el) return;
+    const cfg = _draft;
+    const gKeys = [
+      { key:'roadmap',    name:'로드맵' },
+      { key:'individual', name:'개별' },
+      { key:'strategy',   name:'대입전략' },
+    ];
+    const rows = gKeys.map(g => {
+      const val = cfg.groups?.[g.key]?.label || '';
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text-3);min-width:60px;">${g.name}</span>
+        <input class="admin-input" style="flex:1;" value="${val}"
+          oninput="Admin.updateGroupLabel('${g.key}', this.value)"
+          placeholder="그룹 헤더명">
+      </div>`;
+    }).join('');
+    el.innerHTML = `
+      <div style="padding:24px;">
+        <div class="admin-section-title" style="margin-bottom:16px;">그룹 헤더명 수정</div>
+        ${rows}
+        <button class="admin-add-btn" style="margin-top:8px;" onclick="Admin.saveGroupLabels()">
+          <i class="ti ti-device-floppy"></i> 저장
+        </button>
+      </div>`;
   }
 
   function loadProgramPage(pageId) {
@@ -987,7 +1004,7 @@ const Admin = (() => {
     checkPin, switchTab,
     // 프로그램 관리 (통합)
     renderProgramTab, loadProgramPage, saveProgram,
-    updateGroupLabel, saveGroupLabels,
+    updateGroupLabel, saveGroupLabels, loadGroupLabelEditor,
     addProgram, deleteProgram,
     _confirmWithPin, _pinConfirmSubmit,
     _toggleGroup,
