@@ -48,7 +48,7 @@ const UI = (() => {
 
     // 세션 복원
     const session = Store.loadSession();
-    if (session) Calc.fromSnapshot(session);
+    if (session && session.grade && session.grade !== 0) Calc.fromSnapshot(session);
 
     // DC 버튼 초기화
     _updateDcButtons();
@@ -741,38 +741,79 @@ const UI = (() => {
    * 10. 학생 드롭다운 렌더링 / 로드 (비동기)
    * ============================================================ */
   async function renderStudentDropdown() {
-    const sel = document.getElementById('student-select');
-    if (!sel) return;
+    // 모달 방식으로 전환 — noop
+  }
 
-    sel.innerHTML = '<option value="">불러오는 중...</option>';
+  async function openStudentSelectModal() {
+    const existing = document.getElementById('student-select-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'student-select-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:420px;">
+        <div class="modal-header">
+          <span><i class="ti ti-users"></i> 학생 불러오기</span>
+          <button class="modal-close" onclick="document.getElementById('student-select-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <div id="student-modal-list" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="color:var(--text-3);font-size:13px;">불러오는 중...</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="document.getElementById('student-select-modal').remove()">닫기</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
     try {
       const list = await Store.listStudents();
-      let html = '<option value="">학생 선택...</option>';
-      list.forEach(s => {
+      const listEl = document.getElementById('student-modal-list');
+      if (!listEl) return;
+      if (!list || list.length === 0) {
+        listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">저장된 학생이 없습니다.</div>';
+        return;
+      }
+      listEl.innerHTML = list.map(s => {
         const date = Store.formatDate(s.savedAt).split(' ')[0];
-        html += `<option value="${s.key}">${s.key} (${date})</option>`;
-      });
-      sel.innerHTML = html;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;
+          padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
+            <div style="font-size:12px;color:var(--text-3);">${date}</div>
+          </div>
+          <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;"
+            onclick="UI.loadStudentByKey('${s.key}')">
+            <i class="ti ti-download"></i> 불러오기
+          </button>
+        </div>`;
+      }).join('');
     } catch (e) {
-      sel.innerHTML = '<option value="">불러오기 실패</option>';
+      const listEl = document.getElementById('student-modal-list');
+      if (listEl) listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">목록 로드 실패</div>';
       showToast('학생 목록 로드 실패 — 네트워크 확인', 'error');
     }
   }
 
-  async function loadSelectedStudent() {
-    const sel = document.getElementById('student-select');
-    if (!sel || !sel.value) return;
-
+  async function loadStudentByKey(key) {
+    document.getElementById('student-select-modal')?.remove();
     showToast('불러오는 중...', 'success');
-    const data = await Store.loadStudent(sel.value);
+    const data = await Store.loadStudent(key);
     if (!data) { showToast('학생 데이터를 찾을 수 없습니다', 'error'); return; }
-
     Calc.reset();
     Calc.fromSnapshot(data.selections);
     _syncGradeButtons(Calc.state.grade);
     renderPages();
     go(_currentPageId);
-    showToast(`✓ ${sel.value} 불러오기 완료`, 'success');
+    const labelEl = document.getElementById('student-select-label');
+    if (labelEl) labelEl.textContent = key;
+    showToast(`✓ ${key} 불러오기 완료`, 'success');
+  }
+
+  async function loadSelectedStudent() {
+    // 모달 방식으로 전환 — 하위 호환 유지
   }
 
   function newSession() {
@@ -1040,6 +1081,8 @@ const UI = (() => {
     openSaveStudentModal,
     confirmSaveStudent,
     loadSelectedStudent,
+    openStudentSelectModal,
+    loadStudentByKey,
     newSession,
     applyPackage,
     showToast,
