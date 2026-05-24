@@ -25,6 +25,7 @@ const UI = (() => {
   }
 
   let _currentPageId = 'rm-overview';
+  let _editDraft = null;
 
 
   /* ============================================================
@@ -350,10 +351,13 @@ const UI = (() => {
           <div class="detail-icon" style="background:${page.iconBg};color:${page.iconColor};">
             <i class="ti ${page.iconClass}"></i>
           </div>
-          <div>
+          <div style="flex:1;">
             <div class="detail-title">${page.title}</div>
             <div class="detail-sub">${page.subtitle || ''}</div>
           </div>
+          <button class="edit-mode-btn" onclick="UI.openPageEdit('${pageId}')" title="이 페이지 편집">
+            <i class="ti ti-pencil"></i> 편집
+          </button>
         </div>
         <div class="detail-grid">
           <div>
@@ -747,7 +751,145 @@ const UI = (() => {
 
 
   /* ============================================================
-   * 12. 토스트 알림
+   * 12. 페이지 인라인 편집
+   * ============================================================ */
+
+  function openPageEdit(pageId) {
+    // PIN 확인 후 편집 모달 열기
+    _showPinModal(() => _openEditModal(pageId));
+  }
+
+  function _showPinModal(callback) {
+    const existing = document.getElementById('edit-pin-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'edit-pin-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:320px;">
+        <div class="modal-header">
+          <span><i class="ti ti-shield-lock"></i> 관리자 PIN 확인</span>
+          <button class="modal-close" onclick="document.getElementById('edit-pin-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:24px;display:flex;flex-direction:column;align-items:center;gap:14px;">
+          <input class="admin-input" id="edit-pin-input" type="password" maxlength="6"
+            style="text-align:center;font-size:22px;letter-spacing:.3em;width:160px;"
+            placeholder="••••">
+          <div id="edit-pin-err" style="font-size:12px;color:var(--red-tx);min-height:16px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="document.getElementById('edit-pin-modal').remove()">취소</button>
+          <button class="btn btn-primary" id="edit-pin-confirm">확인</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+
+    const input   = document.getElementById('edit-pin-input');
+    const confirm = document.getElementById('edit-pin-confirm');
+    const err     = document.getElementById('edit-pin-err');
+
+    const submit = () => {
+      if (Store.verifyPin(input.value)) {
+        modal.remove();
+        callback();
+      } else {
+        err.textContent = 'PIN이 올바르지 않습니다.';
+        input.value = '';
+        input.focus();
+      }
+    };
+
+    confirm.addEventListener('click', submit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    input.focus();
+  }
+
+  function _openEditModal(pageId) {
+    const config = MK_CONFIG.resolve();
+    const page   = config.pages[pageId];
+    if (!page) return;
+
+    const existing = document.getElementById('page-edit-modal');
+    if (existing) existing.remove();
+
+    // programs 편집 행
+    const programRows = (page.programs || []).map((p, idx) => `
+      <div class="edit-program-row" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+          <input class="admin-input" style="width:50px;" value="${p.num || ''}"
+            oninput="_editDraft.pages['${pageId}'].programs[${idx}].num=this.value"
+            placeholder="번호">
+          <input class="admin-input" style="flex:1;" value="${p.title || ''}"
+            oninput="_editDraft.pages['${pageId}'].programs[${idx}].title=this.value"
+            placeholder="제목">
+        </div>
+        <textarea class="admin-input" rows="3" style="resize:vertical;"
+          oninput="_editDraft.pages['${pageId}'].programs[${idx}].items=this.value.split('\\n').filter(Boolean)"
+          placeholder="내용 (줄바꿈으로 항목 구분)">${(p.items || []).join('&#10;')}</textarea>
+      </div>`).join('');
+
+    // notes 편집 행
+    const noteRows = (page.notes || []).map((n, idx) => `
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <select class="admin-input" style="width:80px;"
+          onchange="_editDraft.pages['${pageId}'].notes[${idx}].color=this.value">
+          ${['blue','amber','red','green'].map(c =>
+            `<option value="${c}" ${n.color===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <input class="admin-input" style="flex:1;" value="${n.text || ''}"
+          oninput="_editDraft.pages['${pageId}'].notes[${idx}].text=this.value"
+          placeholder="노트 내용">
+      </div>`).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'page-edit-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:640px;max-height:85vh;">
+        <div class="modal-header">
+          <span><i class="ti ti-pencil"></i> ${page.title} 편집</span>
+          <button class="modal-close" onclick="document.getElementById('page-edit-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+          <div>
+            <div class="d-col-label" style="margin-bottom:8px;">프로그램 구성</div>
+            ${programRows}
+          </div>
+          <div>
+            <div class="d-col-label" style="margin-bottom:8px;">참고 노트</div>
+            ${noteRows}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="document.getElementById('page-edit-modal').remove()">취소</button>
+          <button class="btn btn-primary" onclick="UI._savePageEdit('${pageId}')">
+            <i class="ti ti-device-floppy"></i> 저장 및 반영
+          </button>
+        </div>
+      </div>`;
+
+    // _editDraft 초기화 — 현재 config 깊은 복사
+    _editDraft = JSON.parse(JSON.stringify(config));
+    document.body.appendChild(modal);
+  }
+
+  function _savePageEdit(pageId) {
+    if (!confirm('수정사항을 반영하시겠습니까?')) return;
+    Store.saveConfig(_editDraft);
+    document.getElementById('page-edit-modal')?.remove();
+    renderPages();
+    go(pageId);
+    showToast('✓ 수정사항이 반영되었습니다', 'success');
+  }
+
+  /* ============================================================
+   * 13. 토스트 알림
    * ============================================================ */
   function showToast(msg, type = 'success') {
     let toast = document.getElementById('mk-toast');
@@ -802,6 +944,8 @@ const UI = (() => {
     newSession,
     applyPackage,
     showToast,
+    openPageEdit,
+    _savePageEdit,
   };
 
 })();
