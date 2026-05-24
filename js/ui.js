@@ -380,10 +380,7 @@ const UI = (() => {
   function _renderPrograms(programs) {
     return programs.map(p => `
       <div class="p-item">
-        <div class="p-header">
-          <div class="p-num">${p.num}</div>
-          <div class="p-title">${p.title}</div>
-        </div>
+        <div class="p-title">${p.title}</div>
         <div class="p-desc">
           <ul>${(p.items || []).map(i => `<li>${i}</li>`).join('')}</ul>
         </div>
@@ -820,15 +817,13 @@ const UI = (() => {
     const programRows = (page.programs || []).map((p, idx) => `
       <div class="edit-program-row" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
         <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-          <input class="admin-input" style="width:50px;" value="${p.num || ''}"
-            oninput="_editDraft.pages['${pageId}'].programs[${idx}].num=this.value"
-            placeholder="번호">
+          <div class="p-num" style="flex-shrink:0;">${idx + 1}</div>
           <input class="admin-input" style="flex:1;" value="${p.title || ''}"
-            oninput="_editDraft.pages['${pageId}'].programs[${idx}].title=this.value"
+            oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].title=this.value"
             placeholder="제목">
         </div>
         <textarea class="admin-input" rows="3" style="resize:vertical;"
-          oninput="_editDraft.pages['${pageId}'].programs[${idx}].items=this.value.split('\\n').filter(Boolean)"
+          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=this.value.split('\\n').filter(Boolean)"
           placeholder="내용 (줄바꿈으로 항목 구분)">${(p.items || []).join('&#10;')}</textarea>
       </div>`).join('');
 
@@ -836,12 +831,12 @@ const UI = (() => {
     const noteRows = (page.notes || []).map((n, idx) => `
       <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
         <select class="admin-input" style="width:80px;"
-          onchange="_editDraft.pages['${pageId}'].notes[${idx}].color=this.value">
+          onchange="window.mkEditDraft.pages['${pageId}'].notes[${idx}].color=this.value">
           ${['blue','amber','red','green'].map(c =>
             `<option value="${c}" ${n.color===c?'selected':''}>${c}</option>`).join('')}
         </select>
         <input class="admin-input" style="flex:1;" value="${n.text || ''}"
-          oninput="_editDraft.pages['${pageId}'].notes[${idx}].text=this.value"
+          oninput="window.mkEditDraft.pages['${pageId}'].notes[${idx}].text=this.value"
           placeholder="노트 내용">
       </div>`).join('');
 
@@ -874,13 +869,15 @@ const UI = (() => {
         </div>
       </div>`;
 
-    // _editDraft 초기화 — 현재 config 깊은 복사
+    // _editDraft 초기화 — 전역 노출 (oninput에서 접근)
     _editDraft = JSON.parse(JSON.stringify(config));
+    window.mkEditDraft = _editDraft;
     document.body.appendChild(modal);
   }
 
   function _savePageEdit(pageId) {
     if (!confirm('수정사항을 반영하시겠습니까?')) return;
+    _editDraft = window.mkEditDraft;
     Store.saveConfig(_editDraft);
     document.getElementById('page-edit-modal')?.remove();
     renderPages();
