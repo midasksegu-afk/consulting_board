@@ -16,14 +16,8 @@ const UI = (() => {
    * ============================================================ */
   function fmt(n) {
     if (n === 0) return '0원';
-    if (n >= 10000) {
-      const man = Math.floor(n / 10000);
-      const rest = n % 10000;
-      return rest === 0
-        ? `${man.toLocaleString('ko-KR')}만원`
-        : `${n.toLocaleString('ko-KR')}원`;
-    }
-    return `${n.toLocaleString('ko-KR')}원`;
+    const man = Math.round(n / 10000);
+    return man > 0 ? `${man.toLocaleString('ko-KR')}만원` : `${n.toLocaleString('ko-KR')}원`;
   }
 
   function cfg() {
@@ -98,9 +92,13 @@ const UI = (() => {
    * 3. 학년 버튼 토글
    * ============================================================ */
   function toggleGrade(n) {
+    const prev     = Calc.getGrade();
     const newGrade = Calc.setGrade(n);
     _updateOvCardPrices(newGrade);
     _autoCheckOvCards(newGrade);
+    if (prev !== 0 && newGrade !== prev) {
+      showToast('학년이 변경되어 선택이 초기화되었습니다', 'warn');
+    }
   }
 
   // 연간관리형 카드 금액 — 선택된 학년만 표시
@@ -124,12 +122,13 @@ const UI = (() => {
     });
   }
 
-  // 학년 선택 시 A/B/C 카드 자동 전체 체크
+  // 학년 선택 시 A/B 카드만 자동 체크 (noAutoCheck 플래그 있으면 제외)
   function _autoCheckOvCards(grade) {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page || !page.ovCard || page.ovCard.fixed || page.isOverview) return;
+      if (page.ovCard.noAutoCheck) return; // rm-c 제외
       const cb   = document.getElementById('ovchk-' + pageId);
       const card = document.getElementById('ovcard-' + pageId);
       if (grade === 0) {
@@ -171,12 +170,20 @@ const UI = (() => {
    * 5. 체크박스 DOM 동기화 (fromSnapshot 후)
    * ============================================================ */
   function _syncCheckboxes(state) {
-    // 상세 페이지 체크박스
     document.querySelectorAll('input[type=checkbox][data-item-idx]').forEach(cb => {
       const pageId = cb.closest('.page')?.id?.replace('pg-', '');
       if (!pageId) return;
       const idx = parseInt(cb.getAttribute('data-item-idx'));
       cb.checked = Calc.isItemSelected(pageId, idx);
+
+      // ov 선택된 페이지 체크박스 비활성화
+      if (Calc.isOvSelected(pageId)) {
+        cb.disabled = true;
+        cb.closest('label')?.classList.add('p-opt-disabled');
+      } else {
+        cb.disabled = false;
+        cb.closest('label')?.classList.remove('p-opt-disabled');
+      }
     });
     _updateLocalTotal(_currentPageId);
   }
@@ -405,6 +412,12 @@ const UI = (() => {
 
   function _renderPriceCard(pageId, page) {
     const prices = page.prices || [];
+
+    // rm-c 전용 — 할인 구독 카드
+    if (page.priceRef) {
+      return _renderPriceCardRmc(pageId, page);
+    }
+
     const hasGrade = prices.some(p => p.grade);
     const label = hasGrade ? '학년 선택' : '항목 선택';
 
@@ -442,6 +455,51 @@ const UI = (() => {
       </div>`;
   }
 
+  // rm-c 전용 가격 카드 — 원가 취소선 + 할인가 + 절약금액
+  function _renderPriceCardRmc(pageId, page) {
+    const prices = page.prices || [];
+    const refs   = page.priceRef || [];
+
+    const opts = prices.map((price, idx) => `
+      <label class="p-opt p-opt-discount">
+        <input type="checkbox"
+          data-amt="${price.amt}"
+          data-item-idx="${idx}"
+          onchange="UI.handleItemCheck('${pageId}', ${idx}, this)">
+        <div class="p-opt-lbl">
+          <div class="p-opt-grade">${price.label}</div>
+          <div class="p-opt-note">${price.note}</div>
+          <div class="p-opt-origin">
+            원가 <s>${price.origAmt.toLocaleString('ko-KR')}원</s>
+            → <strong style="color:#5b35c4;">${price.amt.toLocaleString('ko-KR')}원</strong>
+          </div>
+          <div class="p-opt-save">💰 ${price.saveAmt.toLocaleString('ko-KR')}원 절약 (${price.discountRate}% 할인)</div>
+        </div>
+      </label>`).join('');
+
+    const refHtml = refs.map(r => `
+      <div class="p-ref-row">
+        <span class="p-ref-label">${r.label}</span>
+        <span class="p-ref-val">${r.ref}</span>
+      </div>`).join('');
+
+    return `
+      <div class="price-card">
+        <div class="pc-title">구독 선택</div>
+        ${opts}
+        <div class="pc-divider"></div>
+        <div class="p-ref-section">
+          <div class="p-ref-title">참고 (개별 이용)</div>
+          ${refHtml}
+        </div>
+        <div class="pc-divider"></div>
+        <div class="pc-total">
+          <span class="pc-total-lbl">페이지 선택 합계</span>
+          <span class="pc-total-amt" id="local-${pageId}">0원</span>
+        </div>
+      </div>`;
+  }
+
 
   /* ============================================================
    * 8. 이벤트 핸들러 — HTML에서 직접 호출
@@ -461,6 +519,11 @@ const UI = (() => {
 
   /** 상세 페이지 체크박스 */
   function handleItemCheck(pageId, idx, cb) {
+    if (Calc.isOvSelected(pageId)) {
+      cb.checked = false;
+      showToast('연간관리형으로 이미 포함된 항목입니다', 'warn');
+      return;
+    }
     Calc.selectItem(pageId, idx, cb.checked);
     _updateLocalTotal(pageId);
   }
