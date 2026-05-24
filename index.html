@@ -46,9 +46,12 @@
         <div class="grade-divider"></div>
 
         <!-- 학생 선택 / 저장 -->
-        <button class="btn" id="student-select-btn" onclick="UI.openStudentSelectModal()" title="학생 불러오기">
-          <i class="ti ti-users"></i> <span id="student-select-label">학생 선택</span>
-        </button>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <button class="btn" id="student-select-btn" onclick="UI.openStudentSelectModal()" title="학생 불러오기">
+            <i class="ti ti-users"></i> <span id="student-select-label">학생 선택</span>
+          </button>
+          <div id="student-info-bar" style="font-size:11px;color:var(--text-3);text-align:center;display:none;"></div>
+        </div>
         <button class="btn" onclick="UI.openSaveStudentModal()" title="현재 선택값을 학생으로 저장">
           <i class="ti ti-user-plus"></i> 저장
         </button>
