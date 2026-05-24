@@ -79,9 +79,9 @@ const Admin = (() => {
 
   function _buildSideMenu(cfg, tabPrefix, includeOverview) {
     const groups = [
-      { key: 'roadmap',    label: '로드맵 컨설팅' },
-      { key: 'individual', label: '개별 컨설팅' },
-      { key: 'strategy',   label: '대입 전략 컨설팅' },
+      { key: 'roadmap',    label: (cfg.groups?.roadmap?.label    || '학년 관리 로드맵') },
+      { key: 'individual', label: (cfg.groups?.individual?.label || '개별 컨설팅') },
+      { key: 'strategy',   label: (cfg.groups?.strategy?.label  || '대입 전략 컨설팅') },
     ];
     let html = '';
     groups.forEach(g => {
@@ -141,7 +141,27 @@ const Admin = (() => {
 
     const sideHtml = _buildSideMenu(cfg, 'program', true);
 
+    const gKeys = ['roadmap','individual','strategy'];
+    const groupRows = gKeys.map(k => {
+      const val = cfg.groups?.[k]?.label || '';
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:12px;color:var(--text-3);min-width:80px;">
+          ${k === 'roadmap' ? '로드맵' : k === 'individual' ? '개별' : '대입전략'}
+        </span>
+        <input class="admin-input" style="flex:1;" value="${val}"
+          oninput="Admin.updateGroupLabel('${k}', this.value)"
+          placeholder="그룹 헤더명">
+      </div>`;
+    }).join('');
+
     el.innerHTML = `
+      <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);">
+        <div class="admin-section-title" style="margin-bottom:10px;">그룹 헤더명 수정</div>
+        ${groupRows}
+        <button class="admin-add-btn" style="margin-top:4px;" onclick="Admin.saveGroupLabels()">
+          <i class="ti ti-device-floppy"></i> 헤더명 저장
+        </button>
+      </div>
       <div style="display:flex;gap:0;min-height:500px;">
         <div class="ct-sidebar">${sideHtml}</div>
         <div class="ct-editor" id="program-editor">
@@ -950,10 +970,24 @@ const Admin = (() => {
   /* ============================================================
    * Public API
    * ============================================================ */
+
+  function updateGroupLabel(key, value) {
+    if (!_draft.groups) _draft.groups = {};
+    if (!_draft.groups[key]) _draft.groups[key] = {};
+    _draft.groups[key].label = value;
+  }
+
+  function saveGroupLabels() {
+    Store.saveConfig(_draft);
+    showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
+    renderProgramTab();
+  }
+
   return {
     checkPin, switchTab,
     // 프로그램 관리 (통합)
     renderProgramTab, loadProgramPage, saveProgram,
+    updateGroupLabel, saveGroupLabels,
     addProgram, deleteProgram,
     _confirmWithPin, _pinConfirmSubmit,
     _toggleGroup,
