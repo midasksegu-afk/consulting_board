@@ -297,8 +297,17 @@ const UI = (() => {
           </div>
         </div>`).join('');
 
-      const priceHtml = (ov.priceLabel || [])
-        .map(p => p + '<br>').join('');
+      // prices[]에서 자동 생성 (없으면 priceLabel 폴백)
+      let priceHtml = '';
+      if (page.prices && page.prices.length) {
+        priceHtml = page.prices.map(pr => {
+          const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
+          const gradeStr = pr.grade && pr.grade !== '1,2,3' ? `고${pr.grade} ` : '';
+          return gradeStr + man + '<br>';
+        }).join('');
+      } else {
+        priceHtml = (ov.priceLabel || []).map(p => p + '<br>').join('');
+      }
 
       return `
         <div class="ov-card" id="ovcard-${pageId}">

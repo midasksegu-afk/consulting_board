@@ -65,39 +65,81 @@ const Admin = (() => {
    * 3. 탭1 — 프로그램 관리 (이름 + 단가 통합)
    * ============================================================ */
   let _programPageId = null;
+  const _groupOpen = { roadmap: true, individual: false, strategy: false };
 
-  function renderProgramTab() {
-    const el  = document.getElementById('tab-program');
-    const cfg = _draft;
+  function _toggleGroup(key, tabPrefix) {
+    _groupOpen[key] = !_groupOpen[key];
+    // 해당 그룹 아이템 토글
+    const items = document.querySelectorAll(`#tab-${tabPrefix} .ct-group-items-${key}`);
+    items.forEach(el => { el.style.display = _groupOpen[key] ? 'block' : 'none'; });
+    // 화살표 회전
+    const arrow = document.querySelector(`#tab-${tabPrefix} .ct-group-arrow-${key}`);
+    if (arrow) arrow.style.transform = _groupOpen[key] ? 'rotate(90deg)' : 'rotate(0deg)';
+  }
+
+  function _buildSideMenu(cfg, tabPrefix, includeOverview) {
     const groups = [
       { key: 'roadmap',    label: '로드맵 컨설팅' },
       { key: 'individual', label: '개별 컨설팅' },
       { key: 'strategy',   label: '대입 전략 컨설팅' },
     ];
-
-    let sideHtml = '';
+    let html = '';
     groups.forEach(g => {
       const pages = MK_CONFIG.pageOrder.filter(id => {
         const p = cfg.pages[id];
         return p && p.group === g.key && !p.isOverview;
       });
-      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
+      if (!pages.length && !includeOverview) return;
+      const isOpen = _groupOpen[g.key];
+      const arrow  = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+
+      html += `
+        <div class="ct-group-label" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;"
+          onclick="Admin._toggleGroup('${g.key}','${tabPrefix}')">
+          ${g.label}
+          <i class="ti ti-chevron-right ct-group-arrow-${g.key}" style="font-size:13px;transition:transform 0.2s;transform:${arrow};"></i>
+        </div>
+        <div class="ct-group-items-${g.key}" style="display:${isOpen ? 'block' : 'none'};">`;
+
+      // 전체 개요 항목 (로드맵 + 프로그램 탭만)
+      if (g.key === 'roadmap' && includeOverview) {
+        const active = _programPageId === '__overview__' ? 'ct-side-active' : '';
+        html += `
+          <div class="ct-side-item ${active}" onclick="Admin.loadProgramPage('__overview__')">
+            <i class="ti ti-layout-grid" style="font-size:14px;"></i> 전체 개요 카드
+          </div>`;
+      }
+
       pages.forEach(id => {
         const p = cfg.pages[id];
-        const active = id === _programPageId ? 'ct-side-active' : '';
-        sideHtml += `
-          <div class="ct-side-item ${active}" onclick="Admin.loadProgramPage('${id}')">
+        const fn = tabPrefix === 'program' ? 'loadProgramPage' : 'loadContentPage';
+        const currentId = tabPrefix === 'program' ? _programPageId : _contentPageId;
+        const active = id === currentId ? 'ct-side-active' : '';
+        html += `
+          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')">
             <i class="ti ${p.sbIcon}" style="font-size:14px;"></i> ${p.sbLabel}
           </div>`;
       });
-      sideHtml += `
-        <div style="padding:4px 10px 10px;">
-          <button class="admin-add-btn" style="margin-top:0;width:100%;justify-content:center;"
-            onclick="Admin.addProgram('${g.key}')">
-            <i class="ti ti-plus"></i> 새 프로그램
-          </button>
-        </div>`;
+
+      if (tabPrefix === 'program') {
+        html += `
+          <div style="padding:4px 10px 10px;">
+            <button class="admin-add-btn" style="margin-top:0;width:100%;justify-content:center;"
+              onclick="Admin.addProgram('${g.key}')">
+              <i class="ti ti-plus"></i> 새 프로그램
+            </button>
+          </div>`;
+      }
+      html += `</div>`;
     });
+    return html;
+  }
+
+  function renderProgramTab() {
+    const el  = document.getElementById('tab-program');
+    const cfg = _draft;
+
+    const sideHtml = _buildSideMenu(cfg, 'program', true);
 
     el.innerHTML = `
       <div style="display:flex;gap:0;min-height:500px;">
@@ -112,14 +154,22 @@ const Admin = (() => {
 
   function loadProgramPage(pageId) {
     _programPageId = pageId;
-    const page = _draft.pages[pageId];
-    const el   = document.getElementById('program-editor');
-    if (!page || !el) return;
+    const el = document.getElementById('program-editor');
+    if (!el) return;
 
     // 사이드 active 갱신
     document.querySelectorAll('#tab-program .ct-side-item').forEach(i => i.classList.remove('ct-side-active'));
     const sel = document.querySelector(`#tab-program .ct-side-item[onclick*="${pageId}"]`);
     if (sel) sel.classList.add('ct-side-active');
+
+    // 전체 개요 편집
+    if (pageId === '__overview__') {
+      _renderOverviewEditor(el);
+      return;
+    }
+
+    const page = _draft.pages[pageId];
+    if (!page) return;
 
     const prices = page.prices || [];
     const priceRows = prices.map((price, idx) => {
@@ -242,6 +292,100 @@ const Admin = (() => {
     Store.addLog('name', `${pageId} ${field}`, old, value);
   }
 
+  function _renderOverviewEditor(el) {
+    const ovPage = Object.values(_draft.pages).find(p => p.isOverview);
+    const ovKey  = Object.keys(_draft.pages).find(k => _draft.pages[k].isOverview);
+    if (!ovPage || !ovKey) return;
+
+    // 트리 항목들 (rm-a/b/c만 해당)
+    const treePages = MK_CONFIG.pageOrder.filter(id => {
+      const p = _draft.pages[id];
+      return p && p.group === 'roadmap' && !p.isOverview && p.ovCard;
+    });
+
+    const treeSections = treePages.map(id => {
+      const p = _draft.pages[id];
+      const tree = (p.ovCard && p.ovCard.tree) || [];
+      const treeRows = tree.map((t, idx) => `
+        <div class="admin-price-row" style="gap:8px;align-items:flex-start;flex-direction:column;">
+          <div style="display:flex;gap:8px;width:100%;align-items:center;">
+            <input class="admin-input" style="flex:1;" value="${t.label || ''}"
+              oninput="Admin.updateTreeField('${id}',${idx},'label',this.value)"
+              placeholder="트리 제목">
+            <button class="admin-del-btn" onclick="Admin.deleteTreeItem('${id}',${idx})">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+          <input class="admin-input" style="width:100%;" value="${t.sub || ''}"
+            oninput="Admin.updateTreeField('${id}',${idx},'sub',this.value)"
+            placeholder="트리 설명">
+        </div>`).join('');
+
+      return `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">
+            <i class="ti ${p.sbIcon}"></i> ${p.sbLabel} 트리
+            <span style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:8px;">
+              (프로그램명은 프로그램 관리에서 수정 시 자동 반영됩니다)
+            </span>
+          </div>
+          <div>${treeRows}</div>
+          <button class="admin-add-btn" style="margin-top:6px;" onclick="Admin.addTreeItem('${id}')">
+            <i class="ti ti-plus"></i> 트리 항목 추가
+          </button>
+        </div>`;
+    }).join('<hr style="border:none;border-top:1px dashed var(--border);margin:12px 0;">');
+
+    el.innerHTML = `
+      <div class="admin-editor-title">
+        <i class="ti ti-layout-grid"></i> 전체 개요 카드 편집
+      </div>
+      <div class="notice n-blue" style="margin-bottom:16px;">
+        <i class="ti ti-info-circle"></i>
+        <span>카드 이름·금액은 프로그램 관리에서 수정하면 자동 반영됩니다.</span>
+      </div>
+      <div class="admin-field-group">
+        <label class="admin-field-label">하단 공지 텍스트</label>
+        <textarea class="admin-input" rows="2" style="resize:vertical;"
+          oninput="Admin.updateOverviewNotice(this.value)">${_draft.overviewNotice || ''}</textarea>
+      </div>
+      <div class="admin-section-title" style="margin-top:20px;">카드 트리 항목 편집</div>
+      ${treeSections}
+      <div style="margin-top:20px;">
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveOverview()">
+          <i class="ti ti-device-floppy"></i> 저장
+        </button>
+      </div>`;
+  }
+
+  function updateTreeField(pageId, idx, field, value) {
+    if (!_draft.pages[pageId].ovCard) return;
+    if (!_draft.pages[pageId].ovCard.tree) _draft.pages[pageId].ovCard.tree = [];
+    _draft.pages[pageId].ovCard.tree[idx][field] = value;
+  }
+
+  function addTreeItem(pageId) {
+    if (!_draft.pages[pageId].ovCard) return;
+    if (!_draft.pages[pageId].ovCard.tree) _draft.pages[pageId].ovCard.tree = [];
+    _draft.pages[pageId].ovCard.tree.push({ label: '새 항목', sub: '' });
+    _renderOverviewEditor(document.getElementById('program-editor'));
+  }
+
+  function deleteTreeItem(pageId, idx) {
+    if (!confirm('이 트리 항목을 삭제할까요?')) return;
+    _draft.pages[pageId].ovCard.tree.splice(idx, 1);
+    _renderOverviewEditor(document.getElementById('program-editor'));
+  }
+
+  function updateOverviewNotice(value) {
+    _draft.overviewNotice = value;
+  }
+
+  function saveOverview() {
+    Store.saveConfig(_draft);
+    showMsg('✓ 전체 개요가 저장되었습니다.', true);
+  }
+
   function saveProgram(pageId) {
     Store.saveConfig(_draft);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
@@ -325,31 +469,7 @@ const Admin = (() => {
   function renderContentTab() {
     const el = document.getElementById('tab-content');
 
-    // 그룹별 사이드 메뉴 구성
-    const groups = [
-      { key: 'roadmap',    label: '로드맵 컨설팅' },
-      { key: 'individual', label: '개별 컨설팅' },
-      { key: 'strategy',   label: '대입 전략 컨설팅' },
-    ];
-
-    let sideHtml = '';
-    groups.forEach(g => {
-      const pages = MK_CONFIG.pageOrder.filter(id => {
-        const p = _draft.pages[id];
-        return p && p.group === g.key && !p.isOverview;
-      });
-      if (!pages.length) return;
-      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
-      pages.forEach(id => {
-        const p = _draft.pages[id];
-        const active = id === _contentPageId ? 'ct-side-active' : '';
-        sideHtml += `
-          <div class="ct-side-item ${active}" onclick="Admin.loadContentPage('${id}')">
-            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i>
-            ${p.sbLabel}
-          </div>`;
-      });
-    });
+    const sideHtml = _buildSideMenu(_draft, 'content', false);
 
     el.innerHTML = `
       <div style="display:flex;gap:0;height:100%;min-height:500px;">
@@ -832,6 +952,9 @@ const Admin = (() => {
     renderProgramTab, loadProgramPage, saveProgram,
     addProgram, deleteProgram,
     _confirmWithPin, _pinConfirmSubmit,
+    _toggleGroup,
+    updateTreeField, addTreeItem, deleteTreeItem,
+    updateOverviewNotice, saveOverview,
     // 가격 필드
     updatePriceField, addPriceItem, deletePriceItem,
     updateDiscountField, saveDcDiscount,

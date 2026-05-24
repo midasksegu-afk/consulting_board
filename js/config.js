@@ -57,7 +57,7 @@ const MK_CONFIG = {
     'rm-overview': {
       group:    'roadmap',
       sbIcon:   'ti-layout-dashboard',
-      sbLabel:  '전체 개요',
+      sbLabel:  '학년 관리 로드맵',
       title:    '연간 관리형',
       isOverview: true,   // 카드 그리드 페이지 플래그
     },
