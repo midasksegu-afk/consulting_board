@@ -8,7 +8,7 @@
 const Admin = (() => {
 
   let _unlocked = false;
-  let _currentTab = 'tab-price';
+  let _currentTab = 'tab-program';
   // 관리자가 편집 중인 config 임시 복사본
   let _draft = null;
 
@@ -25,7 +25,7 @@ const Admin = (() => {
       _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve())); // 깊은 복사
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
-      switchTab('tab-price');
+      switchTab('tab-program');
     } else {
       const err = document.getElementById('pin-err');
       if (err) { err.style.display = 'block'; }
