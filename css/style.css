@@ -536,7 +536,6 @@ html, body {
 .p-opt-disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 /* rm-c 할인 구독 카드 */
@@ -577,3 +576,11 @@ html, body {
 }
 .p-ref-label { font-weight: 500; }
 .p-ref-val   { font-weight: 600; color: var(--text-2); }
+
+/* DC 버튼 활성 상태 */
+.pkg-btn-active {
+  background: linear-gradient(135deg, #6c5ff5, #9b4dfc) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 3px 12px rgba(124,111,247,0.4);
+}
