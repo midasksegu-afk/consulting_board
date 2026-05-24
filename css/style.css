@@ -234,7 +234,7 @@ html, body {
 .student-select:focus { outline:none; border-color:var(--accent); }
 
 /* ── 콘텐츠 영역 ── */
-.content { flex:1; overflow-y:auto; padding:28px 32px; }
+.content { flex:1; overflow-y:auto; padding:18px 24px; }
 .page { display:none; }
 .page.active { display:block; }
 
@@ -243,11 +243,11 @@ html, body {
 ================================================================ */
 .ov-grid {
   display:grid; grid-template-columns:repeat(5,1fr);
-  gap:16px; margin-bottom:20px;
+  gap:12px; margin-bottom:12px;
 }
 .ov-card {
   background:var(--surface); border:1.5px solid var(--border);
-  border-radius:var(--radius-lg); padding:24px 22px;
+  border-radius:var(--radius-lg); padding:16px 16px;
   cursor:pointer; transition:all 0.16s; box-shadow:var(--shadow);
   display:flex; flex-direction:column;
   position:relative;          /* ★ v8: 체크박스 absolute 기준 */
@@ -297,22 +297,22 @@ html, body {
 .ov-check-label.fixed::after { background:#fff; }
 .ov-fixed-badge { font-size:10px; font-weight:600; color:#B79CFF; white-space:nowrap; }
 
-.ov-icon { width:44px; height:44px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:19px; margin-bottom:14px; }
-.ov-badge { font-size:11px; font-weight:600; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
-.ov-name  { font-size:16px; font-weight:700; color:var(--text-1); margin-bottom:8px; }
-.ov-price { font-size:13px; color:var(--text-2); line-height:1.8; }
+.ov-icon { width:38px; height:38px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:8px; }
+.ov-badge { font-size:11px; font-weight:600; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; margin-bottom:2px; }
+.ov-name  { font-size:15px; font-weight:700; color:var(--text-1); margin-bottom:4px; }
+.ov-price { font-size:12.5px; color:var(--text-2); line-height:1.6; }
 .ov-price strong { color:#2a1450; font-weight:700; }
 .ov-arrow { display:flex; align-items:center; gap:4px; font-size:12px; color:#B79CFF; margin-top:12px; font-weight:500; }
 
 /* 트리 */
-.ov-tree { margin-top:16px; padding-top:14px; border-top:1.5px solid var(--border); }
-.ov-tree-item { display:flex; align-items:flex-start; gap:10px; padding:5px 0; position:relative; padding-left:18px; }
+.ov-tree { margin-top:10px; padding-top:10px; border-top:1.5px solid var(--border); }
+.ov-tree-item { display:flex; align-items:flex-start; gap:10px; padding:3px 0; position:relative; padding-left:18px; }
 .ov-tree-item::before { content:''; position:absolute; left:5px; top:0; bottom:0; width:1.5px; background:var(--border); }
 .ov-tree-item:last-child::before { bottom:50%; }
 .ov-tree-item::after  { content:''; position:absolute; left:5px; top:14px; width:10px; height:1.5px; background:var(--border); }
 .ov-tree-dot   { flex-shrink:0; width:8px; height:8px; border-radius:50%; background:linear-gradient(120deg,#FFB89A,#B79CFF); margin-top:5px; }
-.ov-tree-label { font-size:13px; font-weight:600; color:#15151A; line-height:1.5; }
-.ov-tree-sub   { font-size:11px; color:#43434A; margin-top:2px; line-height:1.5; }
+.ov-tree-label { font-size:12px; font-weight:600; color:#15151A; line-height:1.4; }
+.ov-tree-sub   { font-size:10.5px; color:#43434A; margin-top:1px; line-height:1.4; }
 
 .global-notice {
   background:#FFE3D4; border:1px solid #FFB89A; border-radius:var(--radius-md);
@@ -325,7 +325,7 @@ html, body {
    고3 추가 선택 옵션 (aoc)
 ================================================================ */
 .aoc-section {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .aoc-header {
   font-size: 12px; font-weight: 700; color: var(--text-3);
@@ -335,7 +335,7 @@ html, body {
 .aoc-header i { font-size: 14px; color: var(--accent); }
 .aoc-grid {
   display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+  gap: 16px; align-items: start;
 }
 .aoc-card {
   background: var(--surface); border: 1.5px solid var(--border);
@@ -351,6 +351,14 @@ html, body {
 }
 .aoc-card .ov-icon { width: 36px; height: 36px; font-size: 16px; margin-bottom: 0; }
 .aoc-card .ov-name { font-size: 14px; font-weight: 700; color: var(--text-1); margin-bottom: 0; }
+.aoc-notice-card {
+  background: #FFE3D4; border: 1px solid #FFB89A;
+  border-radius: var(--radius-lg); padding: 16px 18px;
+  font-size: 13px; color: #8a4020; line-height: 1.7;
+  display: flex; flex-direction: column; gap: 8px;
+  align-self: start;
+}
+.aoc-notice-card i { font-size: 16px; flex-shrink: 0; color: #c45000; }
 .aoc-link {
   font-size: 11px; font-weight: 500; color: var(--accent);
   background: none; border: none; cursor: pointer; padding: 0;
@@ -580,8 +588,8 @@ html, body {
   justify-content: center;
   gap: 6px;
   width: 100%;
-  margin-top: 12px;
-  padding: 10px 0;
+  margin-top: 8px;
+  padding: 7px 0;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
