@@ -235,7 +235,10 @@ const Store = (() => {
    * ============================================================ */
   function getPin() {
     const cfg = loadConfig();
-    return (cfg && cfg.adminPin) ? cfg.adminPin : MK_CONFIG.app.adminPin;
+    // app.adminPin 우선, 그 다음 adminPin, 없으면 기본값
+    if (cfg && cfg.app && cfg.app.adminPin) return cfg.app.adminPin;
+    if (cfg && cfg.adminPin) return cfg.adminPin;
+    return MK_CONFIG.app.adminPin;
   }
   function savePin(newPin) {
     const cfg = loadConfig() || {};
