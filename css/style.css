@@ -92,21 +92,23 @@ html, body {
 
 .sb-section {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px 10px;
-  font-size: 11px; font-weight: 700; color: rgba(220, 210, 255, 0.85);
-  letter-spacing: .12em; text-transform: uppercase;
+  margin: 6px 10px 4px;
+  padding: 7px 10px;
+  font-size: 10.5px; font-weight: 700; color: #FFB89A;
+  letter-spacing: .1em; text-transform: uppercase;
   cursor: pointer; user-select: none;
-  transition: color 0.15s;
+  background: rgba(255,184,154,0.1);
+  border: 1px solid rgba(255,184,154,0.22);
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
 }
-.sb-section:hover { color: #fff; }
+.sb-section:hover { background: rgba(255,184,154,0.18); color: #ffd0b0; }
 .sb-section-label { flex: 1; }
 .sb-section-divider {
-  margin-top: 4px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 14px;
+  margin-top: 10px;
 }
 .sb-arrow {
-  font-size: 13px; color: rgba(200,190,255,0.55);
+  font-size: 12px; color: rgba(255,184,154,0.6);
   transition: transform 0.22s ease;
 }
 .sb-arrow.collapsed { transform: rotate(-90deg); }
