@@ -130,33 +130,47 @@ const Admin = (() => {
 
   function _renderPriceList(pageId, prices) {
     if (!prices.length) return '<div style="font-size:13px;color:var(--text-3);padding:8px 0;">항목 없음</div>';
-    return prices.map((price, idx) => `
-      <div class="admin-price-row" id="price-row-${pageId}-${idx}">
-        <input class="admin-input" style="flex:2;"
+    return prices.map((price, idx) => {
+      const manwon = price.amt ? Math.round(price.amt / 10000) + '만원' : '0원';
+      return `
+      <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
+        <input class="admin-input" style="flex:2;min-width:80px;"
           value="${price.label}"
           onchange="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
           placeholder="항목명">
-        <input class="admin-input" style="flex:1;text-align:right;"
-          value="${fmt(price.amt)}"
+        <input class="admin-input" style="flex:1;min-width:60px;text-align:right;"
+          value="${manwon}"
           onchange="Admin.updatePriceField('${pageId}', ${idx}, 'amt', this.value)"
           placeholder="금액">
-        <select class="admin-input" style="flex:1;"
+        <select class="admin-input" style="flex:0.8;min-width:60px;"
           onchange="Admin.updatePriceField('${pageId}', ${idx}, 'grade', this.value)">
-          <option value="" ${!price.grade ? 'selected' : ''}>학년 무관</option>
+          <option value="" ${!price.grade ? 'selected' : ''}>무관</option>
           <option value="1" ${price.grade == 1 ? 'selected' : ''}>고1</option>
           <option value="2" ${price.grade == 2 ? 'selected' : ''}>고2</option>
           <option value="3" ${price.grade == 3 ? 'selected' : ''}>고3</option>
           <option value="1,2,3" ${price.grade == '1,2,3' ? 'selected' : ''}>전학년</option>
         </select>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap;">
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;white-space:nowrap;cursor:pointer;">
           <input type="checkbox" ${price.isDefault ? 'checked' : ''}
             onchange="Admin.updatePriceField('${pageId}', ${idx}, 'isDefault', this.checked)">
-          기본체크
+          기본
         </label>
+        <button class="admin-save-btn" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
+          onclick="Admin.savePriceItem('${pageId}', ${idx})" title="이 항목 저장">
+          <i class="ti ti-device-floppy"></i>
+        </button>
         <button class="admin-del-btn" onclick="Admin.deletePriceItem('${pageId}', ${idx})" title="삭제">
           <i class="ti ti-trash"></i>
         </button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
+  }
+
+  function savePriceItem(pageId, idx) {
+    const price = _draft.pages[pageId]?.prices?.[idx];
+    if (!price) return;
+    Store.saveConfig(_draft);
+    showMsg(`✓ "${price.label}" 항목이 저장되었습니다.`, true);
   }
 
   function updatePriceField(pageId, idx, field, value) {
@@ -240,6 +254,10 @@ const Admin = (() => {
             value="${page.subtitle || ''}"
             onchange="Admin.updateNameField('${pageId}', 'subtitle', this.value)"
             placeholder="부제목">
+          <button class="admin-save-btn" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
+            onclick="Admin.saveNameItem('${pageId}')" title="이 항목 저장">
+            <i class="ti ti-device-floppy"></i>
+          </button>
         </div>`;
     });
 
@@ -250,6 +268,13 @@ const Admin = (() => {
         </button>
       </div>`;
     el.innerHTML = html || '<div style="color:var(--text-3);font-size:13px;">페이지가 없습니다.</div>';
+  }
+
+  function saveNameItem(pageId) {
+    const page = _draft.pages[pageId];
+    if (!page) return;
+    Store.saveConfig(_draft);
+    showMsg(`✓ "${page.sbLabel}" 프로그램명이 저장되었습니다.`, true);
   }
 
   function saveNameTab() {
@@ -272,21 +297,42 @@ const Admin = (() => {
 
   function renderContentTab() {
     const el = document.getElementById('tab-content');
-    // 페이지 선택 드롭다운 + 편집 영역
+
+    // 그룹별 사이드 메뉴 구성
+    const groups = [
+      { key: 'roadmap',    label: '로드맵 컨설팅' },
+      { key: 'individual', label: '개별 컨설팅' },
+      { key: 'strategy',   label: '대입 전략 컨설팅' },
+    ];
+
+    let sideHtml = '';
+    groups.forEach(g => {
+      const pages = MK_CONFIG.pageOrder.filter(id => {
+        const p = _draft.pages[id];
+        return p && p.group === g.key && !p.isOverview;
+      });
+      if (!pages.length) return;
+      sideHtml += `<div class="ct-group-label">${g.label}</div>`;
+      pages.forEach(id => {
+        const p = _draft.pages[id];
+        const active = id === _contentPageId ? 'ct-side-active' : '';
+        sideHtml += `
+          <div class="ct-side-item ${active}" onclick="Admin.loadContentPage('${id}')">
+            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i>
+            ${p.sbLabel}
+          </div>`;
+      });
+    });
+
     el.innerHTML = `
-      <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;">
-        <label style="font-size:13px;font-weight:600;color:var(--text-2);">페이지 선택</label>
-        <select class="admin-input" style="width:260px;" id="content-page-sel"
-          onchange="Admin.loadContentPage(this.value)">
-          <option value="">— 선택 —</option>
-          ${MK_CONFIG.pageOrder
-            .filter(id => !_draft.pages[id]?.isOverview)
-            .map(id => `<option value="${id}" ${id === _contentPageId ? 'selected':''}>
-              ${_draft.pages[id]?.sbLabel || id}
-            </option>`).join('')}
-        </select>
-      </div>
-      <div id="content-editor"></div>`;
+      <div style="display:flex;gap:0;height:100%;min-height:500px;">
+        <div class="ct-sidebar">${sideHtml}</div>
+        <div class="ct-editor" id="content-editor">
+          <div style="color:var(--text-3);font-size:13px;padding:24px;">
+            좌측에서 편집할 페이지를 선택하세요.
+          </div>
+        </div>
+      </div>`;
 
     if (_contentPageId) loadContentPage(_contentPageId);
   }
@@ -297,6 +343,13 @@ const Admin = (() => {
     if (!page) return;
     const el = document.getElementById('content-editor');
     if (!el) return;
+
+    // 사이드 메뉴 active 갱신
+    document.querySelectorAll('.ct-side-item').forEach(item => {
+      item.classList.remove('ct-side-active');
+    });
+    const activeItem = document.querySelector(`.ct-side-item[onclick*="${pageId}"]`);
+    if (activeItem) activeItem.classList.add('ct-side-active');
 
     el.innerHTML = `
       ${_renderContentSection(pageId, 'programs',   '프로그램 구성', page.programs   || [])}
@@ -395,9 +448,11 @@ const Admin = (() => {
   }
 
   function saveContentTab() {
-    if (!confirm('콘텐츠를 저장하시겠습니까?')) return;
+    const page = _draft.pages[_contentPageId];
+    const label = page ? page.sbLabel : '콘텐츠';
+    if (!confirm(`"${label}" 콘텐츠를 저장하시겠습니까?`)) return;
     Store.saveConfig(_draft);
-    showMsg('✓ 콘텐츠가 저장되었습니다.', true);
+    showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true);
   }
 
   function updateNoteField(pageId, idx, field, value) {
@@ -449,7 +504,14 @@ const Admin = (() => {
     if (!Store.verifyPin(cur)) return show('현재 PIN이 틀립니다.', false);
     if (nw.length < 4)        return show('PIN은 4자리 이상이어야 합니다.', false);
     if (nw !== con)           return show('새 PIN이 일치하지 않습니다.', false);
-    Store.savePin(nw);
+
+    // _draft에 직접 저장 후 즉시 persist
+    _draft.adminPin = nw;
+    if (!_draft.app) _draft.app = {};
+    _draft.app.adminPin = nw;
+    Store.saveConfig(_draft);
+    Store.addLog('pin', '관리자 PIN', '****', '****');
+
     show('PIN이 변경되었습니다.', true);
     showMsg('✓ PIN이 변경되었습니다.', true);
     ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -620,6 +682,7 @@ const Admin = (() => {
     renderPriceTab, updatePriceField, addPriceItem, deletePriceItem,
     updateDiscountField, saveDcDiscount,
     savePriceTab, saveNameTab, saveContentTab,
+    savePriceItem, saveNameItem,
     // 프로그램명
     renderNameTab, updateNameField,
     // 콘텐츠
