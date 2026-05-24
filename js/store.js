@@ -2,8 +2,8 @@
  * store.js — 마이더스K 저장소 통합 래퍼
  *
  * 저장소 분리:
- *  - 학생 데이터  → Google Sheets API (여러 기기 공유)
- *  - 관리자 설정  → localStorage (기기별 유지)
+ *  - 학생 데이터  → Google Sheets API JSONP (CORS 우회, 여러 기기 공유)
+ *  - 관리자 설정  → localStorage
  *  - 세션/로그    → localStorage
  *
  * 로드 순서: config.js → store.js → calc.js → ui.js
@@ -17,10 +17,10 @@ const Store = (() => {
   const SHEETS_API = 'https://script.google.com/macros/s/AKfycbxpiju5yZc08gQx0DI1skuVJ5lP_ZgucVJ8xDYFTl9zfvn7iDwKdEcStCaJThCJ6cG03w/exec';
 
   const KEYS = {
-    CONFIG:  'mk_config',    // 관리자 변경값 (금액·메뉴명·콘텐츠·PIN)
-    SESSION: 'mk_session',   // 현재 세션 임시 선택값
-    LOG:     'mk_admin_log', // 관리자 변경 이력
-    CACHE:   'mk_stu_cache', // 학생 목록 로컬 캐시 (오프라인 대비)
+    CONFIG:  'mk_config',
+    SESSION: 'mk_session',
+    LOG:     'mk_admin_log',
+    CACHE:   'mk_stu_cache',
   };
 
 
@@ -53,13 +53,36 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 3. Google Sheets API 호출 유틸
+   * 3. Google Sheets API 호출 — JSONP 방식 (CORS 우회)
    * ============================================================ */
-  async function _sheetsCall(params) {
-    const url = SHEETS_API + '?' + new URLSearchParams(params).toString();
-    const res  = await fetch(url);
-    if (!res.ok) throw new Error('Sheets API 오류: ' + res.status);
-    return await res.json();
+  function _sheetsCall(params) {
+    return new Promise((resolve, reject) => {
+      const cbName = '_mkCb_' + Math.random().toString(36).slice(2);
+
+      const timer = setTimeout(() => {
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        reject(new Error('Sheets API 타임아웃'));
+      }, 10000);
+
+      window[cbName] = function(data) {
+        clearTimeout(timer);
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        resolve(data);
+      };
+
+      const script = document.createElement('script');
+      const p = Object.assign({}, params, { callback: cbName });
+      script.src = SHEETS_API + '?' + new URLSearchParams(p).toString();
+      script.onerror = () => {
+        clearTimeout(timer);
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        reject(new Error('Sheets API 로드 실패'));
+      };
+      document.head.appendChild(script);
+    });
   }
 
 
@@ -72,16 +95,8 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 5. 학생 프로필 — Google Sheets
-   *
-   *    키 형식: 이름_학교학년_진로목표
-   *    예시:    김수진_대건고1_경영학
+   * 5. 학생 프로필 — Google Sheets JSONP
    * ============================================================ */
-
-  /**
-   * 학생 키 생성
-   * 중복 확인은 listStudents() 캐시 기반
-   */
   function buildStudentKey(name, school, goal) {
     const base  = `${name}_${school}_${goal}`;
     const cache = _read(KEYS.CACHE) || [];
@@ -92,10 +107,6 @@ const Store = (() => {
     return `${base}_${n}`;
   }
 
-  /**
-   * 학생 저장 (비동기)
-   * @returns Promise<boolean>
-   */
   async function saveStudent(key, selections, meta) {
     const savedAt = new Date().toISOString();
     try {
@@ -109,7 +120,6 @@ const Store = (() => {
         selections: JSON.stringify(selections),
         savedAt,
       });
-      // 캐시 업데이트
       const cache = _read(KEYS.CACHE) || [];
       const idx   = cache.findIndex(s => s.key === key);
       const entry = { key, meta, savedAt };
@@ -123,10 +133,6 @@ const Store = (() => {
     }
   }
 
-  /**
-   * 학생 목록 불러오기 (비동기)
-   * @returns Promise<[{ key, meta, savedAt }]>
-   */
   async function listStudents() {
     try {
       const data = await _sheetsCall({ action: 'list' });
@@ -134,10 +140,8 @@ const Store = (() => {
         key:    s.key,
         meta:   { name: s.name, school: s.school, goal: s.goal, grade: s.grade },
         savedAt: s.savedAt,
-        // selections는 필요할 때만 loadStudent()로 가져옴
         _selections: s.selections,
       }));
-      // 최신순 정렬 후 캐시 저장
       list.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
       _write(KEYS.CACHE, list);
       return list;
@@ -147,10 +151,6 @@ const Store = (() => {
     }
   }
 
-  /**
-   * 특정 학생 선택값 로드 (비동기)
-   * 캐시에 있으면 캐시 우선 사용
-   */
   async function loadStudent(key) {
     const cache = _read(KEYS.CACHE) || [];
     const hit   = cache.find(s => s.key === key);
@@ -163,9 +163,8 @@ const Store = (() => {
         savedAt: hit.savedAt,
       };
     }
-    // 캐시 미스 → 전체 목록 재요청
     try {
-      const data = await _sheetsCall({ action: 'list' });
+      const data  = await _sheetsCall({ action: 'list' });
       const found = (data.students || []).find(s => s.key === key);
       if (!found) return null;
       return {
@@ -181,13 +180,9 @@ const Store = (() => {
     }
   }
 
-  /**
-   * 학생 삭제 (비동기)
-   */
   async function deleteStudent(key) {
     try {
       await _sheetsCall({ action: 'delete', key });
-      // 캐시에서도 제거
       const cache = (_read(KEYS.CACHE) || []).filter(s => s.key !== key);
       _write(KEYS.CACHE, cache);
       return true;
@@ -197,16 +192,11 @@ const Store = (() => {
     }
   }
 
-  /**
-   * 전체 학생 캐시 초기화 (관리자용)
-   */
-  function clearStudentsCache() {
-    _remove(KEYS.CACHE);
-  }
+  function clearStudentsCache() { _remove(KEYS.CACHE); }
 
 
   /* ============================================================
-   * 6. 세션 임시 저장 — localStorage
+   * 6. 세션 — localStorage
    * ============================================================ */
   function saveSession(data) { return _write(KEYS.SESSION, data); }
   function loadSession()     { return _read(KEYS.SESSION); }
@@ -227,7 +217,7 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 8. PIN — localStorage (mk_config 내 포함)
+   * 8. PIN — localStorage
    * ============================================================ */
   function getPin() {
     const cfg = loadConfig();
@@ -244,7 +234,7 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 9. 날짜 포맷 유틸
+   * 9. 날짜 포맷
    * ============================================================ */
   function formatDate(isoString) {
     if (!isoString) return '—';
@@ -259,18 +249,12 @@ const Store = (() => {
    * Public API
    * ============================================================ */
   return {
-    // 관리자 설정
     saveConfig, loadConfig, clearConfig,
-    // 학생 (비동기)
     buildStudentKey, saveStudent, loadStudent,
     listStudents, deleteStudent, clearStudentsCache,
-    // 세션
     saveSession, loadSession, clearSession,
-    // 로그
     addLog, getLog, clearLog,
-    // PIN
     getPin, savePin, verifyPin,
-    // 유틸
     formatDate,
   };
 
