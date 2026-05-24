@@ -322,6 +322,56 @@ html, body {
 .global-notice i { font-size:16px; flex-shrink:0; margin-top:1px; }
 
 /* ================================================================
+   고3 추가 선택 옵션 (aoc)
+================================================================ */
+.aoc-section {
+  margin-bottom: 20px;
+}
+.aoc-header {
+  font-size: 12px; font-weight: 700; color: var(--text-3);
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.aoc-header i { font-size: 14px; color: var(--accent); }
+.aoc-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+.aoc-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px 18px 16px;
+  box-shadow: var(--shadow); position: relative;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: all 0.16s;
+}
+.aoc-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 6px 22px rgba(183,156,255,0.2);
+  transform: translateY(-2px);
+}
+.aoc-card .ov-icon { width: 36px; height: 36px; font-size: 16px; margin-bottom: 0; }
+.aoc-card .ov-name { font-size: 14px; font-weight: 700; color: var(--text-1); margin-bottom: 0; }
+.aoc-link {
+  font-size: 11px; font-weight: 500; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+  display: flex; align-items: center; gap: 3px;
+}
+.aoc-link:hover { color: #7c5ce0; }
+.aoc-prices { display: flex; flex-direction: column; gap: 6px; }
+.aoc-price-row {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: background 0.13s;
+}
+.aoc-price-row:hover { background: #EDE8F8; }
+.aoc-label { font-size: 12.5px; color: var(--text-2); flex: 1; }
+.aoc-amt   { font-size: 13px; font-weight: 700; color: #2a1450; white-space: nowrap; }
+.aoc-note  { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+
+/* ================================================================
    상세 페이지
 ================================================================ */
 .detail-header {
