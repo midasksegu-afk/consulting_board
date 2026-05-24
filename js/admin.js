@@ -50,11 +50,12 @@ const Admin = (() => {
 
     // 탭별 렌더
     const renderMap = {
-      'tab-program': renderProgramTab,
-      'tab-content': renderContentTab,
-      'tab-pin':     renderPinTab,
-      'tab-log':     renderLogTab,
-      'tab-students':renderStudentsTab,
+      'tab-program':  renderProgramTab,
+      'tab-content':  renderContentTab,
+      'tab-discount': renderDiscountTab,
+      'tab-students': renderStudentsTab,
+      'tab-log':      renderLogTab,
+      'tab-pin':      renderPinTab,
     };
     if (renderMap[tabId]) renderMap[tabId]();
   }
@@ -663,6 +664,124 @@ const Admin = (() => {
   }
 
   /* ============================================================
+   * 8-2. 탭 — 할인율 관리
+   * ============================================================ */
+  let _discountSection = 'roadmap'; // 현재 선택 섹션
+
+  function renderDiscountTab() {
+    const el   = document.getElementById('tab-discount');
+    const disc = _draft.discount || {};
+
+    const sideHtml = `
+      <div class="ct-group-label">할인 구분</div>
+      <div class="ct-side-item ${_discountSection === 'roadmap' ? 'ct-side-active' : ''}"
+        onclick="Admin.loadDiscountSection('roadmap')">
+        <i class="ti ti-map" style="font-size:14px;"></i> 로드맵 DC
+      </div>
+      <div class="ct-side-item ${_discountSection === 'individual' ? 'ct-side-active' : ''}"
+        onclick="Admin.loadDiscountSection('individual')">
+        <i class="ti ti-user-check" style="font-size:14px;"></i> 개별 DC
+      </div>`;
+
+    el.innerHTML = `
+      <div style="display:flex;gap:0;min-height:500px;">
+        <div class="ct-sidebar">${sideHtml}</div>
+        <div class="ct-editor" id="discount-editor"></div>
+      </div>`;
+
+    loadDiscountSection(_discountSection);
+  }
+
+  function loadDiscountSection(section) {
+    _discountSection = section;
+    const el   = document.getElementById('discount-editor');
+    const disc = _draft.discount || {};
+    if (!el) return;
+
+    // 사이드 active 갱신
+    document.querySelectorAll('#tab-discount .ct-side-item').forEach(i => i.classList.remove('ct-side-active'));
+    const sel = document.querySelector(`#tab-discount .ct-side-item[onclick*="${section}"]`);
+    if (sel) sel.classList.add('ct-side-active');
+
+    if (section === 'roadmap') {
+      el.innerHTML = `
+        <div class="admin-editor-title">
+          <i class="ti ti-map"></i> 로드맵 DC 할인율
+        </div>
+        <div class="admin-field-group">
+          <label class="admin-field-label">할인율 (%)</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input class="admin-input" style="width:80px;text-align:right;"
+              type="number" min="0" max="100"
+              value="${disc.roadmap ?? 0}"
+              oninput="Admin.updateDiscountField('roadmap', this.value)">
+            <span style="font-size:13px;color:var(--text-2);">%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:6px;">
+            로드맵 DC 버튼 클릭 시 전체 로드맵 합산에서 해당 % 할인
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('roadmap')">
+            <i class="ti ti-device-floppy"></i> 저장
+          </button>
+        </div>`;
+      return;
+    }
+
+    // 개별 항목별 할인율
+    const indDisc = (typeof disc.individual === 'object') ? disc.individual : {};
+    const indPages = MK_CONFIG.pageOrder.filter(id => {
+      const p = _draft.pages[id];
+      return p && p.group === 'individual' && !p.isOverview;
+    });
+
+    const rows = indPages.map(id => {
+      const p    = _draft.pages[id];
+      const rate = indDisc[id] ?? 0;
+      return `
+        <div class="admin-price-row" style="gap:10px;">
+          <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1);">
+            <i class="ti ${p.sbIcon}" style="font-size:13px;color:var(--accent);"></i>
+            ${p.sbLabel}
+          </span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input class="admin-input" style="width:70px;text-align:right;"
+              type="number" min="0" max="100" value="${rate}"
+              oninput="Admin.updateIndividualDiscount('${id}', this.value)">
+            <span style="font-size:13px;color:var(--text-2);">%</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="admin-editor-title">
+        <i class="ti ti-user-check"></i> 개별 항목별 DC 할인율
+      </div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;">
+        0%이면 해당 항목 할인 없음. 모두 0이면 개별 DC 버튼 숨김.
+      </div>
+      <div>${rows}</div>
+      <div style="margin-top:20px;">
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('individual')">
+          <i class="ti ti-device-floppy"></i> 저장
+        </button>
+      </div>`;
+  }
+
+  function updateIndividualDiscount(pageId, value) {
+    if (!_draft.discount) _draft.discount = {};
+    if (typeof _draft.discount.individual !== 'object') _draft.discount.individual = {};
+    _draft.discount.individual[pageId] = parseInt(value) || 0;
+  }
+
+  function saveDiscountSection(section) {
+    if (!confirm(`${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율을 저장하시겠습니까?`)) return;
+    Store.saveConfig(_draft);
+    showMsg(`✓ ${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율이 저장되었습니다.`, true);
+  }
+
+  /* ============================================================
    * 9. 전체 저장
    * ============================================================ */
   function saveAll() {
@@ -716,6 +835,8 @@ const Admin = (() => {
     // 가격 필드
     updatePriceField, addPriceItem, deletePriceItem,
     updateDiscountField, saveDcDiscount,
+    renderDiscountTab, loadDiscountSection,
+    updateIndividualDiscount, saveDiscountSection,
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)

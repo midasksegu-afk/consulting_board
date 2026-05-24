@@ -682,10 +682,16 @@ const UI = (() => {
     const config = cfg();
     const rate = (config.discount || {})[group] || 0;
 
-    // 개별 DC — 할인율 0이면 동작 안함
-    if (group === 'individual' && rate === 0) {
-      showToast('개별 DC 할인율이 설정되지 않았습니다', 'warn');
-      return;
+    // 개별 DC — 모든 항목 할인율이 0이면 동작 안함
+    if (group === 'individual') {
+      const indDisc = (config.discount || {}).individual || {};
+      const hasRate = typeof indDisc === 'object'
+        ? Object.values(indDisc).some(v => v > 0)
+        : indDisc > 0;
+      if (!hasRate) {
+        showToast('개별 DC 할인율이 설정되지 않았습니다', 'warn');
+        return;
+      }
     }
 
     const isOn = Calc.toggleDc(group);
@@ -694,7 +700,7 @@ const UI = (() => {
 
     const label = group === 'roadmap' ? '로드맵' : '개별';
     if (isOn) {
-      showToast(`${label} DC ${rate}% 할인이 적용되었습니다`, 'success');
+      showToast(`${label} DC 할인이 적용되었습니다`, 'success');
     } else {
       showToast(`${label} DC 할인이 해제되었습니다`, 'warn');
     }
@@ -715,13 +721,16 @@ const UI = (() => {
       btn1.classList.toggle('pkg-btn-active', isOn);
     }
     if (btn2) {
-      const rate = disc.individual || 0;
-      if (rate === 0) {
+      const indDisc = disc.individual || {};
+      const hasRate = typeof indDisc === 'object'
+        ? Object.values(indDisc).some(v => v > 0)
+        : indDisc > 0;
+      if (!hasRate) {
         btn2.style.display = 'none';
       } else {
         btn2.style.display = '';
         const isOn = Calc.isDcActive('individual');
-        btn2.textContent = `개별 DC (${rate}%)`;
+        btn2.textContent = `개별 DC`;
         btn2.classList.toggle('pkg-btn-active', isOn);
       }
     }

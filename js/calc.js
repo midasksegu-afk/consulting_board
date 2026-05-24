@@ -342,10 +342,39 @@ const Calc = (() => {
    * 관리자 설정 할인율 적용
    */
   function getDcTotal(group) {
-    const base = getGroupTotal(group);
-    if (!state.dc[group]) return base;
-    const rate = (cfg().discount || {})[group] || 0;
-    return Math.round(base * (1 - rate / 100));
+    if (!state.dc[group]) return getGroupTotal(group);
+    const disc = (cfg().discount || {})[group];
+
+    // 로드맵: 단일 할인율
+    if (group === 'roadmap') {
+      const rate = typeof disc === 'number' ? disc : 0;
+      return Math.round(getGroupTotal(group) * (1 - rate / 100));
+    }
+
+    // 개별: 항목별 할인율 적용
+    if (group === 'individual' && typeof disc === 'object') {
+      const config = cfg();
+      let sum = 0;
+      MK_CONFIG.pageOrder.forEach(pageId => {
+        const page = config.pages[pageId];
+        if (!page || page.group !== 'individual' || page.isOverview) return;
+        // 해당 페이지 합계
+        let pageSum = 0;
+        if (state.ov[pageId]) pageSum += state.ov[pageId].amt;
+        else {
+          const sel = state.pages[pageId];
+          if (sel) sel.forEach(idx => {
+            const price = (page.prices || [])[idx];
+            if (price) pageSum += price.amt;
+          });
+        }
+        const rate = disc[pageId] || 0;
+        sum += Math.round(pageSum * (1 - rate / 100));
+      });
+      return sum;
+    }
+
+    return getGroupTotal(group);
   }
 
   /**
