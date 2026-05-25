@@ -845,15 +845,24 @@ const UI = (() => {
       listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">검색 결과가 없습니다.</div>';
       return;
     }
-    listEl.innerHTML = list.map(s => {
+    listEl.innerHTML = list.map((s, i) => {
       const date = Store.formatDate(s.savedAt).split(' ')[0];
       return `<div onclick="UI.loadStudentByKey('${s.key}')"
-        style="display:flex;align-items:center;justify-content:space-between;
+        style="display:flex;align-items:center;gap:10px;
         padding:8px 14px;border-bottom:1px solid var(--border);cursor:pointer;"
         onmouseover="this.style.background='var(--surface2)'"
         onmouseout="this.style.background=''">
-        <span style="font-size:13px;font-weight:600;color:var(--text-1);">${s.key}</span>
-        <span style="font-size:12px;color:var(--text-3);">${date}</span>
+        <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;
+          background:var(--surface2);border:1px solid var(--border);
+          display:flex;align-items:center;justify-content:center;
+          font-size:11px;font-weight:700;color:var(--text-3);">${i + 1}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.key}</span>
+        <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">${date}</span>
+        <button onclick="event.stopPropagation();UI._deleteStudentFromModal('${s.key}')"
+          style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-3);"
+          title="삭제" onmouseover="this.style.color='var(--red-tx)'" onmouseout="this.style.color='var(--text-3)'">
+          <i class="ti ti-trash" style="font-size:14px;"></i>
+        </button>
       </div>`;
     }).join('');
   }
