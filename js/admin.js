@@ -428,8 +428,6 @@ const Admin = (() => {
   }
 
   function saveProgram(pageId) {
-    // 신규 프로그램은 저장 시점에 pageOrder에 등록 (addProgram에서 즉시 push하지 않음)
-    if (!MK_CONFIG.pageOrder.includes(pageId)) MK_CONFIG.pageOrder.push(pageId);
     Store.saveConfig(_draft);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
   }
@@ -444,7 +442,7 @@ const Admin = (() => {
       subtitle: '',
       prices:   [],
     };
-    // pageOrder 등록은 saveProgram() 시점으로 이동 — 저장 취소 시 고아 ID 방지
+    if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
     renderProgramTab();
     loadProgramPage(id);
   }
@@ -769,11 +767,14 @@ const Admin = (() => {
     }
 
     const rows = list.map(s => {
-      const safeId = s.key.replace(/[^a-zA-Z0-9]/g, '_');
+      const safeId   = s.key.replace(/[^a-zA-Z0-9]/g, '_');
+      const gradeNum = s.meta?.grade;
+      const gradeStr = gradeNum === 0 ? '중학생' : gradeNum ? `고${gradeNum}` : '—';
       return `
         <tr style="cursor:pointer;" onclick="Admin.toggleStudentDetail('${safeId}')">
           <td><strong>${s.key}</strong></td>
           <td>${s.meta?.school || '—'}</td>
+          <td>${gradeStr}</td>
           <td>${s.meta?.goal   || '—'}</td>
           <td>${Store.formatDate(s.savedAt)}</td>
           <td onclick="event.stopPropagation()">
@@ -783,7 +784,7 @@ const Admin = (() => {
           </td>
         </tr>
         <tr id="stu-detail-${safeId}" style="display:none;">
-          <td colspan="5" style="padding:0 0 4px 0;">
+          <td colspan="6" style="padding:0 0 4px 0;">
             <div style="background:var(--surface2);border-radius:var(--radius-sm);
               padding:16px 20px;border-top:2px solid var(--accent);">
               ${_buildStudentDetailHtml(s)}
@@ -801,7 +802,7 @@ const Admin = (() => {
       </div>
       <div style="overflow-x:auto;">
         <table class="admin-log-table">
-          <thead><tr><th>학생 키</th><th>학교/학년</th><th>진로목표</th><th>저장일시</th><th></th></tr></thead>
+          <thead><tr><th>학생 키</th><th>학교</th><th>학년</th><th>진로목표</th><th>저장일시</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;

@@ -767,34 +767,41 @@ const UI = (() => {
   }
 
   async function confirmSaveStudent() {
-    const name   = document.getElementById('st-name')?.value.trim();
-    const school = document.getElementById('st-school')?.value.trim();
+    const name     = document.getElementById('st-name')?.value.trim();
+    const school   = document.getElementById('st-school')?.value.trim();
     const gradeVal = document.getElementById('st-grade')?.value;
-    const goal   = document.getElementById('st-goal')?.value.trim();
+    const goal     = document.getElementById('st-goal')?.value.trim();
 
     if (!name || !school || !gradeVal || !goal) {
       showToast('모든 항목을 입력해 주세요', 'warn');
       return;
     }
 
-    // 학년 숫자 변환 (중학생 = 0, 고1=1, 고2=2, 고3=3)
     const gradeNum = gradeVal === 'mid' ? 0 : parseInt(gradeVal) || 0;
-
     const isUpdate = !!_currentStudentKey;
-    const key  = isUpdate ? _currentStudentKey : Store.buildStudentKey(name, school, goal);
-    const snap = Calc.toSnapshot();
-    const meta = { name, school, goal, grade: gradeNum };
+    const newKey   = Store.buildStudentKey(name, school, goal);
+    const snap     = Calc.toSnapshot();
+    const meta     = { name, school, goal, grade: gradeNum };
 
     showToast('저장 중...', 'success');
-    const ok = await Store.saveStudent(key, snap, meta);
-    document.getElementById('student-modal')?.remove();
 
-    if (ok) {
-      await renderStudentDropdown();
-      showToast(`✓ ${key} ${isUpdate ? '업데이트' : '저장'} 완료`, 'success');
+    if (isUpdate && newKey !== _currentStudentKey) {
+      // 키가 바뀐 경우 — 새 키 저장 후 기존 키 삭제
+      const ok = await Store.saveStudent(newKey, snap, meta);
+      if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
+      await Store.deleteStudent(_currentStudentKey);
+      _currentStudentKey = newKey;
     } else {
-      showToast('저장 실패 — 네트워크 확인', 'error');
+      // 신규 저장 또는 키 동일 업데이트
+      const key = isUpdate ? _currentStudentKey : newKey;
+      const ok  = await Store.saveStudent(key, snap, meta);
+      if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
+      if (!isUpdate) _currentStudentKey = null;
     }
+
+    document.getElementById('student-modal')?.remove();
+    await renderStudentDropdown();
+    showToast(`✓ ${isUpdate ? '업데이트' : '저장'} 완료`, 'success');
   }
 
 
@@ -876,6 +883,11 @@ const UI = (() => {
         <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.key}</span>
         ${gradeStr ? `<span style="font-size:11px;font-weight:600;color:var(--blue-tx);background:var(--blue-bg);border-radius:4px;padding:1px 7px;flex-shrink:0;">${gradeStr}</span>` : ''}
         <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">${date}</span>
+        <button onclick="event.stopPropagation();UI._editStudentFromModal('${s.key}')"
+          style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-3);"
+          title="수정" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-3)'">
+          <i class="ti ti-pencil" style="font-size:14px;"></i>
+        </button>
         <button onclick="event.stopPropagation();UI._deleteStudentFromModal('${s.key}')"
           style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-3);"
           title="삭제" onmouseover="this.style.color='var(--red-tx)'" onmouseout="this.style.color='var(--text-3)'">
@@ -889,6 +901,106 @@ const UI = (() => {
     const q = query.trim().toLowerCase();
     const filtered = q ? _studentListCache.filter(s => s.key.toLowerCase().includes(q)) : _studentListCache;
     _renderStudentItems(filtered);
+  }
+
+  async function _editStudentFromModal(key) {
+    // 해당 학생 데이터 로드 후 수정 모달 열기
+    const data = await Store.loadStudent(key);
+    if (!data) { showToast('학생 데이터를 찾을 수 없습니다', 'error'); return; }
+
+    const existing = document.getElementById('student-edit-modal');
+    if (existing) existing.remove();
+
+    const meta = data.meta || {};
+    const gradeVal = meta.grade === 0 ? 'mid' : meta.grade ? String(meta.grade) : '';
+    const gradeOptions = ['', '1', '2', '3', 'mid'].map(v => {
+      const label = v === '' ? '선택' : v === 'mid' ? '중학생' : `고${v}`;
+      const sel   = gradeVal === v ? 'selected' : '';
+      return `<option value="${v}" ${sel}>${label}</option>`;
+    }).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'student-edit-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:400px;">
+        <div class="modal-header">
+          <span><i class="ti ti-pencil"></i> 학생 정보 수정</span>
+          <button class="modal-close" onclick="document.getElementById('student-edit-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+          <div style="font-size:12px;color:var(--text-3);padding:4px 0;">
+            현재 키: <strong>${key}</strong>
+          </div>
+          <div>
+            <label class="modal-label">학생명 *</label>
+            <input class="admin-input" id="ed-name" placeholder="예) 김수진" maxlength="10" value="${meta.name || ''}">
+          </div>
+          <div>
+            <label class="modal-label">학교 *</label>
+            <input class="admin-input" id="ed-school" placeholder="예) 대건고" maxlength="15" value="${meta.school || ''}">
+          </div>
+          <div>
+            <label class="modal-label">학년 *</label>
+            <select class="admin-input" id="ed-grade">${gradeOptions}</select>
+          </div>
+          <div>
+            <label class="modal-label">진로 목표 *</label>
+            <input class="admin-input" id="ed-goal" placeholder="예) 경영학" maxlength="20" value="${meta.goal || ''}">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="admin-cancel-btn"
+            onclick="document.getElementById('student-edit-modal').remove()">취소</button>
+          <button class="admin-save-btn" onclick="UI._confirmEditStudent('${key}')">
+            <i class="ti ti-device-floppy"></i> 저장
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    document.getElementById('ed-name').focus();
+  }
+
+  async function _confirmEditStudent(oldKey) {
+    const name     = document.getElementById('ed-name')?.value.trim();
+    const school   = document.getElementById('ed-school')?.value.trim();
+    const gradeVal = document.getElementById('ed-grade')?.value;
+    const goal     = document.getElementById('ed-goal')?.value.trim();
+
+    if (!name || !school || !gradeVal || !goal) {
+      showToast('모든 항목을 입력해 주세요', 'warn');
+      return;
+    }
+
+    const gradeNum = gradeVal === 'mid' ? 0 : parseInt(gradeVal) || 0;
+    const newKey   = Store.buildStudentKey(name, school, goal);
+    const meta     = { name, school, goal, grade: gradeNum };
+
+    // 기존 데이터 로드 (selections 유지)
+    const data = await Store.loadStudent(oldKey);
+    if (!data) { showToast('데이터를 찾을 수 없습니다', 'error'); return; }
+
+    showToast('수정 중...', 'success');
+
+    // 키가 바뀐 경우: 새 키로 저장 후 기존 키 삭제
+    if (newKey !== oldKey) {
+      const ok = await Store.saveStudent(newKey, data.selections, meta);
+      if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
+      await Store.deleteStudent(oldKey);
+      if (_currentStudentKey === oldKey) _currentStudentKey = newKey;
+    } else {
+      // 키 동일 (학년만 변경 등): 덮어쓰기
+      const ok = await Store.saveStudent(oldKey, data.selections, meta);
+      if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
+    }
+
+    document.getElementById('student-edit-modal')?.remove();
+    // 목록 갱신
+    _studentListCache = await Store.listStudents();
+    _renderStudentItems(_studentListCache);
+    showToast(`✓ 수정 완료`, 'success');
   }
 
   async function _deleteStudentFromModal(key) {
@@ -1213,6 +1325,8 @@ const UI = (() => {
     openStudentSelectModal,
     loadStudentByKey,
     _deleteStudentFromModal,
+    _editStudentFromModal,
+    _confirmEditStudent,
     _filterStudentList,
     newSession,
     applyPackage,
