@@ -641,6 +641,27 @@ const UI = (() => {
 
 
   /* ============================================================
+   * 9-0. 선택 프로그램 요약 텍스트 생성
+   * ============================================================ */
+  function _buildSelectionSummary(selections) {
+    if (!selections) return '';
+    const config = MK_CONFIG.resolve();
+    const parts  = [];
+    Object.keys(selections.ov || {}).forEach(pageId => {
+      const page = config.pages[pageId];
+      if (page) parts.push(page.sbLabel.replace(/^[A-E]\. /, '') + ' (연간형)');
+    });
+    Object.keys(selections.pages || {}).forEach(pageId => {
+      const page    = config.pages[pageId];
+      const idxList = selections.pages[pageId];
+      if (!page || !idxList || !idxList.length) return;
+      if (selections.ov && selections.ov[pageId]) return;
+      parts.push(page.sbLabel.replace(/^[A-E]\. /, '') + ' ' + idxList.length + '항목');
+    });
+    return parts.length ? parts.join(' · ') : '';
+  }
+
+  /* ============================================================
    * 9. 학생 저장 모달
    * ============================================================ */
   function openSaveStudentModal() {
