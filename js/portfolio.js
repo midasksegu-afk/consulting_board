@@ -246,18 +246,9 @@ ${body}
 </body>
 </html>`;
 
-    // 모달 방식 — 새 창 자동 인쇄 방지
-    let overlay = document.getElementById('pf-print-overlay');
-    if (overlay) overlay.remove();
-    overlay = document.createElement('div');
-    overlay.id = 'pf-print-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;';
-    const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-    const inner = bodyMatch ? bodyMatch[1] : '';
-    const closeBtn = '<button onclick="document.getElementById(\x27pf-print-overlay\x27).remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:#888;">&#x2715;</button>';
-    overlay.innerHTML = '<div class="modal-box pf-modal-box" style="position:relative;">' + closeBtn + '<div class="pf-preview">' + inner + '</div></div>';
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
   }
 
   function print() {
