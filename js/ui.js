@@ -192,6 +192,15 @@ const UI = (() => {
         cb.closest('label')?.classList.remove('p-opt-disabled');
       }
     });
+
+    // aoc 체크박스 동기화 — id="aoc-{pageId}-{idx}" 패턴, .page 안에 없어 위 루프에서 누락됨
+    document.querySelectorAll('input[type=checkbox][id^="aoc-"]').forEach(cb => {
+      const parts  = cb.id.split('-');          // ['aoc', 'sc', 'suisi', '0'] 등
+      const idx    = parseInt(parts[parts.length - 1]);
+      const pageId = parts.slice(1, -1).join('-'); // 'sc-suisi'
+      cb.checked = Calc.isItemSelected(pageId, idx);
+    });
+
     _updateLocalTotal(_currentPageId);
   }
 
@@ -885,7 +894,6 @@ const UI = (() => {
     Calc.fromSnapshot(data.selections);
     _syncGradeButtons(Calc.state.grade);
     _updateOvCardPrices(Calc.state.grade);
-    _autoCheckOvCards(Calc.state.grade);
     _updateDcButtons();
     _updateTotalBoxes(Calc.getAllTotalsDc());
     renderPages();

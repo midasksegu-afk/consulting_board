@@ -428,6 +428,8 @@ const Admin = (() => {
   }
 
   function saveProgram(pageId) {
+    // 신규 프로그램은 저장 시점에 pageOrder에 등록 (addProgram에서 즉시 push하지 않음)
+    if (!MK_CONFIG.pageOrder.includes(pageId)) MK_CONFIG.pageOrder.push(pageId);
     Store.saveConfig(_draft);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
   }
@@ -442,7 +444,7 @@ const Admin = (() => {
       subtitle: '',
       prices:   [],
     };
-    if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
+    // pageOrder 등록은 saveProgram() 시점으로 이동 — 저장 취소 시 고아 ID 방지
     renderProgramTab();
     loadProgramPage(id);
   }

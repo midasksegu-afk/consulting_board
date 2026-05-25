@@ -268,6 +268,8 @@ const Store = (() => {
   function savePin(newPin) {
     const cfg = loadConfig() || {};
     cfg.adminPin = newPin;
+    if (!cfg.app) cfg.app = {};
+    cfg.app.adminPin = newPin;   // getPin()의 우선 참조 경로와 일치
     const ok = saveConfig(cfg);
     if (ok) addLog('pin', '관리자 PIN', '****', '****');
     return ok;

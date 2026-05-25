@@ -239,9 +239,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 </style>
 </head>
 <body>
-<div class="pf-doc">
 ${body}
-</div>
 <button class="print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
 </body>
 </html>`;
