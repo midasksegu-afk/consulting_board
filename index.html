@@ -32,15 +32,20 @@
     <div class="topbar">
 
       <!-- 존1: 학생 -->
-      <div class="tb-zone tb-zone-student">
-        <div id="tb-title" class="tb-student-name">학생 미선택</div>
-        <div class="tb-student-btns">
-          <button class="btn tb-btn-sm" id="student-select-btn" onclick="UI.openStudentSelectModal()" title="학생 불러오기">
+      <div class="tb-zone-student">
+        <div class="tb-student-left">
+          <div class="tb-student-label">학생</div>
+          <div id="tb-title" class="tb-student-name">미선택</div>
+        </div>
+        <div class="tb-student-mid">
+          <button class="btn tb-btn-sm" id="student-select-btn" onclick="UI.openStudentSelectModal()">
             <i class="ti ti-users"></i> <span id="student-select-label">불러오기</span>
           </button>
-          <button class="btn tb-btn-sm" onclick="UI.openSaveStudentModal()" title="저장">
-            <i class="ti ti-device-floppy"></i> 저장
+          <button class="btn tb-btn-sm" onclick="UI.openSaveStudentModal()">
+            <i class="ti ti-device-floppy"></i> 저장/추가
           </button>
+        </div>
+        <div class="tb-student-right">
           <button class="btn tb-btn-sm tb-btn-icon" onclick="UI.newSession()" title="새 상담 시작">
             <i class="ti ti-refresh"></i>
           </button>
@@ -50,7 +55,7 @@
       <div class="tb-divider"></div>
 
       <!-- 존2: 계산 -->
-      <div class="tb-zone tb-zone-calc">
+      <div class="tb-zone-calc">
         <div class="grade-selector">
           <span class="grade-label">학년</span>
           <button class="grade-btn" data-grade="1" onclick="UI.toggleGrade(1)">고1</button>
@@ -91,11 +96,11 @@
       <div class="tb-divider"></div>
 
       <!-- 존3: 액션 -->
-      <div class="tb-zone tb-zone-action">
+      <div class="tb-zone-action">
         <button class="btn btn-primary" onclick="Portfolio.open()">
           <i class="ti ti-clipboard-list"></i> 포트폴리오
         </button>
-        <a href="admin.html" class="btn tb-btn-icon" title="관리자 페이지" target="_blank" rel="noopener">
+        <a href="admin.html" class="btn tb-btn-icon" title="관리자" target="_blank" rel="noopener">
           <i class="ti ti-settings-2"></i>
         </a>
       </div>
