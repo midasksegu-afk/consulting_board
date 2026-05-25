@@ -76,14 +76,39 @@ const Store = (() => {
   }
 
   async function _sbUpsert(row) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
-      method:  'POST',
-      headers: _headers({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
-      body:    JSON.stringify(row),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Supabase UPSERT 실패: ${res.status} ${err}`);
+    // key 기준 존재 확인 후 PATCH(update) or POST(insert)
+    const checkRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE}?key=eq.${encodeURIComponent(row.key)}&select=key&limit=1`,
+      { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
+    );
+    if (!checkRes.ok) throw new Error(`Supabase CHECK 실패: ${checkRes.status}`);
+    const existing = await checkRes.json();
+
+    if (existing && existing.length > 0) {
+      // 이미 존재 → PATCH
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABLE}?key=eq.${encodeURIComponent(row.key)}`,
+        {
+          method:  'PATCH',
+          headers: _headers({ 'Prefer': 'return=minimal' }),
+          body:    JSON.stringify(row),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Supabase PATCH 실패: ${res.status} ${err}`);
+      }
+    } else {
+      // 없음 → POST
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+        method:  'POST',
+        headers: _headers({ 'Prefer': 'return=minimal' }),
+        body:    JSON.stringify(row),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Supabase INSERT 실패: ${res.status} ${err}`);
+      }
     }
     return true;
   }
@@ -119,12 +144,8 @@ const Store = (() => {
     return `${base}_${n}`;
   }
 
-  async function saveStudent(key, selections, meta, memo) {
+  async function saveStudent(key, selections, meta) {
     const savedAt = new Date().toISOString();
-    // memo는 selections jsonb 안에 포함 (스키마 변경 없음, 메인화면엔 노출 안 함)
-    const sel = (memo !== undefined && memo !== null)
-      ? Object.assign({}, selections, { _memo: memo })
-      : selections;
     try {
       await _sbUpsert({
         key,
@@ -132,21 +153,21 @@ const Store = (() => {
         school:     meta.school,
         goal:       meta.goal,
         grade:      meta.grade,
-        selections: sel,
+        selections: selections,   // jsonb — 객체 그대로 전달
         saved_at:   savedAt,
       });
 
       // 로컬 캐시 갱신
       const cache = _read(KEYS.CACHE) || [];
       const idx   = cache.findIndex(s => s.key === key);
-      const entry = { key, meta, savedAt, _selections: sel };
+      const entry = { key, meta, savedAt, _selections: selections };
       if (idx >= 0) cache[idx] = entry;
       else cache.unshift(entry);
       _write(KEYS.CACHE, cache);
 
       return true;
     } catch (e) {
-      console.error('[Store] saveStudent 실패 — key:', key, '| error:', e);
+      console.error('[Store] saveStudent 실패:', e);
       return false;
     }
   }
