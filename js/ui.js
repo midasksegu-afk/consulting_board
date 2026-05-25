@@ -1192,6 +1192,7 @@ const UI = (() => {
     loadSelectedStudent,
     openStudentSelectModal,
     loadStudentByKey,
+    _deleteStudentFromModal,
     _filterStudentList,
     newSession,
     applyPackage,
