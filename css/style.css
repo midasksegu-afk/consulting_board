@@ -187,20 +187,20 @@ html, body {
 }
 .tb-student-name {
   font-size:13px; font-weight:600; color:var(--text-1);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;
 }
 /* tb-student-right 제거 — 버튼 3개 tb-student-mid로 통합 */
 
-/* 존2: 계산 — 남은 공간 전부 */
+/* 존2: 계산 */
 .tb-zone-calc {
   display:flex; align-items:center; gap:10px;
-  padding:0 24px; flex:1;
+  padding:0 24px; flex-shrink:0;
 }
 
-/* 존3: 액션 */
+/* 존3: 액션 — 우측 끝 고정 */
 .tb-zone-action {
   display:flex; align-items:center; gap:8px;
-  padding:0 24px; flex-shrink:0;
+  padding:0 24px; margin-left:auto; flex-shrink:0;
 }
 
 /* 탑바 전용 소형 버튼 */
@@ -212,21 +212,35 @@ html, body {
   align-items:center;
 }
 
-/* 학생존 버튼 — total-box 동일 구조/스타일 */
+/* 학생존 버튼 — 고1/고2/고3 동일 스타일 + 툴팁 */
 .tb-stu-btn {
-  display:flex; align-items:center; gap:7px;
-  background:#1A1A2E; border:1px solid rgba(255,255,255,0.08);
-  border-radius:var(--radius-md); padding:6px 12px;
-  height:44px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.18);
+  display:inline-flex; align-items:center; justify-content:center;
+  width:48px; height:36px;
+  border-radius:var(--radius-md);
+  border:1.5px solid var(--border);
+  background:var(--surface);
+  color:var(--text-2);
+  font-size:20px;
   cursor:pointer; flex-shrink:0;
-  transition:background .15s;
+  transition:all 0.16s;
+  position:relative;
 }
-.tb-stu-btn:hover { background:#252540; }
-.tb-stu-btn i     { font-size:15px; color:rgba(255,255,255,0.45); flex-shrink:0; }
-.tb-stu-inner     { display:flex; flex-direction:column; gap:1px; }
-.tb-stu-label     { font-size:10px; color:rgba(255,255,255,0.42); letter-spacing:.05em; white-space:nowrap; }
-.tb-stu-val       { font-size:13px; font-weight:700; color:rgba(255,255,255,0.92); white-space:nowrap; }
+.tb-stu-btn:hover {
+  border-color:var(--accent); color:var(--accent); background:var(--blue-bg);
+}
+/* 툴팁 */
+.tb-stu-btn::after {
+  content: attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 6px);
+  left:50%; transform:translateX(-50%);
+  background:#1A1A2E; color:#fff;
+  font-size:11px; padding:3px 8px;
+  border-radius:4px; white-space:nowrap;
+  pointer-events:none;
+  opacity:0; transition:opacity .15s;
+}
+.tb-stu-btn:hover::after { opacity:1; }
 
 /* 하위 호환 */
 .tb-breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-3); }
