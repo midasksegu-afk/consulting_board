@@ -688,20 +688,20 @@ html, body {
   gap: 6px;
   width: 100%;
   margin-top: 8px;
-  padding: 7px 0;
+  padding: 8px 0;
   border-radius: var(--radius-md);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   border: 1.5px solid var(--accent);
-  background: var(--blue-bg);
-  color: var(--blue-tx);
+  background: var(--surface);
+  color: var(--accent);
   transition: all 0.15s;
 }
 .ov-detail-btn:hover {
-  background: var(--grad-main);
-  border-color: transparent;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
   box-shadow: 0 3px 12px rgba(183,156,255,0.35);
 }
