@@ -847,16 +847,13 @@ const UI = (() => {
     }
     listEl.innerHTML = list.map(s => {
       const date = Store.formatDate(s.savedAt).split(' ')[0];
-      return `<div style="display:flex;align-items:center;justify-content:space-between;
-        padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
-        <div>
-          <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
-          <div style="font-size:12px;color:var(--text-3);">${date}</div>
-        </div>
-        <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;"
-          onclick="UI.loadStudentByKey('${s.key}')">
-          <i class="ti ti-download"></i> 불러오기
-        </button>
+      return `<div onclick="UI.loadStudentByKey('${s.key}')"
+        style="display:flex;align-items:center;justify-content:space-between;
+        padding:8px 14px;border-bottom:1px solid var(--border);cursor:pointer;"
+        onmouseover="this.style.background='var(--surface2)'"
+        onmouseout="this.style.background=''">
+        <span style="font-size:13px;font-weight:600;color:var(--text-1);">${s.key}</span>
+        <span style="font-size:12px;color:var(--text-3);">${date}</span>
       </div>`;
     }).join('');
   }
