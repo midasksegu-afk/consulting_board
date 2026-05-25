@@ -685,13 +685,20 @@ const UI = (() => {
     const summaryHtml = summary
       ? `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--blue-tx);border:1px solid rgba(91,53,196,0.15);"><div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">선택된 프로그램</div>${summary}</div>`
       : '';
-    let prefillName = '', prefillSchool = '', prefillGoal = '';
+    let prefillName = '', prefillSchool = '', prefillGrade = '', prefillGoal = '';
     if (isUpdate) {
       const p = _currentStudentKey.split('_');
       prefillName   = p[0] || '';
       prefillSchool = p[1] || '';
       prefillGoal   = p.slice(2).join('_') || '';
+      prefillGrade  = String(Calc.getGrade() || '');
     }
+
+    const gradeOptions = ['', '1', '2', '3', 'mid'].map(v => {
+      const label = v === '' ? '선택' : v === 'mid' ? '중학생' : `고${v}`;
+      const sel   = prefillGrade === v ? 'selected' : '';
+      return `<option value="${v}" ${sel}>${label}</option>`;
+    }).join('');
 
     const modal = document.createElement('div');
     modal.id = 'student-modal';
@@ -710,8 +717,12 @@ const UI = (() => {
             <input class="admin-input" id="st-name" placeholder="예) 김수진" maxlength="10" value="${prefillName}">
           </div>
           <div>
-            <label class="modal-label">학교 + 학년 *</label>
-            <input class="admin-input" id="st-school" placeholder="예) 대건고1" maxlength="15" value="${prefillSchool}">
+            <label class="modal-label">학교 *</label>
+            <input class="admin-input" id="st-school" placeholder="예) 대건고" maxlength="15" value="${prefillSchool}">
+          </div>
+          <div>
+            <label class="modal-label">학년 *</label>
+            <select class="admin-input" id="st-grade">${gradeOptions}</select>
           </div>
           <div>
             <label class="modal-label">진로 목표 *</label>
@@ -734,7 +745,7 @@ const UI = (() => {
     document.body.appendChild(modal);
 
     if (!isUpdate) {
-      ['st-name','st-school','st-goal'].forEach(id => {
+      ['st-name','st-school','st-grade','st-goal'].forEach(id => {
         document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
       });
     }
@@ -758,17 +769,21 @@ const UI = (() => {
   async function confirmSaveStudent() {
     const name   = document.getElementById('st-name')?.value.trim();
     const school = document.getElementById('st-school')?.value.trim();
+    const gradeVal = document.getElementById('st-grade')?.value;
     const goal   = document.getElementById('st-goal')?.value.trim();
 
-    if (!name || !school || !goal) {
+    if (!name || !school || !gradeVal || !goal) {
       showToast('모든 항목을 입력해 주세요', 'warn');
       return;
     }
 
+    // 학년 숫자 변환 (중학생 = 0, 고1=1, 고2=2, 고3=3)
+    const gradeNum = gradeVal === 'mid' ? 0 : parseInt(gradeVal) || 0;
+
     const isUpdate = !!_currentStudentKey;
     const key  = isUpdate ? _currentStudentKey : Store.buildStudentKey(name, school, goal);
     const snap = Calc.toSnapshot();
-    const meta = { name, school, goal, grade: Calc.getGrade() };
+    const meta = { name, school, goal, grade: gradeNum };
 
     showToast('저장 중...', 'success');
     const ok = await Store.saveStudent(key, snap, meta);
@@ -846,7 +861,9 @@ const UI = (() => {
       return;
     }
     listEl.innerHTML = list.map((s, i) => {
-      const date = Store.formatDate(s.savedAt).split(' ')[0];
+      const date      = Store.formatDate(s.savedAt).split(' ')[0];
+      const gradeNum  = s.meta?.grade;
+      const gradeStr  = gradeNum === 0 ? '중학생' : gradeNum ? `고${gradeNum}` : '';
       return `<div onclick="UI.loadStudentByKey('${s.key}')"
         style="display:flex;align-items:center;gap:10px;
         padding:8px 14px;border-bottom:1px solid var(--border);cursor:pointer;"
@@ -857,6 +874,7 @@ const UI = (() => {
           display:flex;align-items:center;justify-content:center;
           font-size:11px;font-weight:700;color:var(--text-3);">${i + 1}</span>
         <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.key}</span>
+        ${gradeStr ? `<span style="font-size:11px;font-weight:600;color:var(--blue-tx);background:var(--blue-bg);border-radius:4px;padding:1px 7px;flex-shrink:0;">${gradeStr}</span>` : ''}
         <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">${date}</span>
         <button onclick="event.stopPropagation();UI._deleteStudentFromModal('${s.key}')"
           style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-3);"
@@ -911,7 +929,9 @@ const UI = (() => {
     if (labelEl) labelEl.textContent = data.meta?.name || key;
     const tbTitle = document.getElementById('tb-title');
     if (tbTitle && data.meta) {
-      tbTitle.textContent = `${data.meta.name || ''} · ${data.meta.school || ''} · ${data.meta.goal || ''}`;
+      const gradeStr = data.meta.grade === 0 ? '중학생' : data.meta.grade ? `고${data.meta.grade}` : '';
+      tbTitle.textContent = [data.meta.name, data.meta.school, gradeStr, data.meta.goal]
+        .filter(Boolean).join(' · ');
     }
     showToast(`✓ ${key} 불러오기 완료`, 'success');
   }

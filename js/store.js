@@ -135,7 +135,7 @@ const Store = (() => {
    * 5. 학생 프로필 — Supabase
    * ============================================================ */
   function buildStudentKey(name, school, goal) {
-    const base  = `${name}_${school}_${goal}`;
+    const base  = `${name}_${school}_${goal}`;  // 학년은 meta.grade로만 저장
     const cache = _read(KEYS.CACHE) || [];
     const keys  = cache.map(s => s.key);
     if (!keys.includes(base)) return base;
