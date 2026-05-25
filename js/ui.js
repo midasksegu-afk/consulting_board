@@ -1012,7 +1012,7 @@ const UI = (() => {
       if (_currentStudentKey === key) {
         _currentStudentKey = null;
         const tbTitle = document.getElementById('tb-title');
-        if (tbTitle) tbTitle.textContent = '미선택';
+        if (tbTitle) { tbTitle.textContent = '학생을 선택하세요.'; tbTitle.style.color = 'var(--text-3)'; }
       }
       _renderStudentItems(_studentListCache);
       showToast(`✓ ${key} 삭제 완료`, 'success');
@@ -1044,6 +1044,7 @@ const UI = (() => {
       const gradeStr = data.meta.grade === 0 ? '중학생' : data.meta.grade ? `고${data.meta.grade}` : '';
       tbTitle.textContent = [data.meta.name, data.meta.school, gradeStr, data.meta.goal]
         .filter(Boolean).join(' · ');
+      tbTitle.style.color = 'var(--text-1)';
     }
     showToast(`✓ ${key} 불러오기 완료`, 'success');
   }
@@ -1056,7 +1057,7 @@ const UI = (() => {
     const sel = document.getElementById('student-select');
     if (sel) sel.value = '';
     const tbTitle = document.getElementById('tb-title');
-    if (tbTitle) tbTitle.textContent = '';
+    if (tbTitle) { tbTitle.textContent = '학생을 선택하세요.'; tbTitle.style.color = 'var(--text-3)'; }
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = '학생 선택';
     _currentStudentKey = null;
