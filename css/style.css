@@ -179,7 +179,7 @@ html, body {
 }
 .tb-student-left {
   display:flex; flex-direction:column; justify-content:center;
-  gap:4px; min-width:72px;
+  gap:4px; width:220px; min-width:220px; flex-shrink:0;
 }
 .tb-student-label {
   font-size:10px; font-weight:700; color:var(--text-3);
@@ -228,19 +228,15 @@ html, body {
 .tb-stu-btn:hover {
   border-color:var(--accent); color:var(--accent); background:var(--blue-bg);
 }
-/* 툴팁 */
-.tb-stu-btn::after {
-  content: attr(data-tip);
-  position:absolute;
-  bottom:calc(100% + 6px);
-  left:50%; transform:translateX(-50%);
+/* 툴팁 — JS로 처리 */
+#tb-tooltip {
+  position:fixed; z-index:9999;
   background:#1A1A2E; color:#fff;
-  font-size:11px; padding:3px 8px;
+  font-size:11px; padding:4px 9px;
   border-radius:4px; white-space:nowrap;
   pointer-events:none;
   opacity:0; transition:opacity .15s;
 }
-.tb-stu-btn:hover::after { opacity:1; }
 
 /* 하위 호환 */
 .tb-breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-3); }
