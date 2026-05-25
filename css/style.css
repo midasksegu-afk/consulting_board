@@ -174,12 +174,12 @@ html, body {
 /* 존1: 학생 */
 .tb-zone-student {
   display:flex; align-items:center;
-  gap:0; padding:0 20px 0 24px;
+  gap:12px; padding:0 20px 0 24px;
   flex-shrink:0;
 }
 .tb-student-left {
   display:flex; flex-direction:column; justify-content:center;
-  gap:3px; padding-right:20px; min-width:90px;
+  gap:4px; min-width:72px;
 }
 .tb-student-label {
   font-size:10px; font-weight:700; color:var(--text-3);
@@ -189,14 +189,7 @@ html, body {
   font-size:13px; font-weight:600; color:var(--text-1);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;
 }
-.tb-student-mid {
-  display:flex; flex-direction:column; gap:5px;
-  align-items:flex-start; padding:0 16px;
-}
-.tb-student-right {
-  display:flex; align-items:center; justify-content:center;
-  padding-left:16px;
-}
+/* tb-student-right 제거 — 버튼 3개 tb-student-mid로 통합 */
 
 /* 존2: 계산 — 남은 공간 전부 */
 .tb-zone-calc {
@@ -213,6 +206,27 @@ html, body {
 /* 탑바 전용 소형 버튼 */
 .tb-btn-sm   { padding:5px 11px; font-size:12px; height:28px; }
 .tb-btn-icon { padding:5px 9px; height:28px; }
+
+.tb-student-mid {
+  display:flex; flex-direction:row; gap:6px;
+  align-items:center;
+}
+
+/* 학생존 버튼 — total-box 동일 구조/스타일 */
+.tb-stu-btn {
+  display:flex; align-items:center; gap:7px;
+  background:#1A1A2E; border:1px solid rgba(255,255,255,0.08);
+  border-radius:var(--radius-md); padding:6px 12px;
+  height:44px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.18);
+  cursor:pointer; flex-shrink:0;
+  transition:background .15s;
+}
+.tb-stu-btn:hover { background:#252540; }
+.tb-stu-btn i     { font-size:15px; color:rgba(255,255,255,0.45); flex-shrink:0; }
+.tb-stu-inner     { display:flex; flex-direction:column; gap:1px; }
+.tb-stu-label     { font-size:10px; color:rgba(255,255,255,0.42); letter-spacing:.05em; white-space:nowrap; }
+.tb-stu-val       { font-size:13px; font-weight:700; color:rgba(255,255,255,0.92); white-space:nowrap; }
 
 /* 하위 호환 */
 .tb-breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-3); }
