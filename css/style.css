@@ -479,13 +479,14 @@ html, body {
 
 .detail-grid { display:grid; grid-template-columns:1fr 1fr 260px; gap:20px; align-items:start; }
 .d-col-label {
+  display: inline-block;
   font-size:11.5px; font-weight:700; color:var(--accent);
   letter-spacing:.08em; text-transform:uppercase;
   margin-bottom:14px;
-  padding:7px 12px;
+  padding:5px 12px;
   background:var(--blue-bg);
-  border-left:3px solid var(--accent);
-  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  border:1.5px solid var(--accent);
+  border-radius:var(--radius-sm);
 }
 
 /* 프로그램 항목 */
@@ -527,14 +528,14 @@ html, body {
   position:sticky; top:0;
 }
 .pc-title {
+  display: inline-block;
   font-size:11.5px; font-weight:700; color:var(--accent);
   letter-spacing:.08em; text-transform:uppercase;
   margin-bottom:14px;
-  padding:7px 12px;
+  padding:5px 12px;
   background:var(--blue-bg);
-  border-left:3px solid var(--accent);
-  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
-  margin-left:-20px; margin-right:-20px;
+  border:1.5px solid var(--accent);
+  border-radius:var(--radius-sm);
 }
 .p-opt {
   display:flex; align-items:flex-start; gap:12px;
