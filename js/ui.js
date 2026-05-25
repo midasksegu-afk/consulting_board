@@ -163,6 +163,7 @@ const UI = (() => {
     if (el('total-roadmap'))    el('total-roadmap').textContent    = fmt(totals.roadmap);
     if (el('total-individual')) el('total-individual').textContent = fmt(totals.individual);
     if (el('total-strategy'))   el('total-strategy').textContent   = fmt(totals.strategy);
+    if (el('total-sum'))        el('total-sum').textContent        = fmt((totals.roadmap||0) + (totals.individual||0) + (totals.strategy||0));
   }
 
   function _updateLocalTotal(pageId) {
