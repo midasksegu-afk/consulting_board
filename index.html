@@ -67,7 +67,12 @@
       <div class="tb-zone-student">
         <div class="tb-student-left">
           <div class="tb-student-label">학생</div>
-          <div id="tb-title" class="tb-student-name">미선택</div>
+          <div id="tb-title" class="tb-student-name"
+            style="height:36px;display:flex;align-items:center;padding:0 14px;
+            background:var(--surface2);border:1.5px solid var(--border);
+            border-radius:var(--radius-md);font-size:13px;font-weight:600;
+            color:var(--text-3);white-space:nowrap;overflow:hidden;
+            text-overflow:ellipsis;box-sizing:border-box;">학생을 선택하세요.</div>
         </div>
         <div class="tb-student-mid">
           <button class="tb-stu-btn" id="student-select-btn" data-tip="불러오기" onclick="UI.openStudentSelectModal()">
