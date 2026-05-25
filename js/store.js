@@ -122,7 +122,7 @@ const Store = (() => {
   async function saveStudent(key, selections, meta, memo) {
     const savedAt = new Date().toISOString();
     // memo는 selections jsonb 안에 포함 (스키마 변경 없음, 메인화면엔 노출 안 함)
-    const selectionsWithMemo = memo
+    const sel = (memo !== undefined && memo !== null)
       ? Object.assign({}, selections, { _memo: memo })
       : selections;
     try {
@@ -132,21 +132,21 @@ const Store = (() => {
         school:     meta.school,
         goal:       meta.goal,
         grade:      meta.grade,
-        selections: selectionsWithMemo,
+        selections: sel,
         saved_at:   savedAt,
       });
 
       // 로컬 캐시 갱신
       const cache = _read(KEYS.CACHE) || [];
       const idx   = cache.findIndex(s => s.key === key);
-      const entry = { key, meta, savedAt, _selections: selectionsWithMemo };
+      const entry = { key, meta, savedAt, _selections: sel };
       if (idx >= 0) cache[idx] = entry;
       else cache.unshift(entry);
       _write(KEYS.CACHE, cache);
 
       return true;
     } catch (e) {
-      console.error('[Store] saveStudent 실패:', e);
+      console.error('[Store] saveStudent 실패 — key:', key, '| error:', e);
       return false;
     }
   }

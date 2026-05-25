@@ -766,25 +766,29 @@ const Admin = (() => {
       return;
     }
 
-    const rows = list.map(s => `
-      <tr style="cursor:pointer;" onclick="Admin.toggleStudentDetail('${s.key}')">
-        <td><strong>${s.key}</strong></td>
-        <td>${s.meta?.school || '—'}</td>
-        <td>${s.meta?.goal   || '—'}</td>
-        <td>${Store.formatDate(s.savedAt)}</td>
-        <td onclick="event.stopPropagation()">
-          <button class="admin-del-btn" onclick="Admin.deleteStudent('${s.key}')">
-            <i class="ti ti-trash"></i> 삭제
-          </button>
-        </td>
-      </tr>
-      <tr id="detail-row-${s.key.replace(/[^a-zA-Z0-9]/g,'_')}" style="display:none;">
-        <td colspan="5" style="padding:0;">
-          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px 20px;margin:0 0 4px;">
-            ${_buildStudentDetailHtml(s)}
-          </div>
-        </td>
-      </tr>`).join('');
+    const rows = list.map(s => {
+      const safeId = s.key.replace(/[^a-zA-Z0-9]/g, '_');
+      return `
+        <tr style="cursor:pointer;" onclick="Admin.toggleStudentDetail('${safeId}')">
+          <td><strong>${s.key}</strong></td>
+          <td>${s.meta?.school || '—'}</td>
+          <td>${s.meta?.goal   || '—'}</td>
+          <td>${Store.formatDate(s.savedAt)}</td>
+          <td onclick="event.stopPropagation()">
+            <button class="admin-del-btn" onclick="Admin.deleteStudent('${s.key}')">
+              <i class="ti ti-trash"></i> 삭제
+            </button>
+          </td>
+        </tr>
+        <tr id="stu-detail-${safeId}" style="display:none;">
+          <td colspan="5" style="padding:0 0 4px 0;">
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);
+              padding:16px 20px;border-top:2px solid var(--accent);">
+              ${_buildStudentDetailHtml(s)}
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
 
     el.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -801,21 +805,22 @@ const Admin = (() => {
       </div>`;
   }
 
-  // 선택 프로그램 목록 + 메모 패널 HTML 생성
   function _buildStudentDetailHtml(s) {
     const config  = MK_CONFIG.resolve();
     const sel     = s._selections || {};
     const memo    = sel._memo || '';
-    const safeKey = s.key.replace(/[^a-zA-Z0-9]/g,'_');
-    const lines   = [];
+    const safeId  = s.key.replace(/[^a-zA-Z0-9]/g, '_');
+    const badges  = [];
 
     // 연간관리형 카드
     Object.keys(sel.ov || {}).forEach(pageId => {
       const page = config.pages[pageId];
       const amt  = sel.ov[pageId]?.amt;
-      if (page) lines.push(`<span style="display:inline-block;background:var(--blue-bg);color:var(--blue-tx);
-        border-radius:4px;padding:2px 8px;font-size:12px;margin:2px;">${page.sbLabel} (연간형)
-        ${amt ? '— ' + Math.round(amt/10000) + '만원' : ''}</span>`);
+      if (!page) return;
+      const label = page.sbLabel.replace(/^[A-E]\. /, '');
+      badges.push(`<span style="display:inline-block;background:var(--blue-bg);color:var(--blue-tx);
+        border-radius:4px;padding:2px 8px;font-size:12px;margin:2px 2px 0 0;font-weight:600;">
+        ${label} (연간형)${amt ? ' — ' + Math.round(amt / 10000) + '만원' : ''}</span>`);
     });
 
     // 상세 체크 항목
@@ -823,58 +828,60 @@ const Admin = (() => {
       const page    = config.pages[pageId];
       const idxList = sel.pages[pageId];
       if (!page || !idxList || !idxList.length) return;
-      if (sel.ov && sel.ov[pageId]) return;
+      if (sel.ov && sel.ov[pageId]) return;  // ov 이미 표시된 페이지 건너뜀
       idxList.forEach(idx => {
         const price = (page.prices || [])[idx];
-        if (price) lines.push(`<span style="display:inline-block;background:var(--surface);
-          border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:12px;margin:2px;">
-          ${page.sbLabel} — ${price.label}
-          ${price.amt ? '(' + Math.round(price.amt/10000) + '만원)' : ''}</span>`);
+        if (!price) return;
+        const label = page.sbLabel.replace(/^[A-E]\. /, '');
+        badges.push(`<span style="display:inline-block;background:var(--surface);
+          border:1px solid var(--border);border-radius:4px;
+          padding:2px 8px;font-size:12px;margin:2px 2px 0 0;">
+          ${label} — ${price.label}${price.amt ? ' (' + Math.round(price.amt / 10000) + '만원)' : ''}</span>`);
       });
     });
 
-    const programsHtml = lines.length
-      ? `<div style="margin-bottom:12px;"><div class="admin-section-title" style="margin-bottom:8px;">선택 프로그램</div>
-          <div>${lines.join('')}</div></div>`
-      : `<div style="font-size:13px;color:var(--text-3);margin-bottom:12px;">선택된 프로그램 없음</div>`;
+    const programsHtml = badges.length
+      ? `<div style="margin-bottom:14px;">
+           <div class="admin-section-title" style="margin-bottom:6px;">선택 프로그램</div>
+           <div>${badges.join('')}</div>
+         </div>`
+      : `<div style="font-size:13px;color:var(--text-3);margin-bottom:14px;">선택된 프로그램 없음</div>`;
 
     return `
       ${programsHtml}
-      <div class="admin-section-title" style="margin-bottom:8px;">
-        <i class="ti ti-note" style="font-size:12px;"></i> 상담 메모 (내부 전용 — 고객 비공개)
+      <div class="admin-section-title" style="margin-bottom:6px;">
+        <i class="ti ti-eye-off" style="font-size:12px;"></i>
+        상담 메모 — 내부 전용 (고객 비공개)
       </div>
-      <textarea class="admin-input" id="memo-${safeKey}" rows="3"
-        style="resize:vertical;width:100%;font-size:13px;"
-        placeholder="상담 메모 입력...">${memo}</textarea>
+      <textarea class="admin-input" id="memo-${safeId}" rows="3"
+        style="resize:vertical;width:100%;font-size:13px;line-height:1.6;"
+        placeholder="상담 내용, 특이사항 등 메모...">${memo}</textarea>
       <div style="display:flex;justify-content:flex-end;margin-top:8px;">
         <button class="admin-add-btn" style="margin-top:0;"
-          onclick="Admin.saveMemo('${s.key}')">
+          onclick="Admin.saveMemo('${s.key}', '${safeId}')">
           <i class="ti ti-device-floppy"></i> 메모 저장
         </button>
       </div>`;
   }
 
-  function toggleStudentDetail(key) {
-    const safeKey = key.replace(/[^a-zA-Z0-9]/g,'_');
-    const row = document.getElementById('detail-row-' + safeKey);
+  function toggleStudentDetail(safeId) {
+    const row = document.getElementById('stu-detail-' + safeId);
     if (!row) return;
     row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
   }
 
-  async function saveMemo(key) {
-    const safeKey  = key.replace(/[^a-zA-Z0-9]/g,'_');
-    const textarea = document.getElementById('memo-' + safeKey);
+  async function saveMemo(key, safeId) {
+    const textarea = document.getElementById('memo-' + safeId);
     if (!textarea) return;
     const memo = textarea.value.trim();
 
     const data = await Store.loadStudent(key);
     if (!data) { showMsg('학생 데이터 로드 실패', false); return; }
 
-    // 기존 selections에 _memo 추가/갱신
-    const updatedSelections = Object.assign({}, data.selections, { _memo: memo });
-    const ok = await Store.saveStudent(key, updatedSelections, data.meta);
+    const updatedSel = Object.assign({}, data.selections, { _memo: memo });
+    const ok = await Store.saveStudent(key, updatedSel, data.meta);
     if (ok) {
-      Store.addLog('content', `메모 ${key}`, '—', memo.substring(0, 20));
+      Store.addLog('content', `메모 ${key}`, '—', memo.substring(0, 30));
       showMsg(`✓ ${key} 메모 저장 완료`, true);
     } else {
       showMsg('메모 저장 실패 — 네트워크 확인', false);

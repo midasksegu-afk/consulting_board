@@ -26,7 +26,7 @@ const UI = (() => {
 
   let _currentPageId = 'rm-overview';
   let _editDraft = null;
-  let _currentStudentKey = null;   // 현재 불러온 학생 키 (덮어쓰기 저장용)
+  let _currentStudentKey = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
 
 
   /* ============================================================
@@ -652,23 +652,17 @@ const UI = (() => {
     if (!selections) return '';
     const config = MK_CONFIG.resolve();
     const parts  = [];
-
-    // ov 카드 (연간관리형)
     Object.keys(selections.ov || {}).forEach(pageId => {
       const page = config.pages[pageId];
       if (page) parts.push(page.sbLabel.replace(/^[A-E]\. /, '') + ' (연간형)');
     });
-
-    // 상세 페이지 체크 항목
     Object.keys(selections.pages || {}).forEach(pageId => {
       const page    = config.pages[pageId];
       const idxList = selections.pages[pageId];
       if (!page || !idxList || !idxList.length) return;
-      // ov 이미 표시된 페이지는 건너뜀
       if (selections.ov && selections.ov[pageId]) return;
       parts.push(page.sbLabel.replace(/^[A-E]\. /, '') + ' ' + idxList.length + '항목');
     });
-
     return parts.length ? parts.join(' · ') : '';
   }
 
@@ -679,28 +673,31 @@ const UI = (() => {
     const existing = document.getElementById('student-modal');
     if (existing) existing.remove();
 
-    // 현재 불러온 학생 여부 → 업데이트 모드 결정
-    const isUpdate = !!_currentStudentKey;
-    const titleText = isUpdate ? '학생 업데이트 저장' : '학생 저장';
-    const btnText   = isUpdate ? '<i class="ti ti-refresh"></i> 업데이트 저장' : '<i class="ti ti-device-floppy"></i> 저장';
+    const isUpdate    = !!_currentStudentKey;
+    const titleText   = isUpdate ? '학생 업데이트 저장' : '학생 저장';
+    const btnText     = isUpdate
+      ? '<i class="ti ti-refresh"></i> 업데이트 저장'
+      : '<i class="ti ti-device-floppy"></i> 저장';
 
-    // 현재 선택된 프로그램 요약
-    const snap    = Calc.toSnapshot();
-    const summary = _buildSelectionSummary(snap);
+    // 현재 선택 프로그램 요약
+    const snap        = Calc.toSnapshot();
+    const summary     = _buildSelectionSummary(snap);
     const summaryHtml = summary
-      ? `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--blue-tx);border:1px solid rgba(91,53,196,0.15);">
+      ? `<div style="background:var(--surface2);border-radius:var(--radius-sm);
+           padding:8px 12px;font-size:12px;color:var(--blue-tx);
+           border:1px solid rgba(91,53,196,0.15);">
            <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">선택된 프로그램</div>
            ${summary}
          </div>`
       : '';
 
-    // 불러온 학생 정보 파싱 (자동완성용)
+    // 불러온 학생 자동완성 (키 = name_school_goal)
     let prefillName = '', prefillSchool = '', prefillGoal = '';
-    if (isUpdate && _currentStudentKey) {
+    if (isUpdate) {
       const p = _currentStudentKey.split('_');
       prefillName   = p[0] || '';
       prefillSchool = p[1] || '';
-      prefillGoal   = p[2] || '';
+      prefillGoal   = p.slice(2).join('_') || '';  // goal에 _가 있을 경우 대비
     }
 
     const modal = document.createElement('div');
@@ -743,13 +740,11 @@ const UI = (() => {
 
     document.body.appendChild(modal);
 
-    // 실시간 키 미리보기 (업데이트 모드에선 키 변경 없이 표시만)
     if (!isUpdate) {
       ['st-name','st-school','st-goal'].forEach(id => {
         document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
       });
     }
-
     document.getElementById('st-name').focus();
   }
 
@@ -787,8 +782,7 @@ const UI = (() => {
 
     if (ok) {
       await renderStudentDropdown();
-      const label = isUpdate ? '업데이트' : '저장';
-      showToast(`✓ ${key} ${label} 완료`, 'success');
+      showToast(`✓ ${key} ${isUpdate ? '업데이트' : '저장'} 완료`, 'success');
     } else {
       showToast('저장 실패 — 네트워크 확인', 'error');
     }
@@ -862,26 +856,28 @@ const UI = (() => {
       const grade   = s.meta?.grade ? `고${s.meta.grade}` : '';
       const summary = _buildSelectionSummary(s._selections);
       const summaryHtml = summary
-        ? `<div style="font-size:11px;color:var(--blue-tx);margin-top:3px;line-height:1.4;">${summary}</div>`
+        ? `<div style="font-size:11px;color:var(--blue-tx);margin-top:3px;line-height:1.5;">${summary}</div>`
         : '';
-      return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
-        padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
-          <div style="font-size:12px;color:var(--text-3);">${date}${grade ? ' · ' + grade : ''}</div>
-          ${summaryHtml}
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;margin-top:2px;">
-          <button class="btn btn-primary" style="padding:5px 12px;font-size:12px;"
-            onclick="UI.loadStudentByKey('${s.key}')">
-            <i class="ti ti-download"></i> 불러오기
-          </button>
-          <button class="btn" style="padding:5px 10px;font-size:12px;color:var(--red-tx);border-color:rgba(139,28,58,0.2);"
-            onclick="UI._deleteStudentFromModal('${s.key}')">
-            <i class="ti ti-trash"></i>
-          </button>
-        </div>
-      </div>`;
+      return `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+          padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
+            <div style="font-size:12px;color:var(--text-3);">${date}${grade ? ' · ' + grade : ''}</div>
+            ${summaryHtml}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;padding-top:2px;">
+            <button class="btn btn-primary" style="padding:5px 12px;font-size:12px;"
+              onclick="UI.loadStudentByKey('${s.key}')">
+              <i class="ti ti-download"></i> 불러오기
+            </button>
+            <button class="btn" style="padding:5px 10px;font-size:12px;
+              color:var(--red-tx);border-color:rgba(139,28,58,0.2);"
+              onclick="UI._deleteStudentFromModal('${s.key}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>`;
     }).join('');
   }
 
@@ -897,11 +893,12 @@ const UI = (() => {
     const ok = await Store.deleteStudent(key);
     if (ok) {
       _studentListCache = _studentListCache.filter(s => s.key !== key);
-      // 삭제된 학생이 현재 불러온 학생이면 초기화
       if (_currentStudentKey === key) {
         _currentStudentKey = null;
         const tbTitle = document.getElementById('tb-title');
         if (tbTitle) tbTitle.textContent = '';
+        const labelEl = document.getElementById('student-select-label');
+        if (labelEl) labelEl.textContent = '학생 선택';
       }
       _renderStudentItems(_studentListCache);
       showToast(`✓ ${key} 삭제 완료`, 'success');
@@ -922,7 +919,7 @@ const UI = (() => {
     _autoCheckOvCards(Calc.state.grade);
     renderPages();
     go(_currentPageId);
-    _currentStudentKey = key;   // 불러온 학생 키 기록
+    _currentStudentKey = key;  // 불러온 학생 키 기록
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = data.meta?.name || key;
     const tbTitle = document.getElementById('tb-title');
@@ -943,7 +940,7 @@ const UI = (() => {
     if (tbTitle) tbTitle.textContent = '';
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = '학생 선택';
-    _currentStudentKey = null;   // 현재 학생 키 초기화
+    _currentStudentKey = null;  // 현재 학생 키 초기화
     Calc.reset();
     renderPages();
     go('rm-overview');
