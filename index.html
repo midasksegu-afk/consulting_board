@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=1920">
   <title>마이더스K — 학생부 관리 컨설팅</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link rel="stylesheet" href="./css/style.css">
 </head>
@@ -28,48 +28,36 @@
   <!-- ═══ 메인 ═══ -->
   <div class="main">
 
-    <!-- 탑바 -->
+    <!-- 탑바 — 3존 구조 -->
     <div class="topbar">
-      <!-- 좌: 학생 정보 영역 -->
-      <div id="tb-title" style="font-size:14px;font-weight:600;color:var(--text-1);"></div>
 
-      <!-- 우: 컨트롤 묶음 -->
-      <div class="tb-right">
-
-        <!-- 관리자 -->
-        <a href="admin.html" class="btn" title="관리자 페이지">
-          <i class="ti ti-settings-2"></i> 관리자
-        </a>
-
-        <div class="grade-divider"></div>
-
-        <!-- 학생 선택 / 저장 -->
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <button class="btn" id="student-select-btn" onclick="UI.openStudentSelectModal()" title="학생 불러오기">
-            <i class="ti ti-users"></i> <span id="student-select-label">학생 선택</span>
+      <!-- 존1: 학생 -->
+      <div class="tb-zone tb-zone-student">
+        <div id="tb-title" class="tb-student-name">학생 미선택</div>
+        <div class="tb-student-btns">
+          <button class="btn tb-btn-sm" id="student-select-btn" onclick="UI.openStudentSelectModal()" title="학생 불러오기">
+            <i class="ti ti-users"></i> <span id="student-select-label">불러오기</span>
           </button>
-          <div id="student-info-bar" style="font-size:11px;color:var(--text-3);text-align:center;display:none;"></div>
+          <button class="btn tb-btn-sm" onclick="UI.openSaveStudentModal()" title="저장">
+            <i class="ti ti-device-floppy"></i> 저장
+          </button>
+          <button class="btn tb-btn-sm tb-btn-icon" onclick="UI.newSession()" title="새 상담 시작">
+            <i class="ti ti-refresh"></i>
+          </button>
         </div>
-        <button class="btn" onclick="UI.openSaveStudentModal()" title="현재 선택값을 학생으로 저장">
-          <i class="ti ti-user-plus"></i> 저장
-        </button>
-        <button class="btn" onclick="UI.newSession()" title="새 상담 시작">
-          <i class="ti ti-refresh"></i> 초기화
-        </button>
+      </div>
 
-        <div class="grade-divider"></div>
+      <div class="tb-divider"></div>
 
-        <!-- 학년 선택 -->
+      <!-- 존2: 계산 -->
+      <div class="tb-zone tb-zone-calc">
         <div class="grade-selector">
           <span class="grade-label">학년</span>
           <button class="grade-btn" data-grade="1" onclick="UI.toggleGrade(1)">고1</button>
           <button class="grade-btn" data-grade="2" onclick="UI.toggleGrade(2)">고2</button>
           <button class="grade-btn" data-grade="3" onclick="UI.toggleGrade(3)">고3</button>
         </div>
-
-        <div class="grade-divider"></div>
-
-        <!-- 합산 3분리 -->
+        <div class="tb-divider-sm"></div>
         <div class="total-boxes">
           <div class="total-box">
             <i class="ti ti-map"></i>
@@ -93,21 +81,25 @@
             </div>
           </div>
         </div>
-
-        <!-- 패키지 DC -->
+        <div class="tb-divider-sm"></div>
         <div class="pkg-btns">
           <button class="pkg-btn pkg-btn-1" onclick="UI.applyPackage(1)">로드맵 DC</button>
           <button class="pkg-btn pkg-btn-2" onclick="UI.applyPackage(2)">개별 DC</button>
         </div>
-
-        <div class="grade-divider"></div>
-
-        <!-- 포트폴리오 출력 -->
-        <button class="btn btn-primary" onclick="Portfolio.open()">
-          <i class="ti ti-clipboard-list"></i> 컨설팅 포트폴리오
-        </button>
-
       </div>
+
+      <div class="tb-divider"></div>
+
+      <!-- 존3: 액션 -->
+      <div class="tb-zone tb-zone-action">
+        <button class="btn btn-primary" onclick="Portfolio.open()">
+          <i class="ti ti-clipboard-list"></i> 포트폴리오
+        </button>
+        <a href="admin.html" class="btn tb-btn-icon" title="관리자 페이지" target="_blank" rel="noopener">
+          <i class="ti ti-settings-2"></i>
+        </a>
+      </div>
+
     </div>
 
     <!-- 콘텐츠 — ui.js renderPages()가 동적 생성 -->
