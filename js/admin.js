@@ -847,8 +847,31 @@ const Admin = (() => {
          </div>`
       : `<div style="font-size:13px;color:var(--text-3);margin-bottom:14px;">선택된 프로그램 없음</div>`;
 
+    // DC 할인 표시
+    const dc = sel.dc || {};
+    const disc = config.discount || {};
+    const dcItems = [];
+    if (dc.roadmap) {
+      const rate = disc.roadmap || 0;
+      dcItems.push(`<span style="display:inline-block;background:var(--amber-bg);color:var(--amber-tx);
+        border-radius:4px;padding:2px 8px;font-size:12px;margin:2px 2px 0 0;font-weight:600;">
+        로드맵 DC ${rate}% 적용</span>`);
+    }
+    if (dc.individual) {
+      dcItems.push(`<span style="display:inline-block;background:var(--amber-bg);color:var(--amber-tx);
+        border-radius:4px;padding:2px 8px;font-size:12px;margin:2px 2px 0 0;font-weight:600;">
+        개별 DC 적용</span>`);
+    }
+    const dcHtml = dcItems.length
+      ? `<div style="margin-bottom:14px;">
+           <div class="admin-section-title" style="margin-bottom:6px;">DC 할인</div>
+           <div>${dcItems.join('')}</div>
+         </div>`
+      : '';
+
     return `
       ${programsHtml}
+      ${dcHtml}
       <div class="admin-section-title" style="margin-bottom:6px;">
         <i class="ti ti-eye-off" style="font-size:12px;"></i>
         상담 메모 — 내부 전용 (고객 비공개)

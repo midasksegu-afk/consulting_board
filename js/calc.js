@@ -265,6 +265,7 @@ const Calc = (() => {
       ov:          { ...state.ov },
       pages:       pagesSerial,
       pageVisited: { ...state.pageVisited },
+      dc:          { ...state.dc },
     };
   }
 
@@ -284,6 +285,9 @@ const Calc = (() => {
     });
 
     state.pageVisited = snapshot.pageVisited || {};
+    if (snapshot.dc) {
+      state.dc = { roadmap: !!snapshot.dc.roadmap, individual: !!snapshot.dc.individual };
+    }
 
     _notifyChange();
   }

@@ -917,6 +917,8 @@ const UI = (() => {
     _syncGradeButtons(Calc.state.grade);
     _updateOvCardPrices(Calc.state.grade);
     _autoCheckOvCards(Calc.state.grade);
+    _updateDcButtons();   // DC 상태 복원
+    _updateTotalBoxes(Calc.getAllTotalsDc());  // DC 반영 합계 갱신
     renderPages();
     go(_currentPageId);
     _currentStudentKey = key;  // 불러온 학생 키 기록
