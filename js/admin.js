@@ -840,49 +840,42 @@ const Admin = (() => {
       });
     });
 
-    const programsHtml = badges.length
-      ? `<div style="margin-bottom:14px;">
-           <div class="admin-section-title" style="margin-bottom:6px;">선택 프로그램</div>
-           <div>${badges.join('')}</div>
-         </div>`
-      : `<div style="font-size:13px;color:var(--text-3);margin-bottom:14px;">선택된 프로그램 없음</div>`;
-
-    // DC 할인 표시
+    // 1라인: 선택 프로그램 + DC
     const dc = sel.dc || {};
     const disc = config.discount || {};
-    const dcItems = [];
-    if (dc.roadmap) {
-      const rate = disc.roadmap || 0;
-      dcItems.push(`<span style="display:inline-block;background:var(--amber-bg);color:var(--amber-tx);
-        border-radius:4px;padding:2px 8px;font-size:12px;margin:2px 2px 0 0;font-weight:600;">
-        로드맵 DC ${rate}% 적용</span>`);
-    }
-    if (dc.individual) {
-      dcItems.push(`<span style="display:inline-block;background:var(--amber-bg);color:var(--amber-tx);
-        border-radius:4px;padding:2px 8px;font-size:12px;margin:2px 2px 0 0;font-weight:600;">
-        개별 DC 적용</span>`);
-    }
-    const dcHtml = dcItems.length
-      ? `<div style="margin-bottom:14px;">
-           <div class="admin-section-title" style="margin-bottom:6px;">DC 할인</div>
-           <div>${dcItems.join('')}</div>
-         </div>`
+    const dcParts = [];
+    if (dc.roadmap)    dcParts.push(`로드맵 DC ${disc.roadmap || 0}%`);
+    if (dc.individual) dcParts.push('개별 DC');
+    const dcText = dcParts.length
+      ? `<span style="display:inline-block;background:var(--amber-bg);color:var(--amber-tx);
+           border-radius:4px;padding:1px 8px;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0;">
+           ${dcParts.join(' · ')} 적용</span>`
       : '';
 
+    const badgesHtml = badges.length
+      ? badges.join('')
+      : `<span style="font-size:12px;color:var(--text-3);">선택된 프로그램 없음</span>`;
+
     return `
-      ${programsHtml}
-      ${dcHtml}
-      <div class="admin-section-title" style="margin-bottom:6px;">
-        <i class="ti ti-eye-off" style="font-size:12px;"></i>
-        상담 메모 — 내부 전용 (고객 비공개)
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.08em;
+          text-transform:uppercase;white-space:nowrap;padding-top:3px;flex-shrink:0;">프로그램</span>
+        <div style="flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:2px;align-items:center;">
+          ${badgesHtml}
+        </div>
+        ${dcText}
       </div>
-      <textarea class="admin-input" id="memo-${safeId}" rows="3"
-        style="resize:vertical;width:100%;font-size:13px;line-height:1.6;"
-        placeholder="상담 내용, 특이사항 등 메모...">${memo}</textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-        <button class="admin-add-btn" style="margin-top:0;"
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.08em;
+          text-transform:uppercase;white-space:nowrap;padding-top:6px;flex-shrink:0;">메모</span>
+        <div style="flex:1;position:relative;">
+          <textarea class="admin-input" id="memo-${safeId}" rows="1"
+            style="resize:vertical;width:100%;font-size:13px;line-height:1.6;min-height:34px;"
+            placeholder="상담 내용, 특이사항...">${memo}</textarea>
+        </div>
+        <button class="admin-add-btn" style="margin-top:0;flex-shrink:0;"
           onclick="Admin.saveMemo('${s.key}', '${safeId}')">
-          <i class="ti ti-device-floppy"></i> 메모 저장
+          <i class="ti ti-device-floppy"></i>
         </button>
       </div>`;
   }
