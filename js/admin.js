@@ -22,7 +22,8 @@ const Admin = (() => {
     const input = document.getElementById('pin-input')?.value;
     if (Store.verifyPin(input)) {
       _unlocked = true;
-      _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve())); // 깊은 복사
+      sessionStorage.setItem('mk_admin_auth', '1');  // 탭 유지 중 재인증 면제
+      _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
       switchTab('tab-program');
@@ -1113,8 +1114,13 @@ const Admin = (() => {
     renderProgramTab();
   }
 
+  function initDraft() {
+    _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
+    _unlocked = true;
+  }
+
   return {
-    checkPin, switchTab,
+    checkPin, switchTab, initDraft,
     // 프로그램 관리 (통합)
     renderProgramTab, loadProgramPage, saveProgram,
     updateGroupLabel, saveGroupLabels, loadGroupLabelEditor,
@@ -1153,5 +1159,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pin-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') Admin.checkPin();
   });
-  document.getElementById('pin-input')?.focus();
+  // 같은 탭에서 이미 인증된 경우 PIN 화면 스킵
+  if (sessionStorage.getItem('mk_admin_auth') === '1') {
+    Admin.initDraft();
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('admin-body').style.display = 'flex';
+    Admin.switchTab('tab-program');
+  } else {
+    document.getElementById('pin-input')?.focus();
+  }
 });
