@@ -26,6 +26,7 @@ const UI = (() => {
 
   let _currentPageId = 'rm-overview';
   let _editDraft = null;
+  let _currentStudentKey = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
 
 
   /* ============================================================
@@ -646,13 +647,29 @@ const UI = (() => {
     const existing = document.getElementById('student-modal');
     if (existing) existing.remove();
 
+    const isUpdate  = !!_currentStudentKey;
+    const titleText = isUpdate ? '학생 업데이트 저장' : '학생 저장';
+    const btnText   = isUpdate ? '<i class="ti ti-refresh"></i> 업데이트 저장' : '<i class="ti ti-device-floppy"></i> 저장';
+    const snap      = Calc.toSnapshot();
+    const summary   = _buildSelectionSummary ? _buildSelectionSummary(snap) : '';
+    const summaryHtml = summary
+      ? `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--blue-tx);border:1px solid rgba(91,53,196,0.15);"><div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">선택된 프로그램</div>${summary}</div>`
+      : '';
+    let prefillName = '', prefillSchool = '', prefillGoal = '';
+    if (isUpdate) {
+      const p = _currentStudentKey.split('_');
+      prefillName   = p[0] || '';
+      prefillSchool = p[1] || '';
+      prefillGoal   = p.slice(2).join('_') || '';
+    }
+
     const modal = document.createElement('div');
     modal.id = 'student-modal';
     modal.className = 'modal-overlay open';
     modal.innerHTML = `
       <div class="modal-box" style="width:400px;">
         <div class="modal-header">
-          <span><i class="ti ti-user-plus"></i> 학생 저장</span>
+          <span><i class="ti ti-user-plus"></i> ${titleText}</span>
           <button class="modal-close" onclick="document.getElementById('student-modal').remove()">
             <i class="ti ti-x"></i>
           </button>
@@ -660,35 +677,37 @@ const UI = (() => {
         <div class="modal-body" style="padding:24px;display:flex;flex-direction:column;gap:14px;">
           <div>
             <label class="modal-label">학생명 *</label>
-            <input class="admin-input" id="st-name" placeholder="예) 김수진" maxlength="10">
+            <input class="admin-input" id="st-name" placeholder="예) 김수진" maxlength="10" value="${prefillName}">
           </div>
           <div>
             <label class="modal-label">학교 + 학년 *</label>
-            <input class="admin-input" id="st-school" placeholder="예) 대건고1" maxlength="15">
+            <input class="admin-input" id="st-school" placeholder="예) 대건고1" maxlength="15" value="${prefillSchool}">
           </div>
           <div>
             <label class="modal-label">진로 목표 *</label>
-            <input class="admin-input" id="st-goal" placeholder="예) 경영학" maxlength="20">
+            <input class="admin-input" id="st-goal" placeholder="예) 경영학" maxlength="20" value="${prefillGoal}">
           </div>
+          ${summaryHtml}
           <div id="st-preview" style="font-size:12px;color:var(--text-3);padding:6px 0;">
-            저장 키: —
+            저장 키: ${isUpdate ? _currentStudentKey : '—'}
           </div>
         </div>
         <div class="modal-footer">
           <button class="admin-cancel-btn"
             onclick="document.getElementById('student-modal').remove()">취소</button>
           <button class="admin-save-btn" onclick="UI.confirmSaveStudent()">
-            <i class="ti ti-device-floppy"></i> 저장
+            ${btnText}
           </button>
         </div>
       </div>`;
 
     document.body.appendChild(modal);
 
-    // 실시간 키 미리보기
-    ['st-name','st-school','st-goal'].forEach(id => {
-      document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
-    });
+    if (!isUpdate) {
+      ['st-name','st-school','st-goal'].forEach(id => {
+        document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
+      });
+    }
 
     document.getElementById('st-name').focus();
   }
@@ -716,7 +735,8 @@ const UI = (() => {
       return;
     }
 
-    const key  = Store.buildStudentKey(name, school, goal);
+    const isUpdate = !!_currentStudentKey;
+    const key  = isUpdate ? _currentStudentKey : Store.buildStudentKey(name, school, goal);
     const snap = Calc.toSnapshot();
     const meta = { name, school, goal, grade: Calc.getGrade() };
 
@@ -726,7 +746,7 @@ const UI = (() => {
 
     if (ok) {
       await renderStudentDropdown();
-      showToast(`✓ ${key} 저장/추가 완료`, 'success');
+      showToast(`✓ ${key} ${isUpdate ? '업데이트' : '저장'} 완료`, 'success');
     } else {
       showToast('저장 실패 — 네트워크 확인', 'error');
     }
@@ -817,6 +837,24 @@ const UI = (() => {
     _renderStudentItems(filtered);
   }
 
+  async function _deleteStudentFromModal(key) {
+    if (!confirm(`"${key}" 데이터를 삭제할까요?`)) return;
+    showToast('삭제 중...', 'success');
+    const ok = await Store.deleteStudent(key);
+    if (ok) {
+      _studentListCache = _studentListCache.filter(s => s.key !== key);
+      if (_currentStudentKey === key) {
+        _currentStudentKey = null;
+        const tbTitle = document.getElementById('tb-title');
+        if (tbTitle) tbTitle.textContent = '미선택';
+      }
+      _renderStudentItems(_studentListCache);
+      showToast(`✓ ${key} 삭제 완료`, 'success');
+    } else {
+      showToast('삭제 실패 — 네트워크 확인', 'error');
+    }
+  }
+
   async function loadStudentByKey(key) {
     document.getElementById('student-select-modal')?.remove();
     showToast('불러오는 중...', 'success');
@@ -827,8 +865,11 @@ const UI = (() => {
     _syncGradeButtons(Calc.state.grade);
     _updateOvCardPrices(Calc.state.grade);
     _autoCheckOvCards(Calc.state.grade);
+    _updateDcButtons();
+    _updateTotalBoxes(Calc.getAllTotalsDc());
     renderPages();
     go(_currentPageId);
+    _currentStudentKey = key;
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = data.meta?.name || key;
     const tbTitle = document.getElementById('tb-title');
@@ -849,6 +890,7 @@ const UI = (() => {
     if (tbTitle) tbTitle.textContent = '';
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = '학생 선택';
+    _currentStudentKey = null;
     Calc.reset();
     renderPages();
     go('rm-overview');
