@@ -130,5 +130,24 @@
   });
 </script>
 
+  <div id="tb-tooltip"></div>
+  <script>
+  (function(){
+    var tip = document.getElementById('tb-tooltip');
+    document.querySelectorAll('.tb-stu-btn[data-tip]').forEach(function(btn){
+      btn.addEventListener('mouseenter', function(e){
+        tip.textContent = btn.getAttribute('data-tip');
+        tip.style.opacity = '1';
+      });
+      btn.addEventListener('mousemove', function(e){
+        tip.style.left = (e.clientX - tip.offsetWidth/2) + 'px';
+        tip.style.top  = (e.clientY - tip.offsetHeight - 10) + 'px';
+      });
+      btn.addEventListener('mouseleave', function(){
+        tip.style.opacity = '0';
+      });
+    });
+  })();
+  </script>
 </body>
 </html>
