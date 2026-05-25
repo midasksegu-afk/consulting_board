@@ -153,63 +153,66 @@ html, body {
 .topbar {
   background:rgba(246,244,241,0.96); backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(0,0,0,0.07);
-  padding:0 0; height:64px;
-  display:flex; align-items:stretch;
+  padding:0; height:72px;
+  display:flex; align-items:center;
   flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.04);
 }
 
-/* 탑바 구분선 */
-.tb-divider    { width:1px; background:var(--border); flex-shrink:0; }
-.tb-divider-sm { width:1px; height:28px; background:var(--border); flex-shrink:0; align-self:center; }
+/* 존 사이 구분선 — 짧고 세련되게 */
+.tb-divider {
+  width:1px; height:28px;
+  background:rgba(0,0,0,0.12);
+  flex-shrink:0; margin:0 4px;
+}
+/* 존 내부 소구분선 */
+.tb-divider-sm {
+  width:1px; height:20px;
+  background:rgba(0,0,0,0.08);
+  flex-shrink:0;
+}
 
-/* 존1: 학생 — 3컬럼 그리드 */
+/* 존1: 학생 */
 .tb-zone-student {
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  align-items:center;
-  gap:0;
-  padding:0 16px;
-  min-width:280px;
+  display:flex; align-items:center;
+  gap:0; padding:0 20px 0 24px;
   flex-shrink:0;
 }
 .tb-student-left {
   display:flex; flex-direction:column; justify-content:center;
-  gap:2px; padding-right:14px;
-  border-right:1px solid var(--border);
-  height:100%; min-width:80px;
+  gap:3px; padding-right:20px; min-width:90px;
 }
 .tb-student-label {
   font-size:10px; font-weight:700; color:var(--text-3);
-  letter-spacing:.1em; text-transform:uppercase;
+  letter-spacing:.12em; text-transform:uppercase;
 }
 .tb-student-name {
   font-size:13px; font-weight:600; color:var(--text-1);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;
 }
 .tb-student-mid {
-  display:flex; flex-direction:column; gap:3px;
-  align-items:flex-start; padding:0 12px;
+  display:flex; flex-direction:column; gap:5px;
+  align-items:flex-start; padding:0 16px;
 }
 .tb-student-right {
   display:flex; align-items:center; justify-content:center;
-  padding-left:8px; border-left:1px solid var(--border); height:100%;
+  padding-left:16px;
 }
 
-/* 존2: 계산 */
+/* 존2: 계산 — 남은 공간 전부 */
 .tb-zone-calc {
-  display:flex; align-items:center; gap:8px;
-  padding:0 16px; flex:1;
+  display:flex; align-items:center; gap:10px;
+  padding:0 24px; flex:1;
 }
 
 /* 존3: 액션 */
 .tb-zone-action {
-  display:flex; align-items:center; gap:6px;
-  padding:0 16px; flex-shrink:0;
+  display:flex; align-items:center; gap:8px;
+  padding:0 24px; flex-shrink:0;
 }
 
 /* 탑바 전용 소형 버튼 */
-.tb-btn-sm   { padding:4px 10px; font-size:12px; height:28px; }
-.tb-btn-icon { padding:4px 8px; }
+.tb-btn-sm   { padding:5px 11px; font-size:12px; height:28px; }
+.tb-btn-icon { padding:5px 9px; height:28px; }
 
 /* 하위 호환 */
 .tb-breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-3); }
