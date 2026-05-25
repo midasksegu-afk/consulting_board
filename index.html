@@ -38,17 +38,14 @@
           <div id="tb-title" class="tb-student-name">미선택</div>
         </div>
         <div class="tb-student-mid">
-          <button class="tb-icon-btn" id="student-select-btn" onclick="UI.openStudentSelectModal()">
+          <button class="tb-stu-btn" id="student-select-btn" data-tip="불러오기" onclick="UI.openStudentSelectModal()">
             <i class="ti ti-users"></i>
-            <span>불러&#13;오기</span>
           </button>
-          <button class="tb-icon-btn" onclick="UI.openSaveStudentModal()">
+          <button class="tb-stu-btn" data-tip="저장" onclick="UI.openSaveStudentModal()">
             <i class="ti ti-device-floppy"></i>
-            <span>저장&#13;추가</span>
           </button>
-          <button class="tb-icon-btn" onclick="UI.newSession()" title="새 상담 시작">
+          <button class="tb-stu-btn" data-tip="신규상담" onclick="UI.newSession()">
             <i class="ti ti-refresh"></i>
-            <span>신규&#13;상담</span>
           </button>
         </div>
       </div>
