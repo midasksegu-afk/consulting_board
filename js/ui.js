@@ -26,6 +26,7 @@ const UI = (() => {
 
   let _currentPageId = 'rm-overview';
   let _editDraft = null;
+  let _currentStudentKey = null;   // 현재 불러온 학생 키 (덮어쓰기 저장용)
 
 
   /* ============================================================
@@ -645,11 +646,62 @@ const UI = (() => {
 
 
   /* ============================================================
+   * 9-0. 선택 프로그램 요약 텍스트 생성 (불러오기 모달 표시용)
+   * ============================================================ */
+  function _buildSelectionSummary(selections) {
+    if (!selections) return '';
+    const config = MK_CONFIG.resolve();
+    const parts  = [];
+
+    // ov 카드 (연간관리형)
+    Object.keys(selections.ov || {}).forEach(pageId => {
+      const page = config.pages[pageId];
+      if (page) parts.push(page.sbLabel.replace(/^[A-E]\. /, '') + ' (연간형)');
+    });
+
+    // 상세 페이지 체크 항목
+    Object.keys(selections.pages || {}).forEach(pageId => {
+      const page    = config.pages[pageId];
+      const idxList = selections.pages[pageId];
+      if (!page || !idxList || !idxList.length) return;
+      // ov 이미 표시된 페이지는 건너뜀
+      if (selections.ov && selections.ov[pageId]) return;
+      parts.push(page.sbLabel.replace(/^[A-E]\. /, '') + ' ' + idxList.length + '항목');
+    });
+
+    return parts.length ? parts.join(' · ') : '';
+  }
+
+  /* ============================================================
    * 9. 학생 저장 모달
    * ============================================================ */
   function openSaveStudentModal() {
     const existing = document.getElementById('student-modal');
     if (existing) existing.remove();
+
+    // 현재 불러온 학생 여부 → 업데이트 모드 결정
+    const isUpdate = !!_currentStudentKey;
+    const titleText = isUpdate ? '학생 업데이트 저장' : '학생 저장';
+    const btnText   = isUpdate ? '<i class="ti ti-refresh"></i> 업데이트 저장' : '<i class="ti ti-device-floppy"></i> 저장';
+
+    // 현재 선택된 프로그램 요약
+    const snap    = Calc.toSnapshot();
+    const summary = _buildSelectionSummary(snap);
+    const summaryHtml = summary
+      ? `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--blue-tx);border:1px solid rgba(91,53,196,0.15);">
+           <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">선택된 프로그램</div>
+           ${summary}
+         </div>`
+      : '';
+
+    // 불러온 학생 정보 파싱 (자동완성용)
+    let prefillName = '', prefillSchool = '', prefillGoal = '';
+    if (isUpdate && _currentStudentKey) {
+      const p = _currentStudentKey.split('_');
+      prefillName   = p[0] || '';
+      prefillSchool = p[1] || '';
+      prefillGoal   = p[2] || '';
+    }
 
     const modal = document.createElement('div');
     modal.id = 'student-modal';
@@ -657,7 +709,7 @@ const UI = (() => {
     modal.innerHTML = `
       <div class="modal-box" style="width:400px;">
         <div class="modal-header">
-          <span><i class="ti ti-user-plus"></i> 학생 저장</span>
+          <span><i class="ti ti-user-plus"></i> ${titleText}</span>
           <button class="modal-close" onclick="document.getElementById('student-modal').remove()">
             <i class="ti ti-x"></i>
           </button>
@@ -665,35 +717,38 @@ const UI = (() => {
         <div class="modal-body" style="padding:24px;display:flex;flex-direction:column;gap:14px;">
           <div>
             <label class="modal-label">학생명 *</label>
-            <input class="admin-input" id="st-name" placeholder="예) 김수진" maxlength="10">
+            <input class="admin-input" id="st-name" placeholder="예) 김수진" maxlength="10" value="${prefillName}">
           </div>
           <div>
             <label class="modal-label">학교 + 학년 *</label>
-            <input class="admin-input" id="st-school" placeholder="예) 대건고1" maxlength="15">
+            <input class="admin-input" id="st-school" placeholder="예) 대건고1" maxlength="15" value="${prefillSchool}">
           </div>
           <div>
             <label class="modal-label">진로 목표 *</label>
-            <input class="admin-input" id="st-goal" placeholder="예) 경영학" maxlength="20">
+            <input class="admin-input" id="st-goal" placeholder="예) 경영학" maxlength="20" value="${prefillGoal}">
           </div>
+          ${summaryHtml}
           <div id="st-preview" style="font-size:12px;color:var(--text-3);padding:6px 0;">
-            저장 키: —
+            저장 키: ${isUpdate ? _currentStudentKey : '—'}
           </div>
         </div>
         <div class="modal-footer">
           <button class="admin-cancel-btn"
             onclick="document.getElementById('student-modal').remove()">취소</button>
           <button class="admin-save-btn" onclick="UI.confirmSaveStudent()">
-            <i class="ti ti-device-floppy"></i> 저장
+            ${btnText}
           </button>
         </div>
       </div>`;
 
     document.body.appendChild(modal);
 
-    // 실시간 키 미리보기
-    ['st-name','st-school','st-goal'].forEach(id => {
-      document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
-    });
+    // 실시간 키 미리보기 (업데이트 모드에선 키 변경 없이 표시만)
+    if (!isUpdate) {
+      ['st-name','st-school','st-goal'].forEach(id => {
+        document.getElementById(id).addEventListener('input', _updateStudentKeyPreview);
+      });
+    }
 
     document.getElementById('st-name').focus();
   }
@@ -721,7 +776,8 @@ const UI = (() => {
       return;
     }
 
-    const key  = Store.buildStudentKey(name, school, goal);
+    const isUpdate = !!_currentStudentKey;
+    const key  = isUpdate ? _currentStudentKey : Store.buildStudentKey(name, school, goal);
     const snap = Calc.toSnapshot();
     const meta = { name, school, goal, grade: Calc.getGrade() };
 
@@ -731,7 +787,8 @@ const UI = (() => {
 
     if (ok) {
       await renderStudentDropdown();
-      showToast(`✓ ${key} 저장 완료`, 'success');
+      const label = isUpdate ? '업데이트' : '저장';
+      showToast(`✓ ${key} ${label} 완료`, 'success');
     } else {
       showToast('저장 실패 — 네트워크 확인', 'error');
     }
@@ -801,17 +858,29 @@ const UI = (() => {
       return;
     }
     listEl.innerHTML = list.map(s => {
-      const date = Store.formatDate(s.savedAt).split(' ')[0];
-      return `<div style="display:flex;align-items:center;justify-content:space-between;
+      const date    = Store.formatDate(s.savedAt).split(' ')[0];
+      const grade   = s.meta?.grade ? `고${s.meta.grade}` : '';
+      const summary = _buildSelectionSummary(s._selections);
+      const summaryHtml = summary
+        ? `<div style="font-size:11px;color:var(--blue-tx);margin-top:3px;line-height:1.4;">${summary}</div>`
+        : '';
+      return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
         padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);">
-        <div>
+        <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:600;color:var(--text-1);">${s.key}</div>
-          <div style="font-size:12px;color:var(--text-3);">${date}</div>
+          <div style="font-size:12px;color:var(--text-3);">${date}${grade ? ' · ' + grade : ''}</div>
+          ${summaryHtml}
         </div>
-        <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;"
-          onclick="UI.loadStudentByKey('${s.key}')">
-          <i class="ti ti-download"></i> 불러오기
-        </button>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;margin-top:2px;">
+          <button class="btn btn-primary" style="padding:5px 12px;font-size:12px;"
+            onclick="UI.loadStudentByKey('${s.key}')">
+            <i class="ti ti-download"></i> 불러오기
+          </button>
+          <button class="btn" style="padding:5px 10px;font-size:12px;color:var(--red-tx);border-color:rgba(139,28,58,0.2);"
+            onclick="UI._deleteStudentFromModal('${s.key}')">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -820,6 +889,25 @@ const UI = (() => {
     const q = query.trim().toLowerCase();
     const filtered = q ? _studentListCache.filter(s => s.key.toLowerCase().includes(q)) : _studentListCache;
     _renderStudentItems(filtered);
+  }
+
+  async function _deleteStudentFromModal(key) {
+    if (!confirm(`"${key}" 데이터를 삭제할까요?`)) return;
+    showToast('삭제 중...', 'success');
+    const ok = await Store.deleteStudent(key);
+    if (ok) {
+      _studentListCache = _studentListCache.filter(s => s.key !== key);
+      // 삭제된 학생이 현재 불러온 학생이면 초기화
+      if (_currentStudentKey === key) {
+        _currentStudentKey = null;
+        const tbTitle = document.getElementById('tb-title');
+        if (tbTitle) tbTitle.textContent = '';
+      }
+      _renderStudentItems(_studentListCache);
+      showToast(`✓ ${key} 삭제 완료`, 'success');
+    } else {
+      showToast('삭제 실패 — 네트워크 확인', 'error');
+    }
   }
 
   async function loadStudentByKey(key) {
@@ -834,6 +922,7 @@ const UI = (() => {
     _autoCheckOvCards(Calc.state.grade);
     renderPages();
     go(_currentPageId);
+    _currentStudentKey = key;   // 불러온 학생 키 기록
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = data.meta?.name || key;
     const tbTitle = document.getElementById('tb-title');
@@ -854,6 +943,7 @@ const UI = (() => {
     if (tbTitle) tbTitle.textContent = '';
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = '학생 선택';
+    _currentStudentKey = null;   // 현재 학생 키 초기화
     Calc.reset();
     renderPages();
     go('rm-overview');
@@ -1119,6 +1209,7 @@ const UI = (() => {
     openStudentSelectModal,
     loadStudentByKey,
     _filterStudentList,
+    _deleteStudentFromModal,
     newSession,
     applyPackage,
     showToast,

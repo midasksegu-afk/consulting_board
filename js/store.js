@@ -119,8 +119,12 @@ const Store = (() => {
     return `${base}_${n}`;
   }
 
-  async function saveStudent(key, selections, meta) {
+  async function saveStudent(key, selections, meta, memo) {
     const savedAt = new Date().toISOString();
+    // memo는 selections jsonb 안에 포함 (스키마 변경 없음, 메인화면엔 노출 안 함)
+    const selectionsWithMemo = memo
+      ? Object.assign({}, selections, { _memo: memo })
+      : selections;
     try {
       await _sbUpsert({
         key,
@@ -128,14 +132,14 @@ const Store = (() => {
         school:     meta.school,
         goal:       meta.goal,
         grade:      meta.grade,
-        selections: selections,   // jsonb — 객체 그대로 전달
+        selections: selectionsWithMemo,
         saved_at:   savedAt,
       });
 
       // 로컬 캐시 갱신
       const cache = _read(KEYS.CACHE) || [];
       const idx   = cache.findIndex(s => s.key === key);
-      const entry = { key, meta, savedAt, _selections: selections };
+      const entry = { key, meta, savedAt, _selections: selectionsWithMemo };
       if (idx >= 0) cache[idx] = entry;
       else cache.unshift(entry);
       _write(KEYS.CACHE, cache);
