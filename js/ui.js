@@ -892,11 +892,11 @@ const UI = (() => {
     if (!data) { showToast('학생 데이터를 찾을 수 없습니다', 'error'); return; }
     Calc.reset();
     Calc.fromSnapshot(data.selections);
-    _syncGradeButtons(Calc.state.grade);
+    renderPages();                              // DOM 먼저 생성 — 이후 동기화 함수들이 aoc 포함 전체 DOM에 적용됨
+    _syncGradeButtons(Calc.state.grade);        // renderPages 후 호출 — aoc-section show/hide 정상 반영
     _updateOvCardPrices(Calc.state.grade);
     _updateDcButtons();
     _updateTotalBoxes(Calc.getAllTotalsDc());
-    renderPages();
     go(_currentPageId);
     _currentStudentKey = key;
     const labelEl = document.getElementById('student-select-label');
