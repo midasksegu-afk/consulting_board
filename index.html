@@ -8,8 +8,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link rel="stylesheet" href="./css/style.css">
+  <style>
+  #splash {
+    position:fixed; inset:0; z-index:99999;
+    background:#0D0D1A;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:20px;
+    opacity:1; transition:opacity .6s ease;
+  }
+  #splash.hide { opacity:0; pointer-events:none; }
+  .splash-sub  { font-size:11px; font-weight:700; letter-spacing:.3em; color:rgba(255,255,255,0.4); margin-bottom:8px; }
+  .splash-title{ font-size:30px; font-weight:700; color:#fff; letter-spacing:.02em; }
+  .splash-title span { background:linear-gradient(120deg,#FFB89A,#FF8FB1,#B79CFF);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .splash-dots { display:flex; gap:7px; }
+  .splash-dots i { width:7px; height:7px; border-radius:50%; background:#B79CFF;
+    animation:splashPulse 1.2s ease-in-out infinite; }
+  .splash-dots i:nth-child(2){ background:#FF8FB1; animation-delay:.2s; }
+  .splash-dots i:nth-child(3){ background:#FFB89A; animation-delay:.4s; }
+  @keyframes splashPulse {
+    0%,100%{ opacity:.3; transform:scale(.8); }
+    50%    { opacity:1;  transform:scale(1.2); }
+  }
+  </style>
 </head>
 <body>
+  <div id="splash">
+    <div>
+      <div class="splash-sub">CONSULTING BOARD</div>
+      <div class="splash-title">마이더스K<span>교육컨설팅</span></div>
+    </div>
+    <div class="splash-dots">
+      <i></i><i></i><i></i>
+    </div>
+  </div>
 
 <div class="app">
 
@@ -138,6 +170,15 @@
 </script>
 
   <div id="tb-tooltip"></div>
+  <script>
+  (function(){
+    var s = document.getElementById('splash');
+    setTimeout(function(){
+      s.classList.add('hide');
+      setTimeout(function(){ s.style.display='none'; }, 650);
+    }, 2000);
+  })();
+  </script>
   <script>
   (function(){
     var tip = document.getElementById('tb-tooltip');
