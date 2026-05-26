@@ -17,7 +17,9 @@ const Store = (() => {
   const SUPABASE_URL = 'https://rigdvsxjqzaojwhvucpr.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_FcoQJ-2-LU5ctB-JVzFfEQ_4DvLWt9n';
   const TABLE        = 'students';
-  const CONFIG_TABLE = 'app_config';
+  const CONFIG_TABLE   = 'app_config';
+  const _configChannel = (typeof BroadcastChannel !== 'undefined')
+    ? new BroadcastChannel('mk_config_sync') : null;
 
   const KEYS = {
     CONFIG:  'mk_config',
@@ -133,6 +135,8 @@ const Store = (() => {
    * ============================================================ */
   function saveConfig(data) {
     _write(KEYS.CONFIG, data);
+    // 같은 브라우저 다른 탭에 설정 변경 알림
+    _configChannel?.postMessage({ type: 'config_updated' });
     // Supabase 백그라운드 저장 (app_config 테이블, key='settings' 단일 행)
     fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
       method: 'GET',

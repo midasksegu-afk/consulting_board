@@ -1825,4 +1825,18 @@ document.addEventListener('DOMContentLoaded', () => {
       UI.go('rm-overview');
     }
   });
+
+  // 다른 탭(관리자)에서 설정 변경 시 자동 갱신
+  if (typeof BroadcastChannel !== 'undefined') {
+    const ch = new BroadcastChannel('mk_config_sync');
+    ch.onmessage = () => {
+      Store.syncConfigFromServer().then(updated => {
+        if (updated) {
+          renderSidebar();
+          renderPages();
+          UI.go('rm-overview');
+        }
+      });
+    };
+  }
 });
