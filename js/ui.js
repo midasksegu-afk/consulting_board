@@ -1836,8 +1836,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 서버 최신 설정 동기화 후 UI 갱신
   Store.syncConfigFromServer().then(updated => {
     if (updated) {
-      renderSidebar();
-      renderPages();
+      UI.renderSidebar();
+      UI.renderPages();
       UI.go('rm-overview');
     }
   });
@@ -1846,10 +1846,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
-      // 관리자가 저장했으므로 무조건 최신값 sync 후 갱신
       Store.syncConfigFromServer().then(() => {
-        renderSidebar();
-        renderPages();
+        UI.renderSidebar();
+        UI.renderPages();
         UI.go('rm-overview');
       });
     };
