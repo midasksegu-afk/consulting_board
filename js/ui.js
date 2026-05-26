@@ -29,12 +29,35 @@ const UI = (() => {
     return sessionStorage.getItem('mk_admin_auth') === '1';
   }
 
-  // 관리자 인증 후 편집 버튼 표시 갱신
+  // 관리자 인증 후 편집 버튼 + 자물쇠 아이콘 갱신
   function _refreshEditButtons() {
     const show = _isAdminMode();
     document.querySelectorAll('.edit-mode-btn').forEach(btn => {
       btn.style.display = show ? '' : 'none';
     });
+    const icon = document.getElementById('admin-lock-icon');
+    const btn  = document.getElementById('admin-lock-btn');
+    if (icon) icon.className = show ? 'ti ti-lock-open' : 'ti ti-lock';
+    if (btn)  btn.style.color = show ? 'var(--accent)' : '';
+  }
+
+  // 관리자 모드 토글 (로그인/로그아웃)
+  function toggleAdminMode() {
+    if (_isAdminMode()) {
+      // 로그아웃
+      sessionStorage.removeItem('mk_admin_auth');
+      _refreshEditButtons();
+      renderPages();
+      showToast('관리자 모드 종료', 'warn');
+    } else {
+      // 로그인
+      _showPinModal(() => {
+        sessionStorage.setItem('mk_admin_auth', '1');
+        _refreshEditButtons();
+        renderPages();
+        showToast('✓ 관리자 모드 활성화', 'success');
+      });
+    }
   }
 
   let _currentPageId = 'rm-overview';
@@ -66,6 +89,9 @@ const UI = (() => {
 
     // DC 버튼 초기화
     _updateDcButtons();
+
+    // 자물쇠 초기 상태 반영
+    _refreshEditButtons();
 
     // 초기 페이지
     go('rm-overview');
@@ -1738,6 +1764,7 @@ const UI = (() => {
     newSession,
     applyPackage,
     showToast,
+    toggleAdminMode,
     openPageEdit,
     _savePageEdit,
     openOvCardEdit,
