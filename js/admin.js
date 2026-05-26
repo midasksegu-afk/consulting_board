@@ -85,8 +85,9 @@ const Admin = (() => {
       { key: 'strategy',   label: (cfg.groups?.strategy?.label  || '대입 전략 컨설팅') },
     ];
     let html = '';
+    const _order = _draft._pageOrder || MK_CONFIG.pageOrder;
     groups.forEach(g => {
-      const pages = MK_CONFIG.pageOrder.filter(id => {
+      const pages = _order.filter(id => {
         const p = cfg.pages[id];
         return p && p.group === g.key && !p.isOverview;
       });
@@ -116,18 +117,15 @@ const Admin = (() => {
         const fn = tabPrefix === 'program' ? 'loadProgramPage' : 'loadContentPage';
         const currentId = tabPrefix === 'program' ? _programPageId : _contentPageId;
         const active = id === currentId ? 'ct-side-active' : '';
-        const orderBtns = tabPrefix === 'program' ? `
-          <span style="display:flex;flex-direction:column;gap:1px;margin-left:auto;flex-shrink:0;">
-            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
-              onclick="event.stopPropagation();Admin.moveProgram('${id}',-1)" title="위로">▲</button>
-            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
-              onclick="event.stopPropagation();Admin.moveProgram('${id}',1)" title="아래로">▼</button>
-          </span>` : '';
+        const dragHandle = tabPrefix === 'program'
+          ? `<i class="ti ti-grip-vertical" data-drag-handle style="font-size:14px;color:var(--text-3);cursor:grab;margin-left:auto;flex-shrink:0;" title="드래그하여 순서 변경"></i>`
+          : '';
         html += `
-          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;">
+          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;"
+            ${tabPrefix === 'program' ? `draggable="true" data-drag-id="${id}" data-drag-group="${g.key}"` : ''}>
             <i class="ti ${p.sbIcon}" style="font-size:14px;flex-shrink:0;"></i>
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px;">${p.sbLabel}</span>
-            ${orderBtns}
+            ${dragHandle}
           </div>`;
       });
 
@@ -167,6 +165,7 @@ const Admin = (() => {
       </div>`;
 
     if (_programPageId) loadProgramPage(_programPageId);
+    _initDrag();
   }
 
   function loadGroupLabelEditor() {
@@ -480,23 +479,57 @@ const Admin = (() => {
     });
   }
 
-  async function moveProgram(pageId, dir) {
-    const order = MK_CONFIG.pageOrder;
-    const idx   = order.indexOf(pageId);
-    if (idx < 0) return;
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= order.length) return;
-    const group     = _draft.pages[pageId]?.group;
-    const swapGroup = _draft.pages[order[swapIdx]]?.group;
-    if (group !== swapGroup) return;
-    [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
-    _draft._pageOrder = [...order];
+  let _dragId = null;
+
+  function _initDrag() {
+    const sidebar = document.querySelector('#tab-program .ct-sidebar');
+    if (!sidebar) return;
+    sidebar.addEventListener('dragstart', e => {
+      const el = e.target.closest('[data-drag-id]');
+      if (!el) return;
+      _dragId = el.dataset.dragId;
+      setTimeout(() => el.style.opacity = '0.4', 0);
+    });
+    sidebar.addEventListener('dragend', e => {
+      const el = e.target.closest('[data-drag-id]');
+      if (el) el.style.opacity = '';
+      document.querySelectorAll('[data-drag-id]').forEach(el => el.classList.remove('drag-over'));
+    });
+    sidebar.addEventListener('dragover', e => {
+      e.preventDefault();
+      const el = e.target.closest('[data-drag-id]');
+      if (!el || el.dataset.dragId === _dragId) return;
+      document.querySelectorAll('[data-drag-id]').forEach(el => el.classList.remove('drag-over'));
+      el.classList.add('drag-over');
+    });
+    sidebar.addEventListener('drop', e => {
+      e.preventDefault();
+      const el = e.target.closest('[data-drag-id]');
+      if (!el || !_dragId || el.dataset.dragId === _dragId) return;
+      const targetId = el.dataset.dragId;
+      _dropProgram(_dragId, targetId);
+      _dragId = null;
+    });
+  }
+
+  async function _dropProgram(fromId, toId) {
+    const order = _draft._pageOrder || [...MK_CONFIG.pageOrder];
+    const fromGroup = _draft.pages[fromId]?.group;
+    const toGroup   = _draft.pages[toId]?.group;
+    if (fromGroup !== toGroup) return;
+    const fromIdx = order.indexOf(fromId);
+    const toIdx   = order.indexOf(toId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, fromId);
+    _draft._pageOrder  = [...order];
+    MK_CONFIG.pageOrder = [...order];
     showSaving();
     try {
       await Store.saveConfig(_draft);
       showMsg('✓ 순서가 저장되었습니다.', true);
       renderProgramTab();
-      loadProgramPage(pageId);
+      loadProgramPage(fromId);
     } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
@@ -1192,7 +1225,7 @@ const Admin = (() => {
     // 프로그램 관리 (통합)
     renderProgramTab, loadProgramPage, saveProgram,
     updateGroupLabel, saveGroupLabels, loadGroupLabelEditor,
-    addProgram, deleteProgram, moveProgram,
+    addProgram, deleteProgram,
     _confirmWithPin, _pinConfirmSubmit,
     _toggleGroup,
     updateTreeField, addTreeItem, deleteTreeItem,
