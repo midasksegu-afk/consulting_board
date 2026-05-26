@@ -1180,10 +1180,13 @@ const UI = (() => {
     const existing = document.getElementById('ovcard-edit-modal');
     if (existing) existing.remove();
 
-    _editDraft = JSON.parse(JSON.stringify(config));
-    window.mkEditDraft = _editDraft;
+    if (!window.mkEditDraft || window.mkEditDraft._reopening !== pageId) {
+      _editDraft = JSON.parse(JSON.stringify(config));
+      window.mkEditDraft = _editDraft;
+    }
+    window.mkEditDraft._reopening = null;
 
-    const ov = page.ovCard || {};
+    const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
 
     // 트리 행
     const treeRows = (ov.tree || []).map((t, idx) => `
@@ -1259,6 +1262,7 @@ const UI = (() => {
 
   function _reopenOvCardModal(pageId) {
     _editDraft = window.mkEditDraft;
+    window.mkEditDraft._reopening = pageId;
     document.getElementById('ovcard-edit-modal')?.remove();
     _openOvCardModal(pageId);
   }
@@ -1430,15 +1434,21 @@ const UI = (() => {
 
   function _openEditModal(pageId) {
     const config = MK_CONFIG.resolve();
-    const page   = config.pages[pageId];
+    if (!config.pages[pageId]) return;
+
+    // draft 보존 처리 후 page는 mkEditDraft에서 참조
+    const page = window.mkEditDraft ? window.mkEditDraft.pages[pageId] : config.pages[pageId];
     if (!page) return;
 
     const existing = document.getElementById('page-edit-modal');
     if (existing) existing.remove();
 
-    // _editDraft 초기화
-    _editDraft = JSON.parse(JSON.stringify(config));
-    window.mkEditDraft = _editDraft;
+    // 재호출 시 draft 보존, 최초 열기 시에만 초기화
+    if (!window.mkEditDraft || window.mkEditDraft._reopening !== pageId) {
+      _editDraft = JSON.parse(JSON.stringify(config));
+      window.mkEditDraft = _editDraft;
+    }
+    window.mkEditDraft._reopening = null;
 
     // programs 편집 행
     const programRows = (page.programs || []).map((p, idx) => {
@@ -1571,6 +1581,7 @@ const UI = (() => {
   // 모달 유지하며 draft 보존 후 재렌더
   function _reopenEditModal(pageId) {
     _editDraft = window.mkEditDraft;
+    window.mkEditDraft._reopening = pageId;
     document.getElementById('page-edit-modal')?.remove();
     _openEditModal(pageId);
   }
