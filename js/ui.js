@@ -24,9 +24,9 @@ const UI = (() => {
     return MK_CONFIG.resolve();
   }
 
-  // 관리자 인증 상태 확인 (sessionStorage 기반)
+  // 관리자 인증 상태 확인 (localStorage — 탭 간 공유)
   function _isAdminMode() {
-    return sessionStorage.getItem('mk_admin_auth') === '1';
+    return localStorage.getItem('mk_admin_auth') === '1';
   }
 
   let _currentPageId = 'rm-overview';
@@ -49,7 +49,7 @@ const UI = (() => {
   function toggleAdminMode() {
     if (_isAdminMode()) {
       // 로그아웃
-      sessionStorage.removeItem('mk_admin_auth');
+      localStorage.removeItem('mk_admin_auth');
       _refreshEditButtons();
       renderSidebar();
       renderPages();
@@ -58,7 +58,7 @@ const UI = (() => {
     } else {
       // 로그인
       _showPinModal(() => {
-        sessionStorage.setItem('mk_admin_auth', '1');
+        localStorage.setItem('mk_admin_auth', '1');
         _refreshEditButtons();
         renderSidebar();
         renderPages();
@@ -1195,7 +1195,7 @@ const UI = (() => {
       _openOvCardModal(pageId);
     } else {
       _showPinModal(() => {
-        sessionStorage.setItem('mk_admin_auth', '1');
+        localStorage.setItem('mk_admin_auth', '1');
         _refreshEditButtons();
         _openOvCardModal(pageId);
       });
@@ -1326,7 +1326,7 @@ const UI = (() => {
       _openEditModal(pageId);
     } else {
       _showPinModal(() => {
-        sessionStorage.setItem('mk_admin_auth', '1');
+        localStorage.setItem('mk_admin_auth', '1');
         _refreshEditButtons();
         _openEditModal(pageId);
       });

@@ -22,7 +22,7 @@ const Admin = (() => {
     const input = document.getElementById('pin-input')?.value;
     if (Store.verifyPin(input)) {
       _unlocked = true;
-      sessionStorage.setItem('mk_admin_auth', '1');  // 탭 유지 중 재인증 면제
+      localStorage.setItem('mk_admin_auth', '1');  // localStorage — 메인화면 자물쇠와 공유
       _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
@@ -1185,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') Admin.checkPin();
   });
   // 같은 탭에서 이미 인증된 경우 PIN 화면 스킵
-  if (sessionStorage.getItem('mk_admin_auth') === '1') {
+  if (localStorage.getItem('mk_admin_auth') === '1') {
     Admin.initDraft();
     document.getElementById('pin-screen').style.display = 'none';
     document.getElementById('admin-body').style.display = 'flex';
