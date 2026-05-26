@@ -1830,12 +1830,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
-      Store.syncConfigFromServer().then(updated => {
-        if (updated) {
-          renderSidebar();
-          renderPages();
-          UI.go('rm-overview');
-        }
+      // 관리자가 저장했으므로 무조건 최신값 sync 후 갱신
+      Store.syncConfigFromServer().then(() => {
+        renderSidebar();
+        renderPages();
+        UI.go('rm-overview');
       });
     };
   }
