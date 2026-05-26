@@ -1210,26 +1210,11 @@ const UI = (() => {
     const existing = document.getElementById('ovcard-edit-modal');
     if (existing) existing.remove();
 
-    if (!window.mkEditDraft || window.mkEditDraft._reopening !== pageId) {
-      _editDraft = JSON.parse(JSON.stringify(config));
-      window.mkEditDraft = _editDraft;
-    }
-    window.mkEditDraft._reopening = null;
+    _editDraft = JSON.parse(JSON.stringify(config));
+    window.mkEditDraft = _editDraft;
 
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
-
-    // 트리 행
-    const treeRows = (ov.tree || []).map((t, idx) => `
-      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-        <input class="admin-input" style="flex:1;" value="${t.label || ''}"
-          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
-          placeholder="트리 제목">
-        <input class="admin-input" style="flex:1;" value="${t.sub || ''}"
-          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
-          placeholder="트리 부제">
-        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
-      </div>`).join('');
+    const treeRows = _buildOvTreeRows(pageId);
 
     const modal = document.createElement('div');
     modal.id = 'ovcard-edit-modal';
@@ -1290,23 +1275,36 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
-  function _reopenOvCardModal(pageId) {
-    _editDraft = window.mkEditDraft;
-    window.mkEditDraft._reopening = pageId;
-    document.getElementById('ovcard-edit-modal')?.remove();
-    _openOvCardModal(pageId);
+  function _buildOvTreeRows(pageId) {
+    const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
+    return (ov.tree || []).map((t, idx) => `
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <input class="admin-input" style="flex:1;" value="${t.label || ''}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
+          placeholder="트리 제목">
+        <input class="admin-input" style="flex:1;" value="${t.sub || ''}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
+          placeholder="트리 부제">
+        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+  }
+
+  function _refreshOvTreeRows(pageId) {
+    const el = document.getElementById(`ovtree-rows-${pageId}`);
+    if (el) el.innerHTML = _buildOvTreeRows(pageId);
   }
 
   function _addOvTree(pageId) {
     if (!window.mkEditDraft.pages[pageId].ovCard) window.mkEditDraft.pages[pageId].ovCard = {};
     if (!window.mkEditDraft.pages[pageId].ovCard.tree) window.mkEditDraft.pages[pageId].ovCard.tree = [];
     window.mkEditDraft.pages[pageId].ovCard.tree.push({ label: '', sub: '' });
-    _reopenOvCardModal(pageId);
+    _refreshOvTreeRows(pageId);
   }
 
   function _removeOvTree(pageId, idx) {
     window.mkEditDraft.pages[pageId].ovCard.tree.splice(idx, 1);
-    _reopenOvCardModal(pageId);
+    _refreshOvTreeRows(pageId);
   }
 
   function _saveOvCardEdit(pageId) {
@@ -1415,8 +1413,23 @@ const UI = (() => {
           <option value="7">특대</option>
         </select>
         <span class="rich-sep">|</span>
-        <input type="color" class="rich-color" title="글자 색" value="#000000"
-          onchange="UI._richCmd('foreColor',this.value,'${targetId}')">
+        ${[
+          ['#000000','⚫','기본'],
+          ['#e03131','🔴','빨강'],
+          ['#e8590c','🟠','주황'],
+          ['#f08c00','🟡','노랑'],
+          ['#2f9e44','🟢','초록'],
+          ['#1971c2','🔵','파랑'],
+          ['#7048e8','🟣','보라'],
+          ['#c2255c','🩷','분홍'],
+          ['#868e96','⚪','회색'],
+          ['#ffffff','◻','흰색'],
+        ].map(([color, icon, label]) =>
+          `<button type="button" class="rich-btn rich-color-btn"
+            title="${label}"
+            style="background:${color};border-color:${color};min-width:22px;height:22px;border-radius:50%;padding:0;"
+            onclick="UI._richCmd('foreColor','${color}','${targetId}')"></button>`
+        ).join('')}
         <span class="rich-sep">|</span>
         <div style="position:relative;display:inline-block;">
           <button type="button" class="rich-btn" title="특수문자"
@@ -1473,70 +1486,14 @@ const UI = (() => {
     const existing = document.getElementById('page-edit-modal');
     if (existing) existing.remove();
 
-    // 재호출 시 draft 보존, 최초 열기 시에만 초기화
-    if (!window.mkEditDraft || window.mkEditDraft._reopening !== pageId) {
-      _editDraft = JSON.parse(JSON.stringify(config));
-      window.mkEditDraft = _editDraft;
-    }
-    window.mkEditDraft._reopening = null;
+    // 최초 열기 시 draft 초기화
+    _editDraft = JSON.parse(JSON.stringify(config));
+    window.mkEditDraft = _editDraft;
 
-    // programs 편집 행
-    const programRows = (page.programs || []).map((p, idx) => {
-      const tid = `prog-items-${idx}`;
-      return `
-      <div class="edit-program-row" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
-        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-          <div class="p-num" style="flex-shrink:0;width:28px;text-align:center;font-weight:700;color:var(--accent);">${idx+1}</div>
-          <input class="admin-input" style="flex:1;" value="${p.title || ''}"
-            oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].title=this.value"
-            placeholder="제목">
-          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-            onclick="UI._removeProgram('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
-        </div>
-        ${_richToolbar(tid)}
-        <div id="${tid}" class="admin-input rich-editor"
-          contenteditable="true"
-          style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
-          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean).length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean):[this.innerHTML.trim()]"
-        >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
-      </div>`;
-    }).join('');
-
-    // conditions 편집 행
-    const condRows = (page.conditions || []).map((c, idx) => {
-      const tid = `cond-text-${idx}`;
-      return `
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
-        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-          <input class="admin-input" style="flex:1;" value="${c.title || ''}"
-            oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].title=this.value"
-            placeholder="조건 제목">
-          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-            onclick="UI._removeCond('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
-        </div>
-        ${_richToolbar(tid)}
-        <div id="${tid}" class="admin-input rich-editor"
-          contenteditable="true"
-          style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
-          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
-        >${(c.text || '').replace(/\n/g,'<br>')}</div>
-      </div>`;
-    }).join('');
-
-    // notes 편집 행
-    const noteRows = (page.notes || []).map((n, idx) => `
-      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-        <select class="admin-input" style="width:90px;flex-shrink:0;"
-          onchange="window.mkEditDraft.pages['${pageId}'].notes[${idx}].color=this.value">
-          ${['blue','amber','red','green'].map(c =>
-            `<option value="${c}" ${n.color===c?'selected':''}>${c}</option>`).join('')}
-        </select>
-        <input class="admin-input" style="flex:1;" value="${n.text || ''}"
-          oninput="window.mkEditDraft.pages['${pageId}'].notes[${idx}].text=this.value"
-          placeholder="노트 내용">
-        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-          onclick="UI._removeNote('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
-      </div>`).join('');
+    // rows는 독립 함수로 생성 (항목 추가/삭제 시 DOM 부분 업데이트에도 재사용)
+    const programRows = _buildProgramRows(pageId);
+    const condRows    = _buildCondRows(pageId);
+    const noteRows    = _buildNoteRows(pageId);
 
     const modal = document.createElement('div');
     modal.id = 'page-edit-modal';
@@ -1608,45 +1565,111 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
-  // 모달 유지하며 draft 보존 후 재렌더
-  function _reopenEditModal(pageId) {
-    _editDraft = window.mkEditDraft;
-    window.mkEditDraft._reopening = pageId;
-    document.getElementById('page-edit-modal')?.remove();
-    _openEditModal(pageId);
+  /* ============================================================
+   * rows 생성 독립 함수 — draft 기반, 모달/DOM 부분 업데이트 공용
+   * ============================================================ */
+  function _buildProgramRows(pageId) {
+    return (window.mkEditDraft.pages[pageId].programs || []).map((p, idx) => {
+      const tid = `prog-items-${pageId}-${idx}`;
+      return `
+      <div class="edit-program-row" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+          <div class="p-num" style="flex-shrink:0;width:28px;text-align:center;font-weight:700;color:var(--accent);">${idx+1}</div>
+          <input class="admin-input" style="flex:1;" value="${p.title || ''}"
+            oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].title=this.value"
+            placeholder="제목">
+          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+            onclick="UI._removeProgram('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+        </div>
+        ${_richToolbar(tid)}
+        <div id="${tid}" class="admin-input rich-editor"
+          contenteditable="true"
+          style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
+          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean).length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean):[this.innerHTML.trim()]"
+        >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function _buildCondRows(pageId) {
+    return (window.mkEditDraft.pages[pageId].conditions || []).map((c, idx) => {
+      const tid = `cond-text-${pageId}-${idx}`;
+      return `
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+          <input class="admin-input" style="flex:1;" value="${c.title || ''}"
+            oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].title=this.value"
+            placeholder="조건 제목">
+          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+            onclick="UI._removeCond('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+        </div>
+        ${_richToolbar(tid)}
+        <div id="${tid}" class="admin-input rich-editor"
+          contenteditable="true"
+          style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
+          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
+        >${(c.text || '').replace(/\n/g,'<br>')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function _buildNoteRows(pageId) {
+    return (window.mkEditDraft.pages[pageId].notes || []).map((n, idx) => `
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <select class="admin-input" style="width:90px;flex-shrink:0;"
+          onchange="window.mkEditDraft.pages['${pageId}'].notes[${idx}].color=this.value">
+          ${['blue','amber','red','green'].map(c =>
+            `<option value="${c}" ${n.color===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <input class="admin-input" style="flex:1;" value="${n.text || ''}"
+          oninput="window.mkEditDraft.pages['${pageId}'].notes[${idx}].text=this.value"
+          placeholder="노트 내용">
+        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+          onclick="UI._removeNote('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+  }
+
+  // DOM 부분 업데이트 헬퍼
+  function _refreshRows(pageId) {
+    const pr = document.getElementById(`prog-rows-${pageId}`);
+    const cr = document.getElementById(`cond-rows-${pageId}`);
+    const nr = document.getElementById(`note-rows-${pageId}`);
+    if (pr) pr.innerHTML = _buildProgramRows(pageId);
+    if (cr) cr.innerHTML = _buildCondRows(pageId);
+    if (nr) nr.innerHTML = _buildNoteRows(pageId);
   }
 
   // 프로그램 항목 추가/삭제
   function _addProgram(pageId) {
     if (!window.mkEditDraft.pages[pageId].programs) window.mkEditDraft.pages[pageId].programs = [];
     window.mkEditDraft.pages[pageId].programs.push({ num: '', title: '새 항목', items: [] });
-    _reopenEditModal(pageId);
+    _refreshRows(pageId);
   }
   function _removeProgram(pageId, idx) {
     window.mkEditDraft.pages[pageId].programs.splice(idx, 1);
-    _reopenEditModal(pageId);
+    _refreshRows(pageId);
   }
 
   // 조건 항목 추가/삭제
   function _addCond(pageId) {
     if (!window.mkEditDraft.pages[pageId].conditions) window.mkEditDraft.pages[pageId].conditions = [];
     window.mkEditDraft.pages[pageId].conditions.push({ title: '새 조건', type: 'text', text: '' });
-    _reopenEditModal(pageId);
+    _refreshRows(pageId);
   }
   function _removeCond(pageId, idx) {
     window.mkEditDraft.pages[pageId].conditions.splice(idx, 1);
-    _reopenEditModal(pageId);
+    _refreshRows(pageId);
   }
 
   // 노트 추가/삭제
   function _addNote(pageId) {
     if (!window.mkEditDraft.pages[pageId].notes) window.mkEditDraft.pages[pageId].notes = [];
     window.mkEditDraft.pages[pageId].notes.push({ color: 'blue', icon: 'ti-info-circle', text: '' });
-    _reopenEditModal(pageId);
+    _refreshRows(pageId);
   }
   function _removeNote(pageId, idx) {
     window.mkEditDraft.pages[pageId].notes.splice(idx, 1);
-    _reopenEditModal(pageId);
+    _refreshRows(pageId);
   }
 
   function openNoticeEdit() {
@@ -1773,12 +1796,14 @@ const UI = (() => {
     _savePageEdit,
     openOvCardEdit,
     _saveOvCardEdit,
-    _addOvTree, _removeOvTree, _reopenOvCardModal,
+    _buildOvTreeRows, _refreshOvTreeRows,
+    _addOvTree, _removeOvTree,
     openNoticeEdit,
     _saveNoticeEdit,
     _richCmd,
     _insertText,
     _toggleScPopup,
+    _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
     _addProgram, _removeProgram,
     _addCond, _removeCond,
     _addNote, _removeNote,
