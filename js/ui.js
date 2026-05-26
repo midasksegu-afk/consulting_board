@@ -82,6 +82,12 @@ const UI = (() => {
       _syncOvCards(state);
     });
 
+    // 로컬 캐시의 _pageOrder를 MK_CONFIG.pageOrder에 반영 (새 프로그램 포함)
+    const _cachedCfg = Store.loadConfig();
+    if (_cachedCfg && _cachedCfg._pageOrder && Array.isArray(_cachedCfg._pageOrder)) {
+      MK_CONFIG.pageOrder = _cachedCfg._pageOrder;
+    }
+
     // 렌더링
     renderSidebar();
     renderPages();
@@ -274,7 +280,8 @@ const UI = (() => {
     const config  = cfg();
     const groups  = config.groups;
     const pages   = config.pages;
-    const order   = MK_CONFIG.pageOrder;
+    // _pageOrder(저장된 순서, 새 프로그램 포함)를 우선 사용하고 없으면 기본 pageOrder 사용
+    const order   = config._pageOrder || MK_CONFIG.pageOrder;
 
     // 그룹별로 페이지 묶기
     const grouped = {}; // { groupKey: [pageId, ...] }
@@ -345,9 +352,11 @@ const UI = (() => {
     if (!container) return;
 
     const config = cfg();
+    // _pageOrder(저장된 순서, 새 프로그램 포함)를 우선 사용
+    const order = config._pageOrder || MK_CONFIG.pageOrder;
     let html = '';
 
-    MK_CONFIG.pageOrder.forEach(pageId => {
+    order.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page) return;
 
