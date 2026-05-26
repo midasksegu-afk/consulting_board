@@ -510,20 +510,18 @@ const Admin = (() => {
 
   function renderContentTab() {
     const el = document.getElementById('tab-content');
-
-    const sideHtml = _buildSideMenu(_draft, 'content', false);
-
     el.innerHTML = `
-      <div style="display:flex;gap:0;height:100%;min-height:500px;">
-        <div class="ct-sidebar">${sideHtml}</div>
-        <div class="ct-editor" id="content-editor">
-          <div style="color:var(--text-3);font-size:13px;padding:24px;">
-            좌측에서 편집할 페이지를 선택하세요.
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:300px;">
+        <div style="text-align:center;padding:40px;color:var(--text-3);">
+          <i class="ti ti-info-circle" style="font-size:36px;margin-bottom:16px;display:block;color:var(--primary);"></i>
+          <div style="font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:8px;">콘텐츠 편집은 메인화면에서 하세요</div>
+          <div style="font-size:13px;line-height:1.6;">
+            각 페이지 우상단 <b>편집</b> 버튼을 클릭하면<br>
+            해당 페이지의 콘텐츠를 바로 수정할 수 있습니다.<br><br>
+            프로그램명·가격 수정은 <b>프로그램 관리</b> 탭을 이용하세요.
           </div>
         </div>
       </div>`;
-
-    if (_contentPageId) loadContentPage(_contentPageId);
   }
 
   function loadContentPage(pageId) {
@@ -1159,17 +1157,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pin-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') Admin.checkPin();
   });
-
-  // 서버 최신 설정 동기화 후 초기화 (브라우저 간 설정 공유)
-  Store.syncConfigFromServer().then(() => {
-    // 같은 탭에서 이미 인증된 경우 PIN 화면 스킵
-    if (sessionStorage.getItem('mk_admin_auth') === '1') {
-      Admin.initDraft();
-      document.getElementById('pin-screen').style.display = 'none';
-      document.getElementById('admin-body').style.display = 'flex';
-      Admin.switchTab('tab-program');
-    } else {
-      document.getElementById('pin-input')?.focus();
-    }
-  });
+  // 같은 탭에서 이미 인증된 경우 PIN 화면 스킵
+  if (sessionStorage.getItem('mk_admin_auth') === '1') {
+    Admin.initDraft();
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('admin-body').style.display = 'flex';
+    Admin.switchTab('tab-program');
+  } else {
+    document.getElementById('pin-input')?.focus();
+  }
 });

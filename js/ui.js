@@ -24,6 +24,19 @@ const UI = (() => {
     return MK_CONFIG.resolve();
   }
 
+  // 관리자 인증 상태 확인 (sessionStorage 기반)
+  function _isAdminMode() {
+    return sessionStorage.getItem('mk_admin_auth') === '1';
+  }
+
+  // 관리자 인증 후 편집 버튼 표시 갱신
+  function _refreshEditButtons() {
+    const show = _isAdminMode();
+    document.querySelectorAll('.edit-mode-btn').forEach(btn => {
+      btn.style.display = show ? '' : 'none';
+    });
+  }
+
   let _currentPageId = 'rm-overview';
   let _editDraft = null;
   let _currentStudentKey = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
@@ -365,8 +378,12 @@ const UI = (() => {
         priceHtml = (ov.priceLabel || []).map(p => p + '<br>').join('');
       }
 
+      const ovEditBtn = _isAdminMode()
+        ? `<button class="edit-mode-btn ov-edit-btn" onclick="UI.openPageEdit('${pageId}')" title="카드 편집" style="position:absolute;bottom:8px;right:8px;"><i class="ti ti-pencil"></i> 편집</button>`
+        : '';
+
       return `
-        <div class="ov-card" id="ovcard-${pageId}">
+        <div class="ov-card" id="ovcard-${pageId}" style="position:relative;">
           ${checkArea}
           <div class="ov-icon" style="background:${page.iconBg};color:${page.iconColor};">
             <i class="ti ${page.iconClass}"></i>
@@ -379,6 +396,7 @@ const UI = (() => {
             <i class="ti ti-arrow-right"></i> 자세히 보기
           </button>
           <div class="ov-tree">${treeHtml}</div>
+          ${ovEditBtn}
         </div>`;
     }).join('');
 
@@ -421,6 +439,12 @@ const UI = (() => {
           <span>${config.overviewNotice}</span>
         </div>`;
 
+    const noticeEditBtn = _isAdminMode()
+      ? `<button class="edit-mode-btn" onclick="UI.openNoticeEdit()" style="margin-left:12px;flex-shrink:0;" title="공지 편집">
+           <i class="ti ti-pencil"></i> 편집
+         </button>`
+      : '';
+
     return `
       <div id="pg-rm-overview" class="page">
         <div class="ov-grid">${cards}</div>
@@ -428,9 +452,10 @@ const UI = (() => {
           <div class="aoc-header"><i class="ti ti-plus"></i> 고3 추가 선택 항목</div>
           <div class="aoc-grid">${addOnCards}${noticeCard}</div>
         </div>
-        <div class="global-notice">
+        <div class="global-notice" style="display:flex;align-items:center;">
           <i class="ti ti-alert-triangle"></i>
-          <span>${config.overviewNotice}</span>
+          <span style="flex:1;">${config.overviewNotice}</span>
+          ${noticeEditBtn}
         </div>
       </div>`;
   }
@@ -453,9 +478,7 @@ const UI = (() => {
             <div class="detail-title">${page.title}</div>
             <div class="detail-sub">${page.subtitle || ''}</div>
           </div>
-          <button class="edit-mode-btn" onclick="UI.openPageEdit('${pageId}')" title="이 페이지 편집">
-            <i class="ti ti-pencil"></i> 편집
-          </button>
+          ${_isAdminMode() ? `<button class="edit-mode-btn" onclick="UI.openPageEdit('${pageId}')" title="이 페이지 편집"><i class="ti ti-pencil"></i> 편집</button>` : ''}
         </div>
         <div class="detail-grid">
           <div>
@@ -1136,8 +1159,15 @@ const UI = (() => {
    * ============================================================ */
 
   function openPageEdit(pageId) {
-    // PIN 확인 후 편집 모달 열기
-    _showPinModal(() => _openEditModal(pageId));
+    if (_isAdminMode()) {
+      _openEditModal(pageId);
+    } else {
+      _showPinModal(() => {
+        sessionStorage.setItem('mk_admin_auth', '1');
+        _refreshEditButtons();
+        _openEditModal(pageId);
+      });
+    }
   }
 
   function _showPinModal(callback) {
@@ -1189,6 +1219,56 @@ const UI = (() => {
     input.focus();
   }
 
+  // 툴바형 서식 편집기 HTML 생성
+  function _richToolbar(targetId) {
+    return `
+      <div class="rich-toolbar" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;">
+        <button type="button" class="rich-btn" title="굵게" onclick="UI._richCmd('bold','${targetId}')"><b>B</b></button>
+        <button type="button" class="rich-btn" title="기울임" onclick="UI._richCmd('italic','${targetId}')"><i>I</i></button>
+        <button type="button" class="rich-btn" title="밑줄" onclick="UI._richCmd('underline','${targetId}')"><u>U</u></button>
+        <span class="rich-sep">|</span>
+        <select class="rich-select" title="글자 크기" onchange="UI._richCmd('fontSize',this.value,'${targetId}');this.value=''">
+          <option value="">크기</option>
+          <option value="1">소</option>
+          <option value="3">중</option>
+          <option value="5">대</option>
+          <option value="7">특대</option>
+        </select>
+        <span class="rich-sep">|</span>
+        <input type="color" class="rich-color" title="글자 색" value="#000000"
+          onchange="UI._richCmd('foreColor',this.value,'${targetId}')">
+        <span class="rich-sep">|</span>
+        <button type="button" class="rich-btn" title="특수문자 ❶" onclick="UI._insertText('❶','${targetId}')">❶</button>
+        <button type="button" class="rich-btn" title="특수문자 ❷" onclick="UI._insertText('❷','${targetId}')">❷</button>
+        <button type="button" class="rich-btn" title="특수문자 ❸" onclick="UI._insertText('❸','${targetId}')">❸</button>
+        <button type="button" class="rich-btn" title="특수문자 →" onclick="UI._insertText('→','${targetId}')">→</button>
+        <button type="button" class="rich-btn" title="특수문자 ·" onclick="UI._insertText('·','${targetId}')">·</button>
+      </div>`;
+  }
+
+  // contenteditable 명령 실행
+  function _richCmd(cmd, val, targetId) {
+    if (typeof val === 'string' && val.startsWith('#')) {
+      // 색상 명령
+      document.getElementById(targetId)?.focus();
+      document.execCommand('foreColor', false, val);
+    } else if (cmd === 'fontSize') {
+      document.getElementById(targetId)?.focus();
+      document.execCommand('fontSize', false, val);
+    } else {
+      document.getElementById(targetId)?.focus();
+      document.execCommand(cmd, false, null);
+    }
+  }
+
+  // 특수문자 삽입
+  function _insertText(char, targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    el.focus();
+    document.execCommand('insertText', false, char);
+  }
+
   function _openEditModal(pageId) {
     const config = MK_CONFIG.resolve();
     const page   = config.pages[pageId];
@@ -1197,24 +1277,59 @@ const UI = (() => {
     const existing = document.getElementById('page-edit-modal');
     if (existing) existing.remove();
 
+    // _editDraft 초기화
+    _editDraft = JSON.parse(JSON.stringify(config));
+    window.mkEditDraft = _editDraft;
+
     // programs 편집 행
-    const programRows = (page.programs || []).map((p, idx) => `
+    const programRows = (page.programs || []).map((p, idx) => {
+      const tid = `prog-items-${idx}`;
+      return `
       <div class="edit-program-row" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
         <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-          <div class="p-num" style="flex-shrink:0;">${idx + 1}</div>
+          <input class="admin-input" style="width:60px;flex-shrink:0;" value="${p.num || ''}"
+            oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].num=this.value"
+            placeholder="번호">
           <input class="admin-input" style="flex:1;" value="${p.title || ''}"
             oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].title=this.value"
             placeholder="제목">
+          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+            onclick="UI._removeProgram('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
         </div>
-        <textarea class="admin-input" rows="3" style="resize:vertical;"
-          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=this.value.split('\\n').filter(Boolean)"
-          placeholder="내용 (줄바꿈으로 항목 구분)">${(p.items || []).join('&#10;')}</textarea>
-      </div>`).join('');
+        ${_richToolbar(tid)}
+        <div id="${tid}" class="admin-input rich-editor"
+          contenteditable="true"
+          style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
+          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean).length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean):[this.innerHTML.trim()]"
+        >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
+      </div>`;
+    }).join('');
+
+    // conditions 편집 행
+    const condRows = (page.conditions || []).map((c, idx) => {
+      const tid = `cond-text-${idx}`;
+      return `
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+          <input class="admin-input" style="flex:1;" value="${c.title || ''}"
+            oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].title=this.value"
+            placeholder="조건 제목">
+          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+            onclick="UI._removeCond('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+        </div>
+        ${_richToolbar(tid)}
+        <div id="${tid}" class="admin-input rich-editor"
+          contenteditable="true"
+          style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
+          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
+        >${(c.text || '').replace(/\n/g,'<br>')}</div>
+      </div>`;
+    }).join('');
 
     // notes 편집 행
     const noteRows = (page.notes || []).map((n, idx) => `
       <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-        <select class="admin-input" style="width:80px;"
+        <select class="admin-input" style="width:90px;flex-shrink:0;"
           onchange="window.mkEditDraft.pages['${pageId}'].notes[${idx}].color=this.value">
           ${['blue','amber','red','green'].map(c =>
             `<option value="${c}" ${n.color===c?'selected':''}>${c}</option>`).join('')}
@@ -1222,28 +1337,60 @@ const UI = (() => {
         <input class="admin-input" style="flex:1;" value="${n.text || ''}"
           oninput="window.mkEditDraft.pages['${pageId}'].notes[${idx}].text=this.value"
           placeholder="노트 내용">
+        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+          onclick="UI._removeNote('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
       </div>`).join('');
 
     const modal = document.createElement('div');
     modal.id = 'page-edit-modal';
     modal.className = 'modal-overlay open';
     modal.innerHTML = `
-      <div class="modal-box" style="width:640px;max-height:85vh;">
+      <div class="modal-box" style="width:860px;max-height:90vh;">
         <div class="modal-header">
           <span><i class="ti ti-pencil"></i> ${page.title} 편집</span>
           <button class="modal-close" onclick="document.getElementById('page-edit-modal').remove()">
             <i class="ti ti-x"></i>
           </button>
         </div>
-        <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+        <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;">
+
           <div>
-            <div class="d-col-label" style="margin-bottom:8px;">프로그램 구성</div>
-            ${programRows}
+            <div class="d-col-label" style="margin-bottom:6px;">부제목 (subtitle)</div>
+            <input class="admin-input" style="width:100%;" value="${page.subtitle || ''}"
+              oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.value"
+              placeholder="페이지 부제목">
           </div>
+
           <div>
-            <div class="d-col-label" style="margin-bottom:8px;">참고 노트</div>
-            ${noteRows}
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div class="d-col-label">프로그램 구성</div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="UI._addProgram('${pageId}')">
+                <i class="ti ti-plus"></i> 항목 추가
+              </button>
+            </div>
+            <div id="prog-rows-${pageId}">${programRows}</div>
           </div>
+
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div class="d-col-label">제공 조건</div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="UI._addCond('${pageId}')">
+                <i class="ti ti-plus"></i> 항목 추가
+              </button>
+            </div>
+            <div id="cond-rows-${pageId}">${condRows}</div>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div class="d-col-label">참고 노트</div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="UI._addNote('${pageId}')">
+                <i class="ti ti-plus"></i> 항목 추가
+              </button>
+            </div>
+            <div id="note-rows-${pageId}">${noteRows}</div>
+          </div>
+
         </div>
         <div class="modal-footer">
           <button class="btn" onclick="document.getElementById('page-edit-modal').remove()">취소</button>
@@ -1253,10 +1400,89 @@ const UI = (() => {
         </div>
       </div>`;
 
-    // _editDraft 초기화 — 전역 노출 (oninput에서 접근)
+    document.body.appendChild(modal);
+  }
+
+  // 프로그램 항목 추가/삭제
+  function _addProgram(pageId) {
+    if (!window.mkEditDraft.pages[pageId].programs) window.mkEditDraft.pages[pageId].programs = [];
+    window.mkEditDraft.pages[pageId].programs.push({ num: '', title: '새 항목', items: [] });
+    _openEditModal(pageId);
+  }
+  function _removeProgram(pageId, idx) {
+    window.mkEditDraft.pages[pageId].programs.splice(idx, 1);
+    _editDraft = window.mkEditDraft;
+    _openEditModal(pageId);
+  }
+
+  // 조건 항목 추가/삭제
+  function _addCond(pageId) {
+    if (!window.mkEditDraft.pages[pageId].conditions) window.mkEditDraft.pages[pageId].conditions = [];
+    window.mkEditDraft.pages[pageId].conditions.push({ title: '새 조건', type: 'text', text: '' });
+    _editDraft = window.mkEditDraft;
+    _openEditModal(pageId);
+  }
+  function _removeCond(pageId, idx) {
+    window.mkEditDraft.pages[pageId].conditions.splice(idx, 1);
+    _editDraft = window.mkEditDraft;
+    _openEditModal(pageId);
+  }
+
+  // 노트 추가/삭제
+  function _addNote(pageId) {
+    if (!window.mkEditDraft.pages[pageId].notes) window.mkEditDraft.pages[pageId].notes = [];
+    window.mkEditDraft.pages[pageId].notes.push({ color: 'blue', icon: 'ti-info-circle', text: '' });
+    _editDraft = window.mkEditDraft;
+    _openEditModal(pageId);
+  }
+  function _removeNote(pageId, idx) {
+    window.mkEditDraft.pages[pageId].notes.splice(idx, 1);
+    _editDraft = window.mkEditDraft;
+    _openEditModal(pageId);
+  }
+
+  function openNoticeEdit() {
+    const config = MK_CONFIG.resolve();
+    const existing = document.getElementById('notice-edit-modal');
+    if (existing) existing.remove();
+
     _editDraft = JSON.parse(JSON.stringify(config));
     window.mkEditDraft = _editDraft;
+
+    const modal = document.createElement('div');
+    modal.id = 'notice-edit-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:600px;">
+        <div class="modal-header">
+          <span><i class="ti ti-bell"></i> 공지 배너 편집</span>
+          <button class="modal-close" onclick="document.getElementById('notice-edit-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <div class="d-col-label" style="margin-bottom:8px;">공지 내용</div>
+          <textarea class="admin-input" rows="4" style="width:100%;resize:vertical;"
+            oninput="window.mkEditDraft.overviewNotice=this.value"
+            placeholder="공지 배너 내용">${config.overviewNotice || ''}</textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="document.getElementById('notice-edit-modal').remove()">취소</button>
+          <button class="btn btn-primary" onclick="UI._saveNoticeEdit()">
+            <i class="ti ti-device-floppy"></i> 저장 및 반영
+          </button>
+        </div>
+      </div>`;
     document.body.appendChild(modal);
+  }
+
+  function _saveNoticeEdit() {
+    _editDraft = window.mkEditDraft;
+    Store.saveConfig(_editDraft);
+    document.getElementById('notice-edit-modal')?.remove();
+    renderPages();
+    go('rm-overview');
+    showToast('✓ 공지가 저장되었습니다', 'success');
   }
 
   function _savePageEdit(pageId) {
@@ -1334,6 +1560,13 @@ const UI = (() => {
     showToast,
     openPageEdit,
     _savePageEdit,
+    openNoticeEdit,
+    _saveNoticeEdit,
+    _richCmd,
+    _insertText,
+    _addProgram, _removeProgram,
+    _addCond, _removeCond,
+    _addNote, _removeNote,
   };
 
 })();
@@ -1343,9 +1576,8 @@ const UI = (() => {
  * DOMContentLoaded 진입점
  * ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  // 초기 렌더 즉시 실행 (로컬 캐시 기준)
   UI.init();
-  // 서버 최신 설정 동기화 후 UI 갱신 (브라우저 간 설정 공유)
+  // 서버 최신 설정 동기화 후 UI 갱신
   Store.syncConfigFromServer().then(updated => {
     if (updated) {
       renderSidebar();
