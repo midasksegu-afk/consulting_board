@@ -13,6 +13,7 @@ const Admin = (() => {
   let _draft = null;
 
   function fmt(n) { return n.toLocaleString('ko-KR'); }
+  function _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 
   /* ============================================================
@@ -223,11 +224,11 @@ const Admin = (() => {
       return `
         <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
           <input class="admin-input" style="flex:2;min-width:160px;max-width:400px;"
-            value="${price.label}"
+            value="${_esc(price.label)}"
             oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
             placeholder="항목명">
           <input class="admin-input" style="flex:1;min-width:60px;max-width:140px;"
-            value="${price.note || ''}"
+            value="${_esc(price.note)}"
             oninput="Admin.updatePriceField('${pageId}', ${idx}, 'note', this.value)"
             placeholder="비고 (예: 1회/고3)">
           <div style="display:flex;align-items:center;gap:4px;flex:0.8;">
@@ -269,9 +270,31 @@ const Admin = (() => {
       <div class="admin-field-group">
         <label class="admin-field-label">사이드바 메뉴명</label>
         <input class="admin-input admin-input-md"
-          value="${page.sbLabel || ''}"
+          value="${_esc(page.sbLabel)}"
           oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)">
       </div>
+
+      <div class="admin-field-group">
+        <label class="admin-field-label">아이콘</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+          ${[
+            'ti-pencil','ti-layout-list','ti-bulb','ti-chart-line','ti-school',
+            'ti-send','ti-message-dots','ti-calculator','ti-book','ti-certificate',
+            'ti-clipboard-list','ti-brain','ti-target','ti-star','ti-rocket',
+            'ti-telescope','ti-test-pipe','ti-chart-bar','ti-award','ti-user-check',
+            'ti-map','ti-compass','ti-flag','ti-crown','ti-diamond',
+            'ti-file-text','ti-notes','ti-presentation','ti-podium','ti-circle',
+          ].map(icon => `
+            <div onclick="Admin.updateIconField('${pageId}','${icon}')"
+              style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+              border-radius:6px;cursor:pointer;border:2px solid ${page.sbIcon===icon ? 'var(--accent)' : 'var(--border)'};
+              background:${page.sbIcon===icon ? 'rgba(183,156,255,0.15)' : 'var(--surface)'};
+              transition:all 0.12s;" title="${icon}">
+              <i class="ti ${icon}" style="font-size:16px;color:${page.sbIcon===icon ? 'var(--accent)' : 'var(--text-2)'};"></i>
+            </div>`).join('')}
+        </div>
+      </div>
+
       <div style="font-size:12px;color:var(--blue-tx);background:var(--blue-bg);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:4px;">
         <i class="ti ti-info-circle"></i> 페이지 제목·부제목·콘텐츠는 메인화면 <b>편집</b> 버튼에서 수정하세요.
       </div>
@@ -329,6 +352,11 @@ const Admin = (() => {
     const old = _draft.pages[pageId][field];
     _draft.pages[pageId][field] = value;
     Store.addLog('name', `${pageId} ${field}`, old, value);
+  }
+
+  function updateIconField(pageId, icon) {
+    _draft.pages[pageId].sbIcon = icon;
+    loadProgramPage(pageId);
   }
 
   function _renderOverviewEditor(el) {
@@ -427,7 +455,7 @@ const Admin = (() => {
   }
 
   async function saveProgram(pageId) {
-    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+    if (!_draft._pageOrder) _draft._pageOrder = [...MK_CONFIG.pageOrder];
     showSaving();
     try {
       await Store.saveConfig(_draft);
@@ -450,8 +478,10 @@ const Admin = (() => {
       conditions: [],
       notes:      [],
     };
-    if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
-    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+    const baseOrder = _draft._pageOrder || MK_CONFIG.pageOrder;
+    if (!baseOrder.includes(id)) baseOrder.push(id);
+    _draft._pageOrder  = [...baseOrder];
+    MK_CONFIG.pageOrder = [...baseOrder];
     showSaving();
     try {
       await Store.saveConfig(_draft);
@@ -466,9 +496,11 @@ const Admin = (() => {
     if (!confirm(`"${label}"을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
     _confirmWithPin(async () => {
       delete _draft.pages[pageId];
-      const idx = MK_CONFIG.pageOrder.indexOf(pageId);
-      if (idx > -1) MK_CONFIG.pageOrder.splice(idx, 1);
-      _draft._pageOrder = [...MK_CONFIG.pageOrder];
+      const baseOrder = _draft._pageOrder || MK_CONFIG.pageOrder;
+      const idx = baseOrder.indexOf(pageId);
+      if (idx > -1) baseOrder.splice(idx, 1);
+      _draft._pageOrder  = [...baseOrder];
+      MK_CONFIG.pageOrder = [...baseOrder];
       _programPageId = null;
       showSaving();
       try {
@@ -480,34 +512,36 @@ const Admin = (() => {
   }
 
   let _dragId = null;
+  let _dragInited = false;
 
   function _initDrag() {
-    const sidebar = document.querySelector('#tab-program .ct-sidebar');
-    if (!sidebar) return;
-    sidebar.addEventListener('dragstart', e => {
+    if (_dragInited) return;
+    _dragInited = true;
+    const getSidebar = () => document.querySelector('#tab-program .ct-sidebar');
+    document.addEventListener('dragstart', e => {
       const el = e.target.closest('[data-drag-id]');
       if (!el) return;
       _dragId = el.dataset.dragId;
       setTimeout(() => el.style.opacity = '0.4', 0);
     });
-    sidebar.addEventListener('dragend', e => {
+    document.addEventListener('dragend', e => {
       const el = e.target.closest('[data-drag-id]');
       if (el) el.style.opacity = '';
       document.querySelectorAll('[data-drag-id]').forEach(el => el.classList.remove('drag-over'));
     });
-    sidebar.addEventListener('dragover', e => {
-      e.preventDefault();
+    document.addEventListener('dragover', e => {
       const el = e.target.closest('[data-drag-id]');
-      if (!el || el.dataset.dragId === _dragId) return;
+      if (!el) return;
+      e.preventDefault();
+      if (el.dataset.dragId === _dragId) return;
       document.querySelectorAll('[data-drag-id]').forEach(el => el.classList.remove('drag-over'));
       el.classList.add('drag-over');
     });
-    sidebar.addEventListener('drop', e => {
-      e.preventDefault();
+    document.addEventListener('drop', e => {
       const el = e.target.closest('[data-drag-id]');
       if (!el || !_dragId || el.dataset.dragId === _dragId) return;
-      const targetId = el.dataset.dragId;
-      _dropProgram(_dragId, targetId);
+      e.preventDefault();
+      _dropProgram(_dragId, e.target.closest('[data-drag-id]').dataset.dragId);
       _dragId = null;
     });
   }
@@ -1151,7 +1185,8 @@ const Admin = (() => {
       box-shadow:0 8px 40px rgba(0,0,0,0.35);
       z-index:9999; border:1.5px solid transparent;
       display:flex; align-items:center; gap:12px;
-      opacity:1; transition:opacity 0.3s; white-space:nowrap;`;
+      opacity:1; transition:opacity 0.3s; white-space:nowrap;
+      pointer-events:none;`;
     toast.innerHTML = `<i class="ti ti-loader-2" style="font-size:20px;color:#B79CFF;animation:spin 1s linear infinite;"></i> 저장 중...`;
     clearTimeout(toast._timer);
     // spin 애니메이션 (없으면 추가)
@@ -1189,10 +1224,13 @@ const Admin = (() => {
       z-index:9999; border:1.5px solid ${border};
       display:flex; align-items:center; gap:12px;
       opacity:1; transition:opacity 0.3s;
-      white-space:nowrap;`;
+      white-space:nowrap; pointer-events:none;`;
     toast.innerHTML = `<i class="ti ${icon}" style="font-size:18px;color:${icolor};"></i> ${text}`;
     clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
+    toast._timer = setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => { toast.style.display = 'none'; }, 300);
+    }, 2800);
   }
 
 
@@ -1238,7 +1276,7 @@ const Admin = (() => {
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)
-    updateNameField,
+    updateNameField, updateIconField,
     // 콘텐츠
     renderContentTab, loadContentPage,
     updateContentField, addContentItem, deleteContentItem,
