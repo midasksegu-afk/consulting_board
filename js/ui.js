@@ -390,8 +390,9 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          <div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>
-          ${ov.desc ? `<div class="ov-desc">${ov.desc}</div>` : ''}
+          ${ov.desc
+            ? `<div class="ov-desc">${ov.desc}</div>`
+            : `<div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>`}
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
