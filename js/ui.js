@@ -1257,18 +1257,22 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
+  function _reopenOvCardModal(pageId) {
+    _editDraft = window.mkEditDraft;
+    document.getElementById('ovcard-edit-modal')?.remove();
+    _openOvCardModal(pageId);
+  }
+
   function _addOvTree(pageId) {
     if (!window.mkEditDraft.pages[pageId].ovCard) window.mkEditDraft.pages[pageId].ovCard = {};
     if (!window.mkEditDraft.pages[pageId].ovCard.tree) window.mkEditDraft.pages[pageId].ovCard.tree = [];
     window.mkEditDraft.pages[pageId].ovCard.tree.push({ label: '', sub: '' });
-    _editDraft = window.mkEditDraft;
-    _openOvCardModal(pageId);
+    _reopenOvCardModal(pageId);
   }
 
   function _removeOvTree(pageId, idx) {
     window.mkEditDraft.pages[pageId].ovCard.tree.splice(idx, 1);
-    _editDraft = window.mkEditDraft;
-    _openOvCardModal(pageId);
+    _reopenOvCardModal(pageId);
   }
 
   function _saveOvCardEdit(pageId) {
@@ -1727,7 +1731,7 @@ const UI = (() => {
     _savePageEdit,
     openOvCardEdit,
     _saveOvCardEdit,
-    _addOvTree, _removeOvTree,
+    _addOvTree, _removeOvTree, _reopenOvCardModal,
     openNoticeEdit,
     _saveNoticeEdit,
     _richCmd,
