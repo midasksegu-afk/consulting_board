@@ -515,7 +515,16 @@ const MK_CONFIG = {
     // store.js가 로드되어 있으면 저장된 관리자 변경값을 deep merge
     if (typeof Store !== 'undefined') {
       const saved = Store.loadConfig();
-      if (saved) return _deepMerge(this, saved);
+      if (saved) {
+        const merged = _deepMerge(this, saved);
+        // 신규 추가 페이지(config.js 기본값에 없는 페이지)는 저장값에서 직접 추가
+        if (saved.pages) {
+          Object.keys(saved.pages).forEach(id => {
+            if (!this.pages[id]) merged.pages[id] = saved.pages[id];
+          });
+        }
+        return merged;
+      }
     }
     return this;
   },
