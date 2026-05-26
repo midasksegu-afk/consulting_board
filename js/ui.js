@@ -391,6 +391,7 @@ const UI = (() => {
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
           <div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>
+          ${ov.desc ? `<div class="ov-desc">${ov.desc}</div>` : ''}
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
@@ -1270,8 +1271,11 @@ const UI = (() => {
     _editDraft = window.mkEditDraft;
     Store.saveConfig(_editDraft);
     document.getElementById('ovcard-edit-modal')?.remove();
-    renderPages();
-    go('rm-overview');
+    // localStorage 갱신 후 즉시 렌더 (타이밍 보장)
+    setTimeout(() => {
+      renderPages();
+      go('rm-overview');
+    }, 0);
     showToast('✓ 카드가 저장되었습니다', 'success');
   }
 
@@ -1645,8 +1649,10 @@ const UI = (() => {
     _editDraft = window.mkEditDraft;
     Store.saveConfig(_editDraft);
     document.getElementById('page-edit-modal')?.remove();
-    renderPages();
-    go(pageId);
+    setTimeout(() => {
+      renderPages();
+      go(pageId);
+    }, 0);
     showToast('✓ 수정사항이 반영되었습니다', 'success');
   }
 
