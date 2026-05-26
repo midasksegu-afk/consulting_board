@@ -29,6 +29,10 @@ const UI = (() => {
     return sessionStorage.getItem('mk_admin_auth') === '1';
   }
 
+  let _currentPageId = 'rm-overview';
+  let _editDraft = null;
+  let _currentStudentKey = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
+
   // 관리자 인증 후 편집 버튼 + 자물쇠 아이콘 갱신
   function _refreshEditButtons() {
     const show = _isAdminMode();
@@ -47,22 +51,22 @@ const UI = (() => {
       // 로그아웃
       sessionStorage.removeItem('mk_admin_auth');
       _refreshEditButtons();
+      renderSidebar();
       renderPages();
+      go(_currentPageId);
       showToast('관리자 모드 종료', 'warn');
     } else {
       // 로그인
       _showPinModal(() => {
         sessionStorage.setItem('mk_admin_auth', '1');
         _refreshEditButtons();
+        renderSidebar();
         renderPages();
+        go(_currentPageId);
         showToast('✓ 관리자 모드 활성화', 'success');
       });
     }
   }
-
-  let _currentPageId = 'rm-overview';
-  let _editDraft = null;
-  let _currentStudentKey = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
 
 
   /* ============================================================
@@ -1793,6 +1797,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (updated) {
       renderSidebar();
       renderPages();
+      UI.go('rm-overview');
     }
   });
 });
