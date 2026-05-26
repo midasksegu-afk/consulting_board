@@ -1354,11 +1354,19 @@ const UI = (() => {
         </div>
         <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;">
 
-          <div>
-            <div class="d-col-label" style="margin-bottom:6px;">부제목 (subtitle)</div>
-            <input class="admin-input" style="width:100%;" value="${page.subtitle || ''}"
-              oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.value"
-              placeholder="페이지 부제목">
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;">
+              <div class="d-col-label" style="margin-bottom:6px;">페이지 제목</div>
+              <input class="admin-input" style="width:100%;" value="${page.title || ''}"
+                oninput="window.mkEditDraft.pages['${pageId}'].title=this.value"
+                placeholder="페이지 제목">
+            </div>
+            <div style="flex:2;">
+              <div class="d-col-label" style="margin-bottom:6px;">부제목</div>
+              <input class="admin-input" style="width:100%;" value="${page.subtitle || ''}"
+                oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.value"
+                placeholder="페이지 부제목">
+            </div>
           </div>
 
           <div>

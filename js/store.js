@@ -174,7 +174,12 @@ const Store = (() => {
       if (!res.ok) throw new Error(`status ${res.status}`);
       const rows = await res.json();
       if (rows && rows.length > 0 && rows[0].data) {
-        _write(KEYS.CONFIG, rows[0].data);
+        const data = rows[0].data;
+        _write(KEYS.CONFIG, data);
+        // 저장된 pageOrder가 있으면 런타임에 반영
+        if (data._pageOrder && Array.isArray(data._pageOrder) && typeof MK_CONFIG !== 'undefined') {
+          MK_CONFIG.pageOrder = data._pageOrder;
+        }
         return true;
       }
       return false;

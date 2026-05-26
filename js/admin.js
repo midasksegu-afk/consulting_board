@@ -111,14 +111,23 @@ const Admin = (() => {
           </div>`;
       }
 
-      pages.forEach(id => {
+      pages.forEach((id, i) => {
         const p = cfg.pages[id];
         const fn = tabPrefix === 'program' ? 'loadProgramPage' : 'loadContentPage';
         const currentId = tabPrefix === 'program' ? _programPageId : _contentPageId;
         const active = id === currentId ? 'ct-side-active' : '';
+        const orderBtns = tabPrefix === 'program' ? `
+          <span style="display:flex;flex-direction:column;gap:1px;margin-left:auto;flex-shrink:0;">
+            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
+              onclick="event.stopPropagation();Admin.moveProgram('${id}',-1)" title="위로">▲</button>
+            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
+              onclick="event.stopPropagation();Admin.moveProgram('${id}',1)" title="아래로">▼</button>
+          </span>` : '';
         html += `
-          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')">
-            <i class="ti ${p.sbIcon}" style="font-size:14px;"></i> ${p.sbLabel}
+          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;">
+            <i class="ti ${p.sbIcon}" style="font-size:14px;flex-shrink:0;"></i>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px;">${p.sbLabel}</span>
+            ${orderBtns}
           </div>`;
       });
 
@@ -214,7 +223,7 @@ const Admin = (() => {
       const numOnly = price.amt ? Math.round(price.amt / 10000) : 0;
       return `
         <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
-          <input class="admin-input" style="flex:1;min-width:80px;max-width:200px;"
+          <input class="admin-input" style="flex:2;min-width:160px;max-width:400px;"
             value="${price.label}"
             oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
             placeholder="항목명">
@@ -264,17 +273,8 @@ const Admin = (() => {
           value="${page.sbLabel || ''}"
           oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)">
       </div>
-      <div class="admin-field-group">
-        <label class="admin-field-label">페이지 제목</label>
-        <input class="admin-input admin-input-lg"
-          value="${page.title || ''}"
-          oninput="Admin.updateNameField('${pageId}', 'title', this.value)">
-      </div>
-      <div class="admin-field-group">
-        <label class="admin-field-label">부제목</label>
-        <input class="admin-input admin-input-lg"
-          value="${page.subtitle || ''}"
-          oninput="Admin.updateNameField('${pageId}', 'subtitle', this.value)">
+      <div style="font-size:12px;color:var(--blue-tx);background:var(--blue-bg);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:4px;">
+        <i class="ti ti-info-circle"></i> 페이지 제목·부제목·콘텐츠는 메인화면 <b>편집</b> 버튼에서 수정하세요.
       </div>
 
       <div class="admin-section-title" style="margin-top:20px;">가격 항목</div>
@@ -290,9 +290,7 @@ const Admin = (() => {
         <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveProgram('${pageId}')">
           <i class="ti ti-device-floppy"></i> 저장
         </button>
-        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.switchTab('tab-content');Admin.loadContentPage('${pageId}')">
-          <i class="ti ti-file-text"></i> 콘텐츠 편집으로 이동
-        </button>
+
         <button class="admin-del-btn" style="margin-left:auto;" onclick="Admin.deleteProgram('${pageId}')">
           <i class="ti ti-trash"></i> 프로그램 삭제
         </button>
@@ -429,8 +427,12 @@ const Admin = (() => {
   }
 
   function saveProgram(pageId) {
+    // pageOrder를 _draft에 동기화
+    _draft._pageOrder = [...MK_CONFIG.pageOrder];
     Store.saveConfig(_draft);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
+    renderProgramTab();
+    if (pageId) loadProgramPage(pageId);
   }
 
   function addProgram(group) {
@@ -442,8 +444,13 @@ const Admin = (() => {
       title:    '새 프로그램',
       subtitle: '',
       prices:   [],
+      programs:   [],
+      conditions: [],
+      notes:      [],
     };
     if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
+    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+    Store.saveConfig(_draft);
     renderProgramTab();
     loadProgramPage(id);
   }
@@ -456,11 +463,29 @@ const Admin = (() => {
       delete _draft.pages[pageId];
       const idx = MK_CONFIG.pageOrder.indexOf(pageId);
       if (idx > -1) MK_CONFIG.pageOrder.splice(idx, 1);
+      _draft._pageOrder = [...MK_CONFIG.pageOrder];
       _programPageId = null;
       Store.saveConfig(_draft);
       showMsg(`✓ "${label}" 삭제되었습니다.`, true);
       renderProgramTab();
     });
+  }
+
+  function moveProgram(pageId, dir) {
+    const order = MK_CONFIG.pageOrder;
+    const idx   = order.indexOf(pageId);
+    if (idx < 0) return;
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= order.length) return;
+    // 같은 그룹 내에서만 이동
+    const group = _draft.pages[pageId]?.group;
+    const swapGroup = _draft.pages[order[swapIdx]]?.group;
+    if (group !== swapGroup) return;
+    [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+    _draft._pageOrder = [...order];
+    Store.saveConfig(_draft);
+    renderProgramTab();
+    loadProgramPage(pageId);
   }
 
   function _confirmWithPin(callback) {
@@ -510,18 +535,20 @@ const Admin = (() => {
 
   function renderContentTab() {
     const el = document.getElementById('tab-content');
+
+    const sideHtml = _buildSideMenu(_draft, 'content', false);
+
     el.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:300px;">
-        <div style="text-align:center;padding:40px;color:var(--text-3);">
-          <i class="ti ti-info-circle" style="font-size:36px;margin-bottom:16px;display:block;color:var(--primary);"></i>
-          <div style="font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:8px;">콘텐츠 편집은 메인화면에서 하세요</div>
-          <div style="font-size:13px;line-height:1.6;">
-            각 페이지 우상단 <b>편집</b> 버튼을 클릭하면<br>
-            해당 페이지의 콘텐츠를 바로 수정할 수 있습니다.<br><br>
-            프로그램명·가격 수정은 <b>프로그램 관리</b> 탭을 이용하세요.
+      <div style="display:flex;gap:0;height:100%;min-height:500px;">
+        <div class="ct-sidebar">${sideHtml}</div>
+        <div class="ct-editor" id="content-editor">
+          <div style="color:var(--text-3);font-size:13px;padding:24px;">
+            좌측에서 편집할 페이지를 선택하세요.
           </div>
         </div>
       </div>`;
+
+    if (_contentPageId) loadContentPage(_contentPageId);
   }
 
   function loadContentPage(pageId) {
@@ -1122,7 +1149,7 @@ const Admin = (() => {
     // 프로그램 관리 (통합)
     renderProgramTab, loadProgramPage, saveProgram,
     updateGroupLabel, saveGroupLabels, loadGroupLabelEditor,
-    addProgram, deleteProgram,
+    addProgram, deleteProgram, moveProgram,
     _confirmWithPin, _pinConfirmSubmit,
     _toggleGroup,
     updateTreeField, addTreeItem, deleteTreeItem,
