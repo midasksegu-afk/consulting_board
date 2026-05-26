@@ -421,21 +421,24 @@ const Admin = (() => {
     _draft.overviewNotice = value;
   }
 
-  function saveOverview() {
-    Store.saveConfig(_draft);
-    showMsg('✓ 전체 개요가 저장되었습니다.', true);
+  async function saveOverview() {
+    showSaving();
+    try { await Store.saveConfig(_draft); showMsg('✓ 전체 개요가 저장되었습니다.', true); }
+    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
-  function saveProgram(pageId) {
-    // pageOrder를 _draft에 동기화
+  async function saveProgram(pageId) {
     _draft._pageOrder = [...MK_CONFIG.pageOrder];
-    Store.saveConfig(_draft);
-    showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
-    renderProgramTab();
-    if (pageId) loadProgramPage(pageId);
+    showSaving();
+    try {
+      await Store.saveConfig(_draft);
+      showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
+      renderProgramTab();
+      if (pageId) loadProgramPage(pageId);
+    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
-  function addProgram(group) {
+  async function addProgram(group) {
     const id = 'pg-' + Date.now();
     _draft.pages[id] = {
       group,
@@ -450,42 +453,51 @@ const Admin = (() => {
     };
     if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
     _draft._pageOrder = [...MK_CONFIG.pageOrder];
-    Store.saveConfig(_draft);
-    renderProgramTab();
-    loadProgramPage(id);
+    showSaving();
+    try {
+      await Store.saveConfig(_draft);
+      showMsg('✓ 새 프로그램이 추가되었습니다.', true);
+      renderProgramTab();
+      loadProgramPage(id);
+    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
   function deleteProgram(pageId) {
     const label = _draft.pages[pageId]?.sbLabel || pageId;
-    if (!confirm(`"${label}"을 삭제하시겠습니까?
-이 작업은 되돌릴 수 없습니다.`)) return;
-    _confirmWithPin(() => {
+    if (!confirm(`"${label}"을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    _confirmWithPin(async () => {
       delete _draft.pages[pageId];
       const idx = MK_CONFIG.pageOrder.indexOf(pageId);
       if (idx > -1) MK_CONFIG.pageOrder.splice(idx, 1);
       _draft._pageOrder = [...MK_CONFIG.pageOrder];
       _programPageId = null;
-      Store.saveConfig(_draft);
-      showMsg(`✓ "${label}" 삭제되었습니다.`, true);
-      renderProgramTab();
+      showSaving();
+      try {
+        await Store.saveConfig(_draft);
+        showMsg(`✓ "${label}" 삭제되었습니다.`, true);
+        renderProgramTab();
+      } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
     });
   }
 
-  function moveProgram(pageId, dir) {
+  async function moveProgram(pageId, dir) {
     const order = MK_CONFIG.pageOrder;
     const idx   = order.indexOf(pageId);
     if (idx < 0) return;
     const swapIdx = idx + dir;
     if (swapIdx < 0 || swapIdx >= order.length) return;
-    // 같은 그룹 내에서만 이동
-    const group = _draft.pages[pageId]?.group;
+    const group     = _draft.pages[pageId]?.group;
     const swapGroup = _draft.pages[order[swapIdx]]?.group;
     if (group !== swapGroup) return;
     [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
     _draft._pageOrder = [...order];
-    Store.saveConfig(_draft);
-    renderProgramTab();
-    loadProgramPage(pageId);
+    showSaving();
+    try {
+      await Store.saveConfig(_draft);
+      showMsg('✓ 순서가 저장되었습니다.', true);
+      renderProgramTab();
+      loadProgramPage(pageId);
+    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
   function _confirmWithPin(callback) {
@@ -661,12 +673,13 @@ const Admin = (() => {
     loadContentPage(pageId);
   }
 
-  function saveContentTab() {
+  async function saveContentTab() {
     const page = _draft.pages[_contentPageId];
     const label = page ? page.sbLabel : '콘텐츠';
     if (!confirm(`"${label}" 콘텐츠를 저장하시겠습니까?`)) return;
-    Store.saveConfig(_draft);
-    showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true);
+    showSaving();
+    try { await Store.saveConfig(_draft); showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true); }
+    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
   function updateNoteField(pageId, idx, field, value) {
@@ -707,7 +720,7 @@ const Admin = (() => {
       </div>`;
   }
 
-  function changePin() {
+  async function changePin() {
     const cur = document.getElementById('pin-cur')?.value;
     const nw  = document.getElementById('pin-new')?.value;
     const con = document.getElementById('pin-con')?.value;
@@ -719,16 +732,17 @@ const Admin = (() => {
     if (nw.length < 4)        return show('PIN은 4자리 이상이어야 합니다.', false);
     if (nw !== con)           return show('새 PIN이 일치하지 않습니다.', false);
 
-    // _draft에 직접 저장 후 즉시 persist
     _draft.adminPin = nw;
     if (!_draft.app) _draft.app = {};
     _draft.app.adminPin = nw;
-    Store.saveConfig(_draft);
-    Store.addLog('pin', '관리자 PIN', '****', '****');
-
-    show('PIN이 변경되었습니다.', true);
-    showMsg('✓ PIN이 변경되었습니다.', true);
-    ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    showSaving();
+    try {
+      await Store.saveConfig(_draft);
+      Store.addLog('pin', '관리자 PIN', '****', '****');
+      show('PIN이 변경되었습니다.', true);
+      showMsg('✓ PIN이 변경되었습니다.', true);
+      ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
 
@@ -957,10 +971,11 @@ const Admin = (() => {
     Store.addLog('price', `DC 할인율 ${group}`, old, value);
   }
 
-  function saveDcDiscount() {
+  async function saveDcDiscount() {
     if (!confirm('DC 할인율을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ DC 할인율이 저장되었습니다.', true);
+    showSaving();
+    try { await Store.saveConfig(_draft); showMsg('✓ DC 할인율이 저장되었습니다.', true); }
+    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
   /* ============================================================
@@ -1075,19 +1090,44 @@ const Admin = (() => {
     _draft.discount.individual[pageId] = parseInt(value) || 0;
   }
 
-  function saveDiscountSection(section) {
+  async function saveDiscountSection(section) {
     if (!confirm(`${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율을 저장하시겠습니까?`)) return;
-    Store.saveConfig(_draft);
-    showMsg(`✓ ${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율이 저장되었습니다.`, true);
+    showSaving();
+    try { await Store.saveConfig(_draft); showMsg(`✓ ${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율이 저장되었습니다.`, true); }
+    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
   /* ============================================================
    * 9. 전체 저장
    * ============================================================ */
-  function saveAll() {
+  async function saveAll() {
     if (!confirm('전체 설정을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
-    showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true);
+    showSaving();
+    try { await Store.saveConfig(_draft); showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true); }
+    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+  }
+
+  function showSaving() {
+    let toast = document.getElementById('admin-toast');
+    if (!toast) { toast = document.createElement('div'); toast.id = 'admin-toast'; document.body.appendChild(toast); }
+    toast.style.cssText = `
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:#1a1d2e; color:#fff;
+      padding:20px 40px; border-radius:14px;
+      font-size:15px; font-weight:600;
+      box-shadow:0 8px 40px rgba(0,0,0,0.35);
+      z-index:9999; border:1.5px solid transparent;
+      display:flex; align-items:center; gap:12px;
+      opacity:1; transition:opacity 0.3s; white-space:nowrap;`;
+    toast.innerHTML = `<i class="ti ti-loader-2" style="font-size:20px;color:#B79CFF;animation:spin 1s linear infinite;"></i> 저장 중...`;
+    clearTimeout(toast._timer);
+    // spin 애니메이션 (없으면 추가)
+    if (!document.getElementById('admin-spin-style')) {
+      const s = document.createElement('style');
+      s.id = 'admin-spin-style';
+      s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(s);
+    }
   }
 
   function showMsg(text, ok) {
@@ -1108,13 +1148,13 @@ const Admin = (() => {
     const icon   = ok ? 'ti-circle-check' : 'ti-alert-circle';
     const icolor = ok ? '#B79CFF' : '#8b1c3a';
     toast.style.cssText = `
-      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
       background:${bg}; color:${color};
-      padding:12px 28px; border-radius:12px;
-      font-size:14px; font-weight:600;
-      box-shadow:0 8px 32px rgba(0,0,0,0.15);
+      padding:20px 40px; border-radius:14px;
+      font-size:15px; font-weight:600;
+      box-shadow:0 8px 40px rgba(0,0,0,0.35);
       z-index:9999; border:1.5px solid ${border};
-      display:flex; align-items:center; gap:10px;
+      display:flex; align-items:center; gap:12px;
       opacity:1; transition:opacity 0.3s;
       white-space:nowrap;`;
     toast.innerHTML = `<i class="ti ${icon}" style="font-size:18px;color:${icolor};"></i> ${text}`;
@@ -1133,10 +1173,13 @@ const Admin = (() => {
     _draft.groups[key].label = value;
   }
 
-  function saveGroupLabels() {
-    Store.saveConfig(_draft);
-    showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
-    renderProgramTab();
+  async function saveGroupLabels() {
+    showSaving();
+    try {
+      await Store.saveConfig(_draft);
+      showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
+      renderProgramTab();
+    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
   }
 
   function initDraft() {

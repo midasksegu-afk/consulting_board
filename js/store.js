@@ -133,28 +133,32 @@ const Store = (() => {
    *  loadConfig           : localStorage 캐시 반환 (동기 — 기존 호출부 무변경)
    *  syncConfigFromServer : Supabase → localStorage 동기화 (초기화 시 1회 호출)
    * ============================================================ */
-  function saveConfig(data) {
-    _write(KEYS.CONFIG, data);
-    // 같은 브라우저 다른 탭에 설정 변경 알림
-    _configChannel?.postMessage({ type: 'config_updated' });
-    // Supabase 백그라운드 저장 (app_config 테이블, key='settings' 단일 행)
-    fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
-      method: 'GET',
-      headers: _headers({ 'Accept': 'application/json' }),
-    })
-    .then(r => r.json())
-    .then(rows => {
+  async function saveConfig(data) {
+    // Supabase 먼저 저장 (Primary) — 완료 확인 후 localStorage 캐시
+    try {
+      const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
+        method: 'GET',
+        headers: _headers({ 'Accept': 'application/json' }),
+      });
+      if (!checkRes.ok) throw new Error(`status ${checkRes.status}`);
+      const rows   = await checkRes.json();
       const method = (rows && rows.length > 0) ? 'PATCH' : 'POST';
       const url    = method === 'PATCH'
         ? `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`
         : `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}`;
-      return fetch(url, {
+      const saveRes = await fetch(url, {
         method,
         headers: _headers({ 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ key: 'settings', data, updated_at: new Date().toISOString() }),
       });
-    })
-    .catch(e => console.warn('[Store] saveConfig → Supabase 실패:', e));
+      if (!saveRes.ok) throw new Error(`status ${saveRes.status}`);
+    } catch (e) {
+      console.warn('[Store] saveConfig → Supabase 실패:', e);
+      throw e; // 호출부에서 실패 처리
+    }
+    // Supabase 저장 완료 후 localStorage 캐시
+    _write(KEYS.CONFIG, data);
+    _configChannel?.postMessage({ type: 'config_updated' });
     return true;
   }
 
