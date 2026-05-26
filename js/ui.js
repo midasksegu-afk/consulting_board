@@ -379,7 +379,7 @@ const UI = (() => {
       }
 
       const ovEditBtn = _isAdminMode()
-        ? `<button class="edit-mode-btn ov-edit-btn" onclick="UI.openPageEdit('${pageId}')" title="카드 편집" style="position:absolute;bottom:8px;right:8px;"><i class="ti ti-pencil"></i> 편집</button>`
+        ? `<button class="edit-mode-btn ov-edit-btn" onclick="event.stopPropagation();UI.openOvCardEdit('${pageId}')" title="카드 편집" style="position:absolute;bottom:8px;right:8px;"><i class="ti ti-pencil"></i> 편집</button>`
         : '';
 
       return `
@@ -1158,6 +1158,123 @@ const UI = (() => {
    * 12. 페이지 인라인 편집
    * ============================================================ */
 
+  function openOvCardEdit(pageId) {
+    if (_isAdminMode()) {
+      _openOvCardModal(pageId);
+    } else {
+      _showPinModal(() => {
+        sessionStorage.setItem('mk_admin_auth', '1');
+        _refreshEditButtons();
+        _openOvCardModal(pageId);
+      });
+    }
+  }
+
+  function _openOvCardModal(pageId) {
+    const config = MK_CONFIG.resolve();
+    const page   = config.pages[pageId];
+    if (!page) return;
+
+    const existing = document.getElementById('ovcard-edit-modal');
+    if (existing) existing.remove();
+
+    _editDraft = JSON.parse(JSON.stringify(config));
+    window.mkEditDraft = _editDraft;
+
+    const ov = page.ovCard || {};
+
+    // 트리 행
+    const treeRows = (ov.tree || []).map((t, idx) => `
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <input class="admin-input" style="flex:1;" value="${t.label || ''}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
+          placeholder="트리 제목">
+        <input class="admin-input" style="flex:1;" value="${t.sub || ''}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
+          placeholder="트리 부제">
+        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'ovcard-edit-modal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+      <div class="modal-box" style="width:700px;max-height:90vh;">
+        <div class="modal-header">
+          <span><i class="ti ti-layout-grid"></i> ${page.sbLabel} 카드 편집</span>
+          <button class="modal-close" onclick="document.getElementById('ovcard-edit-modal').remove()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;">
+
+          <div style="display:flex;gap:12px;">
+            <div style="flex:2;">
+              <div class="d-col-label" style="margin-bottom:6px;">프로그램명 (사이드바)</div>
+              <input class="admin-input" style="width:100%;" value="${page.sbLabel || ''}"
+                oninput="window.mkEditDraft.pages['${pageId}'].sbLabel=this.value"
+                placeholder="사이드바 메뉴명">
+            </div>
+            <div style="flex:1;">
+              <div class="d-col-label" style="margin-bottom:6px;">뱃지</div>
+              <input class="admin-input" style="width:100%;" value="${ov.badge || ''}"
+                oninput="window.mkEditDraft.pages['${pageId}'].ovCard.badge=this.value"
+                placeholder="예: 프로그램 A">
+            </div>
+          </div>
+
+          <div>
+            <div class="d-col-label" style="margin-bottom:6px;">🟢 프로그램 설명</div>
+            <textarea class="admin-input" rows="3" style="width:100%;resize:vertical;"
+              oninput="window.mkEditDraft.pages['${pageId}'].ovCard.desc=this.value"
+              placeholder="카드에 표시할 프로그램 설명 (자유 텍스트)">${ov.desc || ''}</textarea>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div class="d-col-label">🩷 구성 요약 트리</div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="UI._addOvTree('${pageId}')">
+                <i class="ti ti-plus"></i> 항목 추가
+              </button>
+            </div>
+            <div id="ovtree-rows-${pageId}">${treeRows}</div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="document.getElementById('ovcard-edit-modal').remove()">취소</button>
+          <button class="btn btn-primary" onclick="UI._saveOvCardEdit('${pageId}')">
+            <i class="ti ti-device-floppy"></i> 저장 및 반영
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function _addOvTree(pageId) {
+    if (!window.mkEditDraft.pages[pageId].ovCard) window.mkEditDraft.pages[pageId].ovCard = {};
+    if (!window.mkEditDraft.pages[pageId].ovCard.tree) window.mkEditDraft.pages[pageId].ovCard.tree = [];
+    window.mkEditDraft.pages[pageId].ovCard.tree.push({ label: '', sub: '' });
+    _editDraft = window.mkEditDraft;
+    _openOvCardModal(pageId);
+  }
+
+  function _removeOvTree(pageId, idx) {
+    window.mkEditDraft.pages[pageId].ovCard.tree.splice(idx, 1);
+    _editDraft = window.mkEditDraft;
+    _openOvCardModal(pageId);
+  }
+
+  function _saveOvCardEdit(pageId) {
+    _editDraft = window.mkEditDraft;
+    Store.saveConfig(_editDraft);
+    document.getElementById('ovcard-edit-modal')?.remove();
+    renderPages();
+    go('rm-overview');
+    showToast('✓ 카드가 저장되었습니다', 'success');
+  }
+
   function openPageEdit(pageId) {
     if (_isAdminMode()) {
       _openEditModal(pageId);
@@ -1221,8 +1338,25 @@ const UI = (() => {
 
   // 툴바형 서식 편집기 HTML 생성
   function _richToolbar(targetId) {
+    const specialChars = [
+      { group: '도형', chars: ['●','○','■','□','◆','◇','▶','▷','▼','▽','▲','△','◀','◁','▣','▢','◈','◉','◎','◌'] },
+      { group: '기호', chars: ['※','★','☆','✓','✔','✦','✧','✪','✿','❖','•','·'] },
+      { group: '화살표', chars: ['→','←','↑','↓','⇒','｜','┃','❘','❙','❚'] },
+      { group: '괄호', chars: ['〈','〉','【','】','《','》','『','』','「','」','〔','〕','〖','〗'] },
+      { group: '원문자', chars: ['❶','❷','❸','❹','❺','❻','❼','❽','❾','❿'] },
+    ];
+    const popupId = 'sc-popup-' + targetId;
+    const groupsHtml = specialChars.map(g => `
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;font-weight:600;">${g.group}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;">
+          ${g.chars.map(c => `<button type="button" class="rich-btn" style="min-width:24px;height:24px;font-size:14px;"
+            onclick="UI._insertText('${c}','${targetId}')">${c}</button>`).join('')}
+        </div>
+      </div>`).join('');
+
     return `
-      <div class="rich-toolbar" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;">
+      <div class="rich-toolbar" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;position:relative;">
         <button type="button" class="rich-btn" title="굵게" onclick="UI._richCmd('bold','${targetId}')"><b>B</b></button>
         <button type="button" class="rich-btn" title="기울임" onclick="UI._richCmd('italic','${targetId}')"><i>I</i></button>
         <button type="button" class="rich-btn" title="밑줄" onclick="UI._richCmd('underline','${targetId}')"><u>U</u></button>
@@ -1238,12 +1372,25 @@ const UI = (() => {
         <input type="color" class="rich-color" title="글자 색" value="#000000"
           onchange="UI._richCmd('foreColor',this.value,'${targetId}')">
         <span class="rich-sep">|</span>
-        <button type="button" class="rich-btn" title="특수문자 ❶" onclick="UI._insertText('❶','${targetId}')">❶</button>
-        <button type="button" class="rich-btn" title="특수문자 ❷" onclick="UI._insertText('❷','${targetId}')">❷</button>
-        <button type="button" class="rich-btn" title="특수문자 ❸" onclick="UI._insertText('❸','${targetId}')">❸</button>
-        <button type="button" class="rich-btn" title="특수문자 →" onclick="UI._insertText('→','${targetId}')">→</button>
-        <button type="button" class="rich-btn" title="특수문자 ·" onclick="UI._insertText('·','${targetId}')">·</button>
+        <div style="position:relative;display:inline-block;">
+          <button type="button" class="rich-btn" title="특수문자"
+            onclick="UI._toggleScPopup('${popupId}')">특수문자 ▾</button>
+          <div id="${popupId}" style="display:none;position:absolute;top:30px;left:0;z-index:9999;
+            background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-md);
+            padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);min-width:280px;">
+            ${groupsHtml}
+          </div>
+        </div>
       </div>`;
+  }
+
+  function _toggleScPopup(popupId) {
+    const el = document.getElementById(popupId);
+    if (!el) return;
+    const isOpen = el.style.display !== 'none';
+    // 다른 팝업 모두 닫기
+    document.querySelectorAll('[id^="sc-popup-"]').forEach(p => p.style.display = 'none');
+    el.style.display = isOpen ? 'none' : 'block';
   }
 
   // contenteditable 명령 실행
@@ -1287,9 +1434,7 @@ const UI = (() => {
       return `
       <div class="edit-program-row" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
         <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-          <input class="admin-input" style="width:60px;flex-shrink:0;" value="${p.num || ''}"
-            oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].num=this.value"
-            placeholder="번호">
+          <div class="p-num" style="flex-shrink:0;width:28px;text-align:center;font-weight:700;color:var(--accent);">${idx+1}</div>
           <input class="admin-input" style="flex:1;" value="${p.title || ''}"
             oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].title=this.value"
             placeholder="제목">
@@ -1411,42 +1556,44 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
+  // 모달 유지하며 draft 보존 후 재렌더
+  function _reopenEditModal(pageId) {
+    _editDraft = window.mkEditDraft;
+    document.getElementById('page-edit-modal')?.remove();
+    _openEditModal(pageId);
+  }
+
   // 프로그램 항목 추가/삭제
   function _addProgram(pageId) {
     if (!window.mkEditDraft.pages[pageId].programs) window.mkEditDraft.pages[pageId].programs = [];
     window.mkEditDraft.pages[pageId].programs.push({ num: '', title: '새 항목', items: [] });
-    _openEditModal(pageId);
+    _reopenEditModal(pageId);
   }
   function _removeProgram(pageId, idx) {
     window.mkEditDraft.pages[pageId].programs.splice(idx, 1);
-    _editDraft = window.mkEditDraft;
-    _openEditModal(pageId);
+    _reopenEditModal(pageId);
   }
 
   // 조건 항목 추가/삭제
   function _addCond(pageId) {
     if (!window.mkEditDraft.pages[pageId].conditions) window.mkEditDraft.pages[pageId].conditions = [];
     window.mkEditDraft.pages[pageId].conditions.push({ title: '새 조건', type: 'text', text: '' });
-    _editDraft = window.mkEditDraft;
-    _openEditModal(pageId);
+    _reopenEditModal(pageId);
   }
   function _removeCond(pageId, idx) {
     window.mkEditDraft.pages[pageId].conditions.splice(idx, 1);
-    _editDraft = window.mkEditDraft;
-    _openEditModal(pageId);
+    _reopenEditModal(pageId);
   }
 
   // 노트 추가/삭제
   function _addNote(pageId) {
     if (!window.mkEditDraft.pages[pageId].notes) window.mkEditDraft.pages[pageId].notes = [];
     window.mkEditDraft.pages[pageId].notes.push({ color: 'blue', icon: 'ti-info-circle', text: '' });
-    _editDraft = window.mkEditDraft;
-    _openEditModal(pageId);
+    _reopenEditModal(pageId);
   }
   function _removeNote(pageId, idx) {
     window.mkEditDraft.pages[pageId].notes.splice(idx, 1);
-    _editDraft = window.mkEditDraft;
-    _openEditModal(pageId);
+    _reopenEditModal(pageId);
   }
 
   function openNoticeEdit() {
@@ -1568,10 +1715,14 @@ const UI = (() => {
     showToast,
     openPageEdit,
     _savePageEdit,
+    openOvCardEdit,
+    _saveOvCardEdit,
+    _addOvTree, _removeOvTree,
     openNoticeEdit,
     _saveNoticeEdit,
     _richCmd,
     _insertText,
+    _toggleScPopup,
     _addProgram, _removeProgram,
     _addCond, _removeCond,
     _addNote, _removeNote,
