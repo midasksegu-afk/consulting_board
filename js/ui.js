@@ -1227,9 +1227,12 @@ const UI = (() => {
 
           <div>
             <div class="d-col-label" style="margin-bottom:6px;">🟢 프로그램 설명</div>
-            <textarea class="admin-input" rows="3" style="width:100%;resize:vertical;"
-              oninput="window.mkEditDraft.pages['${pageId}'].ovCard.desc=this.value"
-              placeholder="카드에 표시할 프로그램 설명 (자유 텍스트)">${ov.desc || ''}</textarea>
+            ${_richToolbar('ov-desc-' + pageId)}
+            <div id="ov-desc-${pageId}" class="admin-input rich-editor"
+              contenteditable="true"
+              style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:80px;padding:8px;"
+              oninput="window.mkEditDraft.pages['${pageId}'].ovCard.desc=this.innerHTML"
+            >${ov.desc || ''}</div>
           </div>
 
           <div>
