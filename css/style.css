@@ -1052,14 +1052,4 @@ select[title] { cursor: help; }
   font-size: 11px !important;
   padding: 4px 10px !important;
 }
-
-/* 샘플 컬러 버튼 */
-.rich-color-btn {
-  border: 2px solid transparent !important;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-.rich-color-btn:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 0 2px var(--accent);
-  background: inherit !important;
-}
+.drag-over { border-top: 2px solid var(--accent) !important; background: rgba(183,156,255,0.12) !important; }
