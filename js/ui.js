@@ -1343,5 +1343,13 @@ const UI = (() => {
  * DOMContentLoaded 진입점
  * ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  // 초기 렌더 즉시 실행 (로컬 캐시 기준)
   UI.init();
+  // 서버 최신 설정 동기화 후 UI 갱신 (브라우저 간 설정 공유)
+  Store.syncConfigFromServer().then(updated => {
+    if (updated) {
+      renderSidebar();
+      renderPages();
+    }
+  });
 });

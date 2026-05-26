@@ -1159,13 +1159,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pin-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') Admin.checkPin();
   });
-  // 같은 탭에서 이미 인증된 경우 PIN 화면 스킵
-  if (sessionStorage.getItem('mk_admin_auth') === '1') {
-    Admin.initDraft();
-    document.getElementById('pin-screen').style.display = 'none';
-    document.getElementById('admin-body').style.display = 'flex';
-    Admin.switchTab('tab-program');
-  } else {
-    document.getElementById('pin-input')?.focus();
-  }
+
+  // 서버 최신 설정 동기화 후 초기화 (브라우저 간 설정 공유)
+  Store.syncConfigFromServer().then(() => {
+    // 같은 탭에서 이미 인증된 경우 PIN 화면 스킵
+    if (sessionStorage.getItem('mk_admin_auth') === '1') {
+      Admin.initDraft();
+      document.getElementById('pin-screen').style.display = 'none';
+      document.getElementById('admin-body').style.display = 'flex';
+      Admin.switchTab('tab-program');
+    } else {
+      document.getElementById('pin-input')?.focus();
+    }
+  });
 });

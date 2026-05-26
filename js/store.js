@@ -2,8 +2,8 @@
  * store.js — 마이더스K 저장소 통합 래퍼
  *
  * 저장소 분리:
- *  - 학생 데이터  → Supabase REST API
- *  - 관리자 설정  → localStorage
+ *  - 학생 데이터  → Supabase REST API (students 테이블)
+ *  - 관리자 설정  → Supabase REST API (app_config 테이블) + localStorage 캐시
  *  - 세션/로그    → localStorage
  *
  * 로드 순서: config.js → store.js → calc.js → ui.js
@@ -17,6 +17,7 @@ const Store = (() => {
   const SUPABASE_URL = 'https://rigdvsxjqzaojwhvucpr.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_FcoQJ-2-LU5ctB-JVzFfEQ_4DvLWt9n';
   const TABLE        = 'students';
+  const CONFIG_TABLE = 'app_config';
 
   const KEYS = {
     CONFIG:  'mk_config',
@@ -124,11 +125,64 @@ const Store = (() => {
 
 
   /* ============================================================
-   * 4. 관리자 설정값 — localStorage
+   * 4. 관리자 설정값 — Supabase app_config + localStorage 캐시
+   *
+   *  saveConfig           : localStorage 즉시 + Supabase 백그라운드 저장
+   *  loadConfig           : localStorage 캐시 반환 (동기 — 기존 호출부 무변경)
+   *  syncConfigFromServer : Supabase → localStorage 동기화 (초기화 시 1회 호출)
    * ============================================================ */
-  function saveConfig(data) { return _write(KEYS.CONFIG, data); }
-  function loadConfig()     { return _read(KEYS.CONFIG); }
-  function clearConfig()    { _remove(KEYS.CONFIG); }
+  function saveConfig(data) {
+    _write(KEYS.CONFIG, data);
+    // Supabase 백그라운드 저장 (app_config 테이블, key='settings' 단일 행)
+    fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
+      method: 'GET',
+      headers: _headers({ 'Accept': 'application/json' }),
+    })
+    .then(r => r.json())
+    .then(rows => {
+      const method = (rows && rows.length > 0) ? 'PATCH' : 'POST';
+      const url    = method === 'PATCH'
+        ? `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`
+        : `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}`;
+      return fetch(url, {
+        method,
+        headers: _headers({ 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ key: 'settings', data, updated_at: new Date().toISOString() }),
+      });
+    })
+    .catch(e => console.warn('[Store] saveConfig → Supabase 실패:', e));
+    return true;
+  }
+
+  function loadConfig() {
+    return _read(KEYS.CONFIG);
+  }
+
+  function clearConfig() {
+    _remove(KEYS.CONFIG);
+    fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
+      method: 'DELETE', headers: _headers(),
+    }).catch(() => {});
+  }
+
+  async function syncConfigFromServer() {
+    try {
+      const res  = await fetch(
+        `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings&select=data&limit=1`,
+        { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
+      );
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const rows = await res.json();
+      if (rows && rows.length > 0 && rows[0].data) {
+        _write(KEYS.CONFIG, rows[0].data);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('[Store] syncConfigFromServer 실패 (로컬 캐시 유지):', e);
+      return false;
+    }
+  }
 
 
   /* ============================================================
@@ -293,7 +347,7 @@ const Store = (() => {
    * Public API
    * ============================================================ */
   return {
-    saveConfig, loadConfig, clearConfig,
+    saveConfig, loadConfig, clearConfig, syncConfigFromServer,
     buildStudentKey, saveStudent, loadStudent,
     listStudents, deleteStudent, clearStudentsCache,
     saveSession, loadSession, clearSession,
