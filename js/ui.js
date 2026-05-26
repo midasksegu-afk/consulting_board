@@ -1316,16 +1316,16 @@ const UI = (() => {
     _refreshOvTreeRows(pageId);
   }
 
-  function _saveOvCardEdit(pageId) {
+  async function _saveOvCardEdit(pageId) {
     _editDraft = window.mkEditDraft;
-    Store.saveConfig(_editDraft);
-    document.getElementById('ovcard-edit-modal')?.remove();
-    // localStorage 갱신 후 즉시 렌더 (타이밍 보장)
-    setTimeout(() => {
+    showToast('저장 중...', 'success', true);
+    try {
+      await Store.saveConfig(_editDraft);
+      document.getElementById('ovcard-edit-modal')?.remove();
       renderPages();
       go('rm-overview');
-    }, 0);
-    showToast('✓ 카드가 저장되었습니다', 'success');
+      showToast('✓ 카드가 저장되었습니다', 'success', true);
+    } catch(e) { showToast('저장 실패 — 네트워크 확인', 'error', true); }
   }
 
   function openPageEdit(pageId) {
@@ -1716,31 +1716,35 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
-  function _saveNoticeEdit() {
+  async function _saveNoticeEdit() {
     _editDraft = window.mkEditDraft;
-    Store.saveConfig(_editDraft);
-    document.getElementById('notice-edit-modal')?.remove();
-    renderPages();
-    go('rm-overview');
-    showToast('✓ 공지가 저장되었습니다', 'success');
+    showToast('저장 중...', 'success', true);
+    try {
+      await Store.saveConfig(_editDraft);
+      document.getElementById('notice-edit-modal')?.remove();
+      renderPages();
+      go('rm-overview');
+      showToast('✓ 공지가 저장되었습니다', 'success', true);
+    } catch(e) { showToast('저장 실패 — 네트워크 확인', 'error', true); }
   }
 
-  function _savePageEdit(pageId) {
+  async function _savePageEdit(pageId) {
     if (!confirm('수정사항을 반영하시겠습니까?')) return;
     _editDraft = window.mkEditDraft;
-    Store.saveConfig(_editDraft);
-    document.getElementById('page-edit-modal')?.remove();
-    setTimeout(() => {
+    showToast('저장 중...', 'success', true);
+    try {
+      await Store.saveConfig(_editDraft);
+      document.getElementById('page-edit-modal')?.remove();
       renderPages();
       go(pageId);
-    }, 0);
-    showToast('✓ 수정사항이 반영되었습니다', 'success');
+      showToast('✓ 수정사항이 반영되었습니다', 'success', true);
+    } catch(e) { showToast('저장 실패 — 네트워크 확인', 'error', true); }
   }
 
   /* ============================================================
    * 13. 토스트 알림
    * ============================================================ */
-  function showToast(msg, type = 'success') {
+  function showToast(msg, type = 'success', center = false) {
     let toast = document.getElementById('mk-toast');
     if (!toast) {
       toast = document.createElement('div');
@@ -1754,9 +1758,12 @@ const UI = (() => {
       error:   { bg: '#FFD3E1',color: '#8b1c3a',  border: '#FF8FB1' },
     };
     const c = colorMap[type] || colorMap.success;
+    const pos = center
+      ? 'top:50%; left:50%; transform:translate(-50%,-50%);'
+      : 'bottom:36px; left:50%; transform:translateX(-50%);';
 
     toast.style.cssText = `
-      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
+      position:fixed; ${pos}
       background:${c.bg}; color:${c.color};
       padding:12px 28px; border-radius:12px;
       font-size:14px; font-weight:600;
