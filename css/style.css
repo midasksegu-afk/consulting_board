@@ -973,3 +973,81 @@ select[title] { cursor: help; }
   border-color: var(--accent);
 }
 .edit-mode-btn i { font-size: 15px; }
+
+/* ============================================================
+ * 툴바형 서식 편집기
+ * ============================================================ */
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.rich-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface1);
+  color: var(--text-1);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+.rich-btn:hover {
+  background: var(--blue-bg);
+  color: var(--blue-tx);
+  border-color: var(--accent);
+}
+.rich-select {
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface1);
+  color: var(--text-1);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rich-color {
+  width: 26px;
+  height: 26px;
+  padding: 1px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface1);
+  cursor: pointer;
+}
+.rich-sep {
+  color: var(--border);
+  line-height: 26px;
+  padding: 0 2px;
+}
+.rich-editor {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+  min-height: 60px;
+  padding: 8px;
+  line-height: 1.6;
+  outline: none;
+}
+.rich-editor:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(91,53,196,0.1);
+}
+
+/* 전체보기 카드 편집 버튼 */
+.ov-edit-btn {
+  margin-left: 0 !important;
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+}
