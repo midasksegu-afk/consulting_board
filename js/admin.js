@@ -384,9 +384,10 @@ const Admin = (() => {
         <i class="ti ti-info-circle"></i>
         <span>카드 이름·금액은 프로그램 관리에서 수정하면 자동 반영됩니다.</span>
       </div>
-      <div class="notice n-blue" style="margin-bottom:16px;">
-        <i class="ti ti-info-circle"></i>
-        <span>하단 공지는 메인화면 편집 버튼에서 추가/편집/삭제할 수 있습니다.</span>
+      <div class="admin-field-group">
+        <label class="admin-field-label">하단 공지 텍스트</label>
+        <textarea class="admin-input" rows="2" style="resize:vertical;"
+          oninput="Admin.updateOverviewNotice(this.value)">${_draft.overviewNotice || ''}</textarea>
       </div>
       <div class="admin-section-title" style="margin-top:20px;">카드 트리 항목 편집</div>
       ${treeSections}
@@ -414,6 +415,10 @@ const Admin = (() => {
     if (!confirm('이 트리 항목을 삭제할까요?')) return;
     _draft.pages[pageId].ovCard.tree.splice(idx, 1);
     _renderOverviewEditor(document.getElementById('program-editor'));
+  }
+
+  function updateOverviewNotice(value) {
+    _draft.overviewNotice = value;
   }
 
   function saveOverview() {
