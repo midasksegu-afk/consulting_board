@@ -144,28 +144,17 @@ const UI = (() => {
     }
   }
 
-  // 연간관리형 카드 금액 — 학년 모드 / 기본 모드 전환
-  //   grade === 0 : 기본 모드 → ov.desc 표시, ov-price 숨김
-  //   grade > 0  : 학년 모드 → ov.desc 숨김, ov-price에 금액 표시
+  // 연간관리형 카드 금액 — 선택된 학년만 표시
   function _updateOvCardPrices(grade) {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page || !page.ovCard || page.isOverview) return;
-
-      const descEl  = document.getElementById('ov-desc-display-' + pageId);
       const priceEl = document.getElementById('ov-price-' + pageId);
       if (!priceEl) return;
-
       if (grade === 0) {
-        // 기본 모드 — ov.desc 있으면 표시, ov-price 숨김
-        if (descEl) descEl.style.display = '';
-        priceEl.style.display = descEl ? 'none' : '';
+        priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
       } else {
-        // 학년 모드 — ov.desc 숨기고 금액 표시
-        if (descEl) descEl.style.display = 'none';
-        priceEl.style.display = '';
-        // A,B: 해당 학년 금액 굵게 / C,D,E: 무관 금액 (ovPrices 없으면 priceLabel)
         const amt = (page.ovCard.ovPrices || {})[grade];
         if (amt) {
           priceEl.innerHTML = '<strong>고' + grade + ' ' + fmt(amt) + '</strong>';
@@ -198,11 +187,10 @@ const UI = (() => {
   }
 
   // overviewNotices 배열 보장 — 하위 호환 변환 헬퍼
-  //   overviewNotices 없으면 overviewNotice 단일값을 배열 첫 항목으로 변환
   function _ensureNoticesArray(draft) {
     if (!draft.overviewNotices || !draft.overviewNotices.length) {
       draft.overviewNotices = draft.overviewNotice
-        ? [{ text: draft.overviewNotice }] : [];
+        ? [{ text: draft.overviewNotice, icon: 'ti-alert-triangle', color: 'orange' }] : [];
     }
     return draft.overviewNotices;
   }
@@ -214,9 +202,9 @@ const UI = (() => {
     // 고3 추가 옵션 섹션 show/hide
     const aocSection = document.getElementById('aoc-section');
     if (aocSection) aocSection.style.display = grade === 3 ? 'block' : 'none';
-    // 하단 global-notice 전체 — 고3 선택 시 숨김 (aoc-notice-card로 대체)
+    // 하단 global-notice 전체 — 고3 포함 항상 표시 (aoc-notice-card 제거됨)
     document.querySelectorAll('#pg-rm-overview .global-notice').forEach(el => {
-      el.style.display = grade === 3 ? 'none' : 'flex';
+      el.style.display = 'flex';
     });
   }
 
@@ -442,8 +430,9 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          <div class="ov-desc" id="ov-desc-display-${pageId}" style="${ov.desc ? '' : 'display:none;'}">${ov.desc || ''}</div>
-          <div class="ov-price" id="ov-price-${pageId}" style="${ov.desc ? 'display:none;' : ''}">${priceHtml}</div>
+          ${ov.desc
+            ? `<div class="ov-desc">${ov.desc}</div>`
+            : `<div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>`}
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
@@ -486,37 +475,34 @@ const UI = (() => {
         </div>`;
     }).join('');
 
-    // aoc-notice-card — 배열 첫 항목 우선, 없으면 overviewNotice 폴백
-    const _firstNotice = (config.overviewNotices && config.overviewNotices.length)
-      ? config.overviewNotices[0].text
-      : (config.overviewNotice || '');
-    const noticeCard = `
-        <div class="aoc-notice-card">
-          <i class="ti ti-alert-triangle"></i>
-          <span>${_firstNotice}</span>
-        </div>`;
-
-    // overviewNotices 배열 — 하위 호환: 배열 없으면 overviewNotice 단일값으로 폴백
+    // overviewNotices 배열 — 하위 호환: 없으면 overviewNotice 단일값으로 폴백
     const notices = (config.overviewNotices && config.overviewNotices.length)
       ? config.overviewNotices
-      : (config.overviewNotice ? [{ text: config.overviewNotice }] : []);
+      : (config.overviewNotice
+          ? [{ text: config.overviewNotice, icon: 'ti-alert-triangle', color: 'orange' }]
+          : []);
 
-    const noticesHtml = notices.map((n, idx) => `
-      <div class="global-notice" style="display:flex;align-items:center;" id="gnotice-${idx}">
-        <i class="ti ti-alert-triangle"></i>
+    const noticesHtml = notices.map((n, idx) => {
+      const icon  = n.icon  || 'ti-alert-triangle';
+      const color = n.color || 'orange';
+      const adminBtns = _isAdminMode() ? `
+        <button class="edit-mode-btn" onclick="UI.openNoticeEdit(${idx})" style="margin-left:8px;flex-shrink:0;" title="공지 편집">
+          <i class="ti ti-pencil"></i> 편집
+        </button>
+        <button class="edit-mode-btn" onclick="UI._deleteNotice(${idx})" style="margin-left:4px;flex-shrink:0;color:#c0392b;" title="공지 삭제">
+          <i class="ti ti-trash"></i>
+        </button>` : '';
+      return `
+      <div class="global-notice n-${color}" id="gnotice-${idx}">
+        <i class="ti ${icon}"></i>
         <span style="flex:1;">${n.text}</span>
-        ${_isAdminMode() ? `
-          <button class="edit-mode-btn" onclick="UI.openNoticeEdit(${idx})" style="margin-left:8px;flex-shrink:0;" title="공지 편집">
-            <i class="ti ti-pencil"></i> 편집
-          </button>
-          <button class="edit-mode-btn" onclick="UI._deleteNotice(${idx})" style="margin-left:4px;flex-shrink:0;color:#c0392b;" title="공지 삭제">
-            <i class="ti ti-trash"></i>
-          </button>` : ''}
-      </div>`).join('');
+        ${adminBtns}
+      </div>`;
+    }).join('');
 
     const noticeAddBtn = _isAdminMode()
       ? `<div style="display:flex;justify-content:flex-end;padding:4px 0;">
-           <button class="edit-mode-btn" onclick="UI.openNoticeEdit(-1)" style="flex-shrink:0;" title="공지 추가">
+           <button class="edit-mode-btn" onclick="UI.openNoticeEdit(-1)" title="공지 추가">
              <i class="ti ti-plus"></i> 공지 추가
            </button>
          </div>`
@@ -527,7 +513,7 @@ const UI = (() => {
         <div class="ov-grid">${cards}</div>
         <div class="aoc-section" id="aoc-section" style="display:none;">
           <div class="aoc-header"><i class="ti ti-plus"></i> 고3 추가 선택 항목</div>
-          <div class="aoc-grid">${addOnCards}${noticeCard}</div>
+          <div class="aoc-grid">${addOnCards}</div>
         </div>
         ${noticesHtml}
         ${noticeAddBtn}
@@ -1714,38 +1700,76 @@ const UI = (() => {
     _refreshRows(pageId);
   }
 
-  // idx >= 0 : 기존 공지 편집 / idx === -1 : 새 공지 추가
+  // 아이콘 선택 목록 (10종)
+  const _NOTICE_ICONS = [
+    { cls: 'ti-alert-triangle', label: '⚠ 경고'  },
+    { cls: 'ti-info-circle',    label: 'ℹ 정보'   },
+    { cls: 'ti-bell',           label: '🔔 알림'  },
+    { cls: 'ti-star',           label: '★ 별'    },
+    { cls: 'ti-check',          label: '✔ 확인'  },
+    { cls: 'ti-clock',          label: '⏰ 시간'  },
+    { cls: 'ti-flag',           label: '🚩 플래그' },
+    { cls: 'ti-bulb',           label: '💡 아이디어' },
+    { cls: 'ti-pin',            label: '📌 핀'    },
+    { cls: 'ti-message',        label: '💬 메시지' },
+  ];
+
+  // idx >= 0: 편집 / idx === -1: 추가
   function openNoticeEdit(idx) {
     const config = MK_CONFIG.resolve();
     const existing = document.getElementById('notice-edit-modal');
     if (existing) existing.remove();
 
     _editDraft = JSON.parse(JSON.stringify(config));
-    // 하위 호환: overviewNotices 없으면 overviewNotice 단일값으로 초기화
     _ensureNoticesArray(_editDraft);
     window.mkEditDraft = _editDraft;
 
     const isNew   = (idx === -1);
-    const current = isNew ? '' : (_editDraft.overviewNotices[idx]?.text || '');
+    const current = isNew ? { text: '', icon: 'ti-alert-triangle', color: 'orange' }
+                           : (_editDraft.overviewNotices[idx] || { text: '', icon: 'ti-alert-triangle', color: 'orange' });
     const title   = isNew ? '공지 추가' : '공지 편집';
+
+    const colorOpts = ['orange','blue','red','green'].map(c =>
+      `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+        <input type="radio" name="notice-color" value="${c}" ${current.color===c?'checked':''}>
+        <span class="global-notice n-${c}" style="padding:3px 10px;margin:0;font-size:12px;border-radius:4px;">${c}</span>
+      </label>`
+    ).join('');
+
+    const iconOpts = _NOTICE_ICONS.map(ic =>
+      `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);">
+        <input type="radio" name="notice-icon" value="${ic.cls}" ${current.icon===ic.cls?'checked':''}>
+        <i class="ti ${ic.cls}" style="font-size:15px;"></i>
+        <span style="font-size:12px;">${ic.label}</span>
+      </label>`
+    ).join('');
 
     const modal = document.createElement('div');
     modal.id = 'notice-edit-modal';
     modal.className = 'modal-overlay open';
     modal.innerHTML = `
-      <div class="modal-box" style="width:600px;">
+      <div class="modal-box" style="width:620px;">
         <div class="modal-header">
           <span><i class="ti ti-bell"></i> ${title}</span>
           <button class="modal-close" onclick="document.getElementById('notice-edit-modal').remove()">
             <i class="ti ti-x"></i>
           </button>
         </div>
-        <div class="modal-body" style="padding:20px;">
-          <div class="d-col-label" style="margin-bottom:8px;">공지 내용</div>
-          <textarea class="admin-input" rows="4" style="width:100%;resize:vertical;"
-            placeholder="공지 배너 내용"
-            id="notice-edit-textarea"
-          >${current}</textarea>
+        <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+          <div>
+            <div class="d-col-label" style="margin-bottom:8px;">공지 내용</div>
+            <textarea class="admin-input" id="notice-edit-textarea" rows="3"
+              style="width:100%;resize:vertical;"
+              placeholder="공지 배너 내용">${current.text}</textarea>
+          </div>
+          <div>
+            <div class="d-col-label" style="margin-bottom:8px;">색상</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">${colorOpts}</div>
+          </div>
+          <div>
+            <div class="d-col-label" style="margin-bottom:8px;">아이콘</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">${iconOpts}</div>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn" onclick="document.getElementById('notice-edit-modal').remove()">취소</button>
@@ -1758,15 +1782,15 @@ const UI = (() => {
   }
 
   function _saveNoticeEdit(idx) {
-    const text = document.getElementById('notice-edit-textarea')?.value || '';
+    const text  = document.getElementById('notice-edit-textarea')?.value || '';
+    const icon  = document.querySelector('input[name="notice-icon"]:checked')?.value  || 'ti-alert-triangle';
+    const color = document.querySelector('input[name="notice-color"]:checked')?.value || 'orange';
     _editDraft = window.mkEditDraft;
-    if (!_editDraft.overviewNotices) _editDraft.overviewNotices = [];
+    _ensureNoticesArray(_editDraft);
     if (idx === -1) {
-      // 추가
-      _editDraft.overviewNotices.push({ text });
+      _editDraft.overviewNotices.push({ text, icon, color });
     } else {
-      // 편집
-      _editDraft.overviewNotices[idx] = { text };
+      _editDraft.overviewNotices[idx] = { text, icon, color };
     }
     Store.saveConfig(_editDraft);
     document.getElementById('notice-edit-modal')?.remove();
