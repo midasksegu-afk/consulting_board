@@ -1314,7 +1314,7 @@ const UI = (() => {
     // localStorage 갱신 후 즉시 렌더 (타이밍 보장)
     setTimeout(() => {
       renderPages();
-      go(_currentPageId);
+      go('rm-overview');
     }, 0);
     showToast('✓ 카드가 저장되었습니다', 'success');
   }
@@ -1712,7 +1712,7 @@ const UI = (() => {
     Store.saveConfig(_editDraft);
     document.getElementById('notice-edit-modal')?.remove();
     renderPages();
-    go(_currentPageId);
+    go('rm-overview');
     showToast('✓ 공지가 저장되었습니다', 'success');
   }
 
@@ -1767,11 +1767,23 @@ const UI = (() => {
 
 
   /* ============================================================
+   * 재렌더링 — 사이드바 + 페이지 전체 갱신 후 현재 페이지 유지
+   *   BroadcastChannel 수신, DOMContentLoaded sync 등 외부 트리거 전용
+   * ============================================================ */
+  function rerender() {
+    renderSidebar();
+    renderPages();
+    go(_currentPageId);
+  }
+
+
+  /* ============================================================
    * Public API
    * ============================================================ */
   return {
     init,
     go,
+    rerender,
     toggleGrade,
     handleOvCheck,
     handleItemCheck,
@@ -1830,11 +1842,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
-      // 관리자가 저장했으므로 무조건 최신값 sync 후 갱신
-      Store.syncConfigFromServer().then(() => {
-        renderSidebar();
-        renderPages();
-        UI.go('rm-overview');
+      // 관리자가 Supabase 저장 완료 후 신호를 보내므로 최신값 보장
+      Store.syncConfigFromServer().then(updated => {
+        if (updated) UI.rerender();
       });
     };
   }
