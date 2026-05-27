@@ -13,7 +13,6 @@ const Admin = (() => {
   let _draft = null;
 
   function fmt(n) { return n.toLocaleString('ko-KR'); }
-  function _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 
   /* ============================================================
@@ -86,9 +85,8 @@ const Admin = (() => {
       { key: 'strategy',   label: (cfg.groups?.strategy?.label  || '대입 전략 컨설팅') },
     ];
     let html = '';
-    const _order = _draft._pageOrder || MK_CONFIG.pageOrder;
     groups.forEach(g => {
-      const pages = _order.filter(id => {
+      const pages = MK_CONFIG.pageOrder.filter(id => {
         const p = cfg.pages[id];
         return p && p.group === g.key && !p.isOverview;
       });
@@ -118,15 +116,18 @@ const Admin = (() => {
         const fn = tabPrefix === 'program' ? 'loadProgramPage' : 'loadContentPage';
         const currentId = tabPrefix === 'program' ? _programPageId : _contentPageId;
         const active = id === currentId ? 'ct-side-active' : '';
-        const dragHandle = tabPrefix === 'program'
-          ? `<i class="ti ti-grip-vertical" data-drag-handle style="font-size:14px;color:var(--text-3);cursor:grab;margin-left:auto;flex-shrink:0;" title="드래그하여 순서 변경"></i>`
-          : '';
+        const orderBtns = tabPrefix === 'program' ? `
+          <span style="display:flex;flex-direction:column;gap:1px;margin-left:auto;flex-shrink:0;">
+            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
+              onclick="event.stopPropagation();Admin.moveProgram('${id}',-1)" title="위로">▲</button>
+            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
+              onclick="event.stopPropagation();Admin.moveProgram('${id}',1)" title="아래로">▼</button>
+          </span>` : '';
         html += `
-          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;"
-            ${tabPrefix === 'program' ? `draggable="true" data-drag-id="${id}" data-drag-group="${g.key}"` : ''}>
+          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;">
             <i class="ti ${p.sbIcon}" style="font-size:14px;flex-shrink:0;"></i>
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px;">${p.sbLabel}</span>
-            ${dragHandle}
+            ${orderBtns}
           </div>`;
       });
 
@@ -166,7 +167,6 @@ const Admin = (() => {
       </div>`;
 
     if (_programPageId) loadProgramPage(_programPageId);
-    _initDrag();
   }
 
   function loadGroupLabelEditor() {
@@ -224,11 +224,11 @@ const Admin = (() => {
       return `
         <div class="admin-price-row" id="price-row-${pageId}-${idx}" style="gap:6px;flex-wrap:nowrap;">
           <input class="admin-input" style="flex:2;min-width:160px;max-width:400px;"
-            value="${_esc(price.label)}"
+            value="${price.label}"
             oninput="Admin.updatePriceField('${pageId}', ${idx}, 'label', this.value)"
             placeholder="항목명">
           <input class="admin-input" style="flex:1;min-width:60px;max-width:140px;"
-            value="${_esc(price.note)}"
+            value="${price.note || ''}"
             oninput="Admin.updatePriceField('${pageId}', ${idx}, 'note', this.value)"
             placeholder="비고 (예: 1회/고3)">
           <div style="display:flex;align-items:center;gap:4px;flex:0.8;">
@@ -270,31 +270,9 @@ const Admin = (() => {
       <div class="admin-field-group">
         <label class="admin-field-label">사이드바 메뉴명</label>
         <input class="admin-input admin-input-md"
-          value="${_esc(page.sbLabel)}"
+          value="${page.sbLabel || ''}"
           oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)">
       </div>
-
-      <div class="admin-field-group">
-        <label class="admin-field-label">아이콘</label>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
-          ${[
-            'ti-pencil','ti-layout-list','ti-bulb','ti-chart-line','ti-school',
-            'ti-send','ti-message-dots','ti-calculator','ti-book','ti-certificate',
-            'ti-clipboard-list','ti-brain','ti-target','ti-star','ti-rocket',
-            'ti-telescope','ti-test-pipe','ti-chart-bar','ti-award','ti-user-check',
-            'ti-map','ti-compass','ti-flag','ti-crown','ti-diamond',
-            'ti-file-text','ti-notes','ti-presentation','ti-podium','ti-circle',
-          ].map(icon => `
-            <div onclick="Admin.updateIconField('${pageId}','${icon}')"
-              style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;
-              border-radius:6px;cursor:pointer;border:2px solid ${page.sbIcon===icon ? 'var(--accent)' : 'var(--border)'};
-              background:${page.sbIcon===icon ? 'rgba(183,156,255,0.15)' : 'var(--surface)'};
-              transition:all 0.12s;" title="${icon}">
-              <i class="ti ${icon}" style="font-size:16px;color:${page.sbIcon===icon ? 'var(--accent)' : 'var(--text-2)'};"></i>
-            </div>`).join('')}
-        </div>
-      </div>
-
       <div style="font-size:12px;color:var(--blue-tx);background:var(--blue-bg);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:4px;">
         <i class="ti ti-info-circle"></i> 페이지 제목·부제목·콘텐츠는 메인화면 <b>편집</b> 버튼에서 수정하세요.
       </div>
@@ -354,11 +332,6 @@ const Admin = (() => {
     Store.addLog('name', `${pageId} ${field}`, old, value);
   }
 
-  function updateIconField(pageId, icon) {
-    _draft.pages[pageId].sbIcon = icon;
-    loadProgramPage(pageId);
-  }
-
   function _renderOverviewEditor(el) {
     const ovPage = Object.values(_draft.pages).find(p => p.isOverview);
     const ovKey  = Object.keys(_draft.pages).find(k => _draft.pages[k].isOverview);
@@ -411,10 +384,9 @@ const Admin = (() => {
         <i class="ti ti-info-circle"></i>
         <span>카드 이름·금액은 프로그램 관리에서 수정하면 자동 반영됩니다.</span>
       </div>
-      <div class="admin-field-group">
-        <label class="admin-field-label">하단 공지 텍스트</label>
-        <textarea class="admin-input" rows="2" style="resize:vertical;"
-          oninput="Admin.updateOverviewNotice(this.value)">${_draft.overviewNotice || ''}</textarea>
+      <div class="notice n-blue" style="margin-bottom:16px;">
+        <i class="ti ti-info-circle"></i>
+        <span>하단 공지는 메인화면 편집 버튼에서 추가/편집/삭제할 수 있습니다.</span>
       </div>
       <div class="admin-section-title" style="margin-top:20px;">카드 트리 항목 편집</div>
       ${treeSections}
@@ -444,28 +416,21 @@ const Admin = (() => {
     _renderOverviewEditor(document.getElementById('program-editor'));
   }
 
-  function updateOverviewNotice(value) {
-    _draft.overviewNotice = value;
+  function saveOverview() {
+    Store.saveConfig(_draft);
+    showMsg('✓ 전체 개요가 저장되었습니다.', true);
   }
 
-  async function saveOverview() {
-    showSaving();
-    try { await Store.saveConfig(_draft); showMsg('✓ 전체 개요가 저장되었습니다.', true); }
-    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+  function saveProgram(pageId) {
+    // pageOrder를 _draft에 동기화
+    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+    Store.saveConfig(_draft);
+    showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
+    renderProgramTab();
+    if (pageId) loadProgramPage(pageId);
   }
 
-  async function saveProgram(pageId) {
-    if (!_draft._pageOrder) _draft._pageOrder = [...MK_CONFIG.pageOrder];
-    showSaving();
-    try {
-      await Store.saveConfig(_draft);
-      showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
-      renderProgramTab();
-      if (pageId) loadProgramPage(pageId);
-    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
-  }
-
-  async function addProgram(group) {
+  function addProgram(group) {
     const id = 'pg-' + Date.now();
     _draft.pages[id] = {
       group,
@@ -478,93 +443,44 @@ const Admin = (() => {
       conditions: [],
       notes:      [],
     };
-    const baseOrder = _draft._pageOrder || MK_CONFIG.pageOrder;
-    if (!baseOrder.includes(id)) baseOrder.push(id);
-    _draft._pageOrder  = [...baseOrder];
-    MK_CONFIG.pageOrder = [...baseOrder];
-    showSaving();
-    try {
-      await Store.saveConfig(_draft);
-      showMsg('✓ 새 프로그램이 추가되었습니다.', true);
-      renderProgramTab();
-      loadProgramPage(id);
-    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+    if (!MK_CONFIG.pageOrder.includes(id)) MK_CONFIG.pageOrder.push(id);
+    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+    Store.saveConfig(_draft);
+    renderProgramTab();
+    loadProgramPage(id);
   }
 
   function deleteProgram(pageId) {
     const label = _draft.pages[pageId]?.sbLabel || pageId;
-    if (!confirm(`"${label}"을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-    _confirmWithPin(async () => {
+    if (!confirm(`"${label}"을 삭제하시겠습니까?
+이 작업은 되돌릴 수 없습니다.`)) return;
+    _confirmWithPin(() => {
       delete _draft.pages[pageId];
-      const baseOrder = _draft._pageOrder || MK_CONFIG.pageOrder;
-      const idx = baseOrder.indexOf(pageId);
-      if (idx > -1) baseOrder.splice(idx, 1);
-      _draft._pageOrder  = [...baseOrder];
-      MK_CONFIG.pageOrder = [...baseOrder];
+      const idx = MK_CONFIG.pageOrder.indexOf(pageId);
+      if (idx > -1) MK_CONFIG.pageOrder.splice(idx, 1);
+      _draft._pageOrder = [...MK_CONFIG.pageOrder];
       _programPageId = null;
-      showSaving();
-      try {
-        await Store.saveConfig(_draft);
-        showMsg(`✓ "${label}" 삭제되었습니다.`, true);
-        renderProgramTab();
-      } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
-    });
-  }
-
-  let _dragId = null;
-  let _dragInited = false;
-
-  function _initDrag() {
-    if (_dragInited) return;
-    _dragInited = true;
-    const getSidebar = () => document.querySelector('#tab-program .ct-sidebar');
-    document.addEventListener('dragstart', e => {
-      const el = e.target.closest('[data-drag-id]');
-      if (!el) return;
-      _dragId = el.dataset.dragId;
-      setTimeout(() => el.style.opacity = '0.4', 0);
-    });
-    document.addEventListener('dragend', e => {
-      const el = e.target.closest('[data-drag-id]');
-      if (el) el.style.opacity = '';
-      document.querySelectorAll('[data-drag-id]').forEach(el => el.classList.remove('drag-over'));
-    });
-    document.addEventListener('dragover', e => {
-      const el = e.target.closest('[data-drag-id]');
-      if (!el) return;
-      e.preventDefault();
-      if (el.dataset.dragId === _dragId) return;
-      document.querySelectorAll('[data-drag-id]').forEach(el => el.classList.remove('drag-over'));
-      el.classList.add('drag-over');
-    });
-    document.addEventListener('drop', e => {
-      const el = e.target.closest('[data-drag-id]');
-      if (!el || !_dragId || el.dataset.dragId === _dragId) return;
-      e.preventDefault();
-      _dropProgram(_dragId, e.target.closest('[data-drag-id]').dataset.dragId);
-      _dragId = null;
-    });
-  }
-
-  async function _dropProgram(fromId, toId) {
-    const order = _draft._pageOrder || [...MK_CONFIG.pageOrder];
-    const fromGroup = _draft.pages[fromId]?.group;
-    const toGroup   = _draft.pages[toId]?.group;
-    if (fromGroup !== toGroup) return;
-    const fromIdx = order.indexOf(fromId);
-    const toIdx   = order.indexOf(toId);
-    if (fromIdx < 0 || toIdx < 0) return;
-    order.splice(fromIdx, 1);
-    order.splice(toIdx, 0, fromId);
-    _draft._pageOrder  = [...order];
-    MK_CONFIG.pageOrder = [...order];
-    showSaving();
-    try {
-      await Store.saveConfig(_draft);
-      showMsg('✓ 순서가 저장되었습니다.', true);
+      Store.saveConfig(_draft);
+      showMsg(`✓ "${label}" 삭제되었습니다.`, true);
       renderProgramTab();
-      loadProgramPage(fromId);
-    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+    });
+  }
+
+  function moveProgram(pageId, dir) {
+    const order = MK_CONFIG.pageOrder;
+    const idx   = order.indexOf(pageId);
+    if (idx < 0) return;
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= order.length) return;
+    // 같은 그룹 내에서만 이동
+    const group = _draft.pages[pageId]?.group;
+    const swapGroup = _draft.pages[order[swapIdx]]?.group;
+    if (group !== swapGroup) return;
+    [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+    _draft._pageOrder = [...order];
+    Store.saveConfig(_draft);
+    renderProgramTab();
+    loadProgramPage(pageId);
   }
 
   function _confirmWithPin(callback) {
@@ -740,13 +656,12 @@ const Admin = (() => {
     loadContentPage(pageId);
   }
 
-  async function saveContentTab() {
+  function saveContentTab() {
     const page = _draft.pages[_contentPageId];
     const label = page ? page.sbLabel : '콘텐츠';
     if (!confirm(`"${label}" 콘텐츠를 저장하시겠습니까?`)) return;
-    showSaving();
-    try { await Store.saveConfig(_draft); showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true); }
-    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+    Store.saveConfig(_draft);
+    showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true);
   }
 
   function updateNoteField(pageId, idx, field, value) {
@@ -787,7 +702,7 @@ const Admin = (() => {
       </div>`;
   }
 
-  async function changePin() {
+  function changePin() {
     const cur = document.getElementById('pin-cur')?.value;
     const nw  = document.getElementById('pin-new')?.value;
     const con = document.getElementById('pin-con')?.value;
@@ -799,17 +714,16 @@ const Admin = (() => {
     if (nw.length < 4)        return show('PIN은 4자리 이상이어야 합니다.', false);
     if (nw !== con)           return show('새 PIN이 일치하지 않습니다.', false);
 
+    // _draft에 직접 저장 후 즉시 persist
     _draft.adminPin = nw;
     if (!_draft.app) _draft.app = {};
     _draft.app.adminPin = nw;
-    showSaving();
-    try {
-      await Store.saveConfig(_draft);
-      Store.addLog('pin', '관리자 PIN', '****', '****');
-      show('PIN이 변경되었습니다.', true);
-      showMsg('✓ PIN이 변경되었습니다.', true);
-      ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+    Store.saveConfig(_draft);
+    Store.addLog('pin', '관리자 PIN', '****', '****');
+
+    show('PIN이 변경되었습니다.', true);
+    showMsg('✓ PIN이 변경되었습니다.', true);
+    ['pin-cur','pin-new','pin-con'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   }
 
 
@@ -1038,11 +952,10 @@ const Admin = (() => {
     Store.addLog('price', `DC 할인율 ${group}`, old, value);
   }
 
-  async function saveDcDiscount() {
+  function saveDcDiscount() {
     if (!confirm('DC 할인율을 저장하시겠습니까?')) return;
-    showSaving();
-    try { await Store.saveConfig(_draft); showMsg('✓ DC 할인율이 저장되었습니다.', true); }
-    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+    Store.saveConfig(_draft);
+    showMsg('✓ DC 할인율이 저장되었습니다.', true);
   }
 
   /* ============================================================
@@ -1157,45 +1070,19 @@ const Admin = (() => {
     _draft.discount.individual[pageId] = parseInt(value) || 0;
   }
 
-  async function saveDiscountSection(section) {
+  function saveDiscountSection(section) {
     if (!confirm(`${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율을 저장하시겠습니까?`)) return;
-    showSaving();
-    try { await Store.saveConfig(_draft); showMsg(`✓ ${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율이 저장되었습니다.`, true); }
-    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+    Store.saveConfig(_draft);
+    showMsg(`✓ ${section === 'roadmap' ? '로드맵' : '개별'} DC 할인율이 저장되었습니다.`, true);
   }
 
   /* ============================================================
    * 9. 전체 저장
    * ============================================================ */
-  async function saveAll() {
+  function saveAll() {
     if (!confirm('전체 설정을 저장하시겠습니까?')) return;
-    showSaving();
-    try { await Store.saveConfig(_draft); showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true); }
-    catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
-  }
-
-  function showSaving() {
-    let toast = document.getElementById('admin-toast');
-    if (!toast) { toast = document.createElement('div'); toast.id = 'admin-toast'; document.body.appendChild(toast); }
-    toast.style.cssText = `
-      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      background:#1a1d2e; color:#fff;
-      padding:20px 40px; border-radius:14px;
-      font-size:15px; font-weight:600;
-      box-shadow:0 8px 40px rgba(0,0,0,0.35);
-      z-index:9999; border:1.5px solid transparent;
-      display:flex; align-items:center; gap:12px;
-      opacity:1; transition:opacity 0.3s; white-space:nowrap;
-      pointer-events:none;`;
-    toast.innerHTML = `<i class="ti ti-loader-2" style="font-size:20px;color:#B79CFF;animation:spin 1s linear infinite;"></i> 저장 중...`;
-    clearTimeout(toast._timer);
-    // spin 애니메이션 (없으면 추가)
-    if (!document.getElementById('admin-spin-style')) {
-      const s = document.createElement('style');
-      s.id = 'admin-spin-style';
-      s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
-      document.head.appendChild(s);
-    }
+    Store.saveConfig(_draft);
+    showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true);
   }
 
   function showMsg(text, ok) {
@@ -1216,21 +1103,18 @@ const Admin = (() => {
     const icon   = ok ? 'ti-circle-check' : 'ti-alert-circle';
     const icolor = ok ? '#B79CFF' : '#8b1c3a';
     toast.style.cssText = `
-      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
       background:${bg}; color:${color};
-      padding:20px 40px; border-radius:14px;
-      font-size:15px; font-weight:600;
-      box-shadow:0 8px 40px rgba(0,0,0,0.35);
+      padding:12px 28px; border-radius:12px;
+      font-size:14px; font-weight:600;
+      box-shadow:0 8px 32px rgba(0,0,0,0.15);
       z-index:9999; border:1.5px solid ${border};
-      display:flex; align-items:center; gap:12px;
+      display:flex; align-items:center; gap:10px;
       opacity:1; transition:opacity 0.3s;
-      white-space:nowrap; pointer-events:none;`;
+      white-space:nowrap;`;
     toast.innerHTML = `<i class="ti ${icon}" style="font-size:18px;color:${icolor};"></i> ${text}`;
     clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => {
-      toast.style.opacity = '0';
-      setTimeout(() => { toast.style.display = 'none'; }, 300);
-    }, 2800);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
   }
 
 
@@ -1244,13 +1128,10 @@ const Admin = (() => {
     _draft.groups[key].label = value;
   }
 
-  async function saveGroupLabels() {
-    showSaving();
-    try {
-      await Store.saveConfig(_draft);
-      showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
-      renderProgramTab();
-    } catch(e) { showMsg('✗ 저장 실패 — 네트워크를 확인하세요.', false); }
+  function saveGroupLabels() {
+    Store.saveConfig(_draft);
+    showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
+    renderProgramTab();
   }
 
   function initDraft() {
@@ -1263,7 +1144,7 @@ const Admin = (() => {
     // 프로그램 관리 (통합)
     renderProgramTab, loadProgramPage, saveProgram,
     updateGroupLabel, saveGroupLabels, loadGroupLabelEditor,
-    addProgram, deleteProgram,
+    addProgram, deleteProgram, moveProgram,
     _confirmWithPin, _pinConfirmSubmit,
     _toggleGroup,
     updateTreeField, addTreeItem, deleteTreeItem,
@@ -1276,7 +1157,7 @@ const Admin = (() => {
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)
-    updateNameField, updateIconField,
+    updateNameField,
     // 콘텐츠
     renderContentTab, loadContentPage,
     updateContentField, addContentItem, deleteContentItem,

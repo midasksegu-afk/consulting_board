@@ -197,6 +197,16 @@ const UI = (() => {
     });
   }
 
+  // overviewNotices 배열 보장 — 하위 호환 변환 헬퍼
+  //   overviewNotices 없으면 overviewNotice 단일값을 배열 첫 항목으로 변환
+  function _ensureNoticesArray(draft) {
+    if (!draft.overviewNotices || !draft.overviewNotices.length) {
+      draft.overviewNotices = draft.overviewNotice
+        ? [{ text: draft.overviewNotice }] : [];
+    }
+    return draft.overviewNotices;
+  }
+
   function _syncGradeButtons(grade) {
     document.querySelectorAll('.grade-btn').forEach(btn => {
       btn.classList.toggle('active', parseInt(btn.dataset.grade) === grade);
@@ -204,9 +214,10 @@ const UI = (() => {
     // 고3 추가 옵션 섹션 show/hide
     const aocSection = document.getElementById('aoc-section');
     if (aocSection) aocSection.style.display = grade === 3 ? 'block' : 'none';
-    // 하단 global-notice — 고3 선택 시 숨김 (aoc-notice-card로 대체)
-    const globalNotice = document.querySelector('#pg-rm-overview .global-notice');
-    if (globalNotice) globalNotice.style.display = grade === 3 ? 'none' : 'flex';
+    // 하단 global-notice 전체 — 고3 선택 시 숨김 (aoc-notice-card로 대체)
+    document.querySelectorAll('#pg-rm-overview .global-notice').forEach(el => {
+      el.style.display = grade === 3 ? 'none' : 'flex';
+    });
   }
 
 
@@ -475,16 +486,40 @@ const UI = (() => {
         </div>`;
     }).join('');
 
+    // aoc-notice-card — 배열 첫 항목 우선, 없으면 overviewNotice 폴백
+    const _firstNotice = (config.overviewNotices && config.overviewNotices.length)
+      ? config.overviewNotices[0].text
+      : (config.overviewNotice || '');
     const noticeCard = `
         <div class="aoc-notice-card">
           <i class="ti ti-alert-triangle"></i>
-          <span>${config.overviewNotice}</span>
+          <span>${_firstNotice}</span>
         </div>`;
 
-    const noticeEditBtn = _isAdminMode()
-      ? `<button class="edit-mode-btn" onclick="UI.openNoticeEdit()" style="margin-left:12px;flex-shrink:0;" title="공지 편집">
-           <i class="ti ti-pencil"></i> 편집
-         </button>`
+    // overviewNotices 배열 — 하위 호환: 배열 없으면 overviewNotice 단일값으로 폴백
+    const notices = (config.overviewNotices && config.overviewNotices.length)
+      ? config.overviewNotices
+      : (config.overviewNotice ? [{ text: config.overviewNotice }] : []);
+
+    const noticesHtml = notices.map((n, idx) => `
+      <div class="global-notice" style="display:flex;align-items:center;" id="gnotice-${idx}">
+        <i class="ti ti-alert-triangle"></i>
+        <span style="flex:1;">${n.text}</span>
+        ${_isAdminMode() ? `
+          <button class="edit-mode-btn" onclick="UI.openNoticeEdit(${idx})" style="margin-left:8px;flex-shrink:0;" title="공지 편집">
+            <i class="ti ti-pencil"></i> 편집
+          </button>
+          <button class="edit-mode-btn" onclick="UI._deleteNotice(${idx})" style="margin-left:4px;flex-shrink:0;color:#c0392b;" title="공지 삭제">
+            <i class="ti ti-trash"></i>
+          </button>` : ''}
+      </div>`).join('');
+
+    const noticeAddBtn = _isAdminMode()
+      ? `<div style="display:flex;justify-content:flex-end;padding:4px 0;">
+           <button class="edit-mode-btn" onclick="UI.openNoticeEdit(-1)" style="flex-shrink:0;" title="공지 추가">
+             <i class="ti ti-plus"></i> 공지 추가
+           </button>
+         </div>`
       : '';
 
     return `
@@ -494,11 +529,8 @@ const UI = (() => {
           <div class="aoc-header"><i class="ti ti-plus"></i> 고3 추가 선택 항목</div>
           <div class="aoc-grid">${addOnCards}${noticeCard}</div>
         </div>
-        <div class="global-notice" style="display:flex;align-items:center;">
-          <i class="ti ti-alert-triangle"></i>
-          <span style="flex:1;">${config.overviewNotice}</span>
-          ${noticeEditBtn}
-        </div>
+        ${noticesHtml}
+        ${noticeAddBtn}
       </div>`;
   }
 
@@ -1682,13 +1714,20 @@ const UI = (() => {
     _refreshRows(pageId);
   }
 
-  function openNoticeEdit() {
+  // idx >= 0 : 기존 공지 편집 / idx === -1 : 새 공지 추가
+  function openNoticeEdit(idx) {
     const config = MK_CONFIG.resolve();
     const existing = document.getElementById('notice-edit-modal');
     if (existing) existing.remove();
 
     _editDraft = JSON.parse(JSON.stringify(config));
+    // 하위 호환: overviewNotices 없으면 overviewNotice 단일값으로 초기화
+    _ensureNoticesArray(_editDraft);
     window.mkEditDraft = _editDraft;
+
+    const isNew   = (idx === -1);
+    const current = isNew ? '' : (_editDraft.overviewNotices[idx]?.text || '');
+    const title   = isNew ? '공지 추가' : '공지 편집';
 
     const modal = document.createElement('div');
     modal.id = 'notice-edit-modal';
@@ -1696,7 +1735,7 @@ const UI = (() => {
     modal.innerHTML = `
       <div class="modal-box" style="width:600px;">
         <div class="modal-header">
-          <span><i class="ti ti-bell"></i> 공지 배너 편집</span>
+          <span><i class="ti ti-bell"></i> ${title}</span>
           <button class="modal-close" onclick="document.getElementById('notice-edit-modal').remove()">
             <i class="ti ti-x"></i>
           </button>
@@ -1704,12 +1743,13 @@ const UI = (() => {
         <div class="modal-body" style="padding:20px;">
           <div class="d-col-label" style="margin-bottom:8px;">공지 내용</div>
           <textarea class="admin-input" rows="4" style="width:100%;resize:vertical;"
-            oninput="window.mkEditDraft.overviewNotice=this.value"
-            placeholder="공지 배너 내용">${config.overviewNotice || ''}</textarea>
+            placeholder="공지 배너 내용"
+            id="notice-edit-textarea"
+          >${current}</textarea>
         </div>
         <div class="modal-footer">
           <button class="btn" onclick="document.getElementById('notice-edit-modal').remove()">취소</button>
-          <button class="btn btn-primary" onclick="UI._saveNoticeEdit()">
+          <button class="btn btn-primary" onclick="UI._saveNoticeEdit(${idx})">
             <i class="ti ti-device-floppy"></i> 저장 및 반영
           </button>
         </div>
@@ -1717,13 +1757,34 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
-  function _saveNoticeEdit() {
+  function _saveNoticeEdit(idx) {
+    const text = document.getElementById('notice-edit-textarea')?.value || '';
     _editDraft = window.mkEditDraft;
+    if (!_editDraft.overviewNotices) _editDraft.overviewNotices = [];
+    if (idx === -1) {
+      // 추가
+      _editDraft.overviewNotices.push({ text });
+    } else {
+      // 편집
+      _editDraft.overviewNotices[idx] = { text };
+    }
     Store.saveConfig(_editDraft);
     document.getElementById('notice-edit-modal')?.remove();
     renderPages();
-    go('rm-overview');
-    showToast('✓ 공지가 저장되었습니다', 'success');
+    go(_currentPageId);
+    showToast(idx === -1 ? '✓ 공지가 추가되었습니다' : '✓ 공지가 저장되었습니다', 'success');
+  }
+
+  function _deleteNotice(idx) {
+    if (!confirm('이 공지를 삭제할까요?')) return;
+    const config = MK_CONFIG.resolve();
+    _editDraft = JSON.parse(JSON.stringify(config));
+    _ensureNoticesArray(_editDraft);
+    _editDraft.overviewNotices.splice(idx, 1);
+    Store.saveConfig(_editDraft);
+    renderPages();
+    go(_currentPageId);
+    showToast('✓ 공지가 삭제되었습니다', 'success');
   }
 
   function _savePageEdit(pageId) {
@@ -1810,6 +1871,7 @@ const UI = (() => {
     _addOvTree, _removeOvTree,
     openNoticeEdit,
     _saveNoticeEdit,
+    _deleteNotice,
     _richCmd,
     _insertText,
     _toggleScPopup,
