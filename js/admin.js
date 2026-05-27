@@ -21,9 +21,8 @@ const Admin = (() => {
   function checkPin() {
     const input = document.getElementById('pin-input')?.value;
     if (Store.verifyPin(input)) {
-      _unlocked = true;
       localStorage.setItem('mk_admin_auth', '1');  // localStorage — 메인화면 자물쇠와 공유
-      _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
+      initDraft();
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
       switchTab('tab-program');
@@ -1264,6 +1263,11 @@ const Admin = (() => {
   }
 
   function initDraft() {
+    // 신규 추가 페이지 순서 복원 — syncConfigFromServer와 동일 패턴
+    const saved = Store.loadConfig();
+    if (saved?._pageOrder && Array.isArray(saved._pageOrder)) {
+      MK_CONFIG.pageOrder = saved._pageOrder;
+    }
     _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
     _unlocked = true;
   }
