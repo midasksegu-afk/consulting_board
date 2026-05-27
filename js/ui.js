@@ -144,7 +144,28 @@ const UI = (() => {
     }
   }
 
-  // 연간관리형 카드 금액 — 선택된 학년만 표시
+  // 카드 가격 표시 모드 판별
+  //   'grade' : ovPrices 있음 → 학년 선택 시 해당 금액 굵게 표시
+  //   'fixed' : prices 전부 grade 없음(무관) → 학년 무관 항상 표시
+  function _getOvPriceMode(page) {
+    if (page.ovCard.ovPrices) return 'grade';
+    return 'fixed';
+  }
+
+  // 무관(fixed) 카드의 기본 가격 HTML 생성
+  function _buildFixedPriceHtml(page) {
+    if (page.prices && page.prices.length) {
+      return page.prices.map(pr => {
+        const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
+        return pr.label + ' ' + man + '<br>';
+      }).join('');
+    }
+    return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+  }
+
+  // 연간관리형 카드 금액 — 학년 모드 / 기본 모드 2가지
+  //   grade === 0 : 기본 모드 (학년 미선택)
+  //   grade > 0  : 학년 모드
   function _updateOvCardPrices(grade) {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
@@ -152,14 +173,21 @@ const UI = (() => {
       if (!page || !page.ovCard || page.isOverview) return;
       const priceEl = document.getElementById('ov-price-' + pageId);
       if (!priceEl) return;
-      if (grade === 0) {
-        priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+
+      const mode = _getOvPriceMode(page);
+
+      if (mode === 'fixed') {
+        // 무관 카드 — 학년과 무관하게 항상 금액 표시
+        priceEl.innerHTML = _buildFixedPriceHtml(page);
       } else {
-        const amt = (page.ovCard.ovPrices || {})[grade];
-        if (amt) {
-          priceEl.innerHTML = '<strong>고' + grade + ' ' + fmt(amt) + '</strong>';
-        } else {
+        // 학년 카드 — 기본 모드: priceLabel / 학년 모드: 해당 학년 금액 굵게
+        if (grade === 0) {
           priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+        } else {
+          const amt = (page.ovCard.ovPrices || {})[grade];
+          priceEl.innerHTML = amt
+            ? '<strong>고' + grade + ' ' + fmt(amt) + '</strong>'
+            : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
         }
       }
     });
@@ -420,9 +448,8 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          ${ov.desc
-            ? `<div class="ov-desc">${ov.desc}</div>`
-            : `<div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>`}
+          ${ov.desc ? `<div class="ov-desc">${ov.desc}</div>` : ''}
+          <div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
@@ -1767,23 +1794,11 @@ const UI = (() => {
 
 
   /* ============================================================
-   * 재렌더링 — 사이드바 + 페이지 전체 갱신 후 현재 페이지 유지
-   *   BroadcastChannel 수신, DOMContentLoaded sync 등 외부 트리거 전용
-   * ============================================================ */
-  function rerender() {
-    renderSidebar();
-    renderPages();
-    go(_currentPageId);
-  }
-
-
-  /* ============================================================
    * Public API
    * ============================================================ */
   return {
     init,
     go,
-    rerender,
     toggleGrade,
     handleOvCheck,
     handleItemCheck,
@@ -1842,9 +1857,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
-      // 관리자가 Supabase 저장 완료 후 신호를 보내므로 최신값 보장
-      Store.syncConfigFromServer().then(updated => {
-        if (updated) UI.rerender();
+      // 관리자가 저장했으므로 무조건 최신값 sync 후 갱신
+      Store.syncConfigFromServer().then(() => {
+        renderSidebar();
+        renderPages();
+        UI.go('rm-overview');
       });
     };
   }
