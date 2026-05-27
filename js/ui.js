@@ -146,13 +146,13 @@ const UI = (() => {
 
   // 카드 가격 표시 모드 판별
   //   'grade' : ovPrices 있음 → 학년 선택 시 해당 금액 굵게 표시
-  //   'fixed' : prices 전부 grade 없음(무관) → 학년 무관 항상 표시
+  //   'fixed' : ovPrices 없음(무관) → 학년 무관 항상 금액 표시
   function _getOvPriceMode(page) {
     if (page.ovCard.ovPrices) return 'grade';
     return 'fixed';
   }
 
-  // 무관(fixed) 카드의 기본 가격 HTML 생성
+  // 무관(fixed) 카드 가격 HTML
   function _buildFixedPriceHtml(page) {
     if (page.prices && page.prices.length) {
       return page.prices.map(pr => {
@@ -163,9 +163,24 @@ const UI = (() => {
     return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
   }
 
-  // 연간관리형 카드 금액 — 학년 모드 / 기본 모드 2가지
-  //   grade === 0 : 기본 모드 (학년 미선택)
-  //   grade > 0  : 학년 모드
+  // 학년 grade 기준 priceHtml 생성 — 렌더와 업데이트 로직 통일
+  //   grade === 0 : 기본 모드 → 전 카드 동일하게 priceLabel (설명 문구)
+  //   grade > 0  : 학년 모드 → A,B: 해당 학년 금액 굵게 / C,D,E: 무관 금액
+  function _buildOvPriceHtml(page, grade) {
+    // 기본 모드 — 전 카드 동일하게 priceLabel 표시
+    if (grade === 0) {
+      return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+    }
+    // 학년 모드 — 모드 분기
+    const mode = _getOvPriceMode(page);
+    if (mode === 'fixed') return _buildFixedPriceHtml(page);
+    const amt = (page.ovCard.ovPrices || {})[grade];
+    return amt
+      ? '<strong>고' + grade + ' ' + fmt(amt) + '</strong>'
+      : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+  }
+
+  // 연간관리형 카드 금액 업데이트 — _buildOvPriceHtml 위임
   function _updateOvCardPrices(grade) {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
@@ -173,23 +188,7 @@ const UI = (() => {
       if (!page || !page.ovCard || page.isOverview) return;
       const priceEl = document.getElementById('ov-price-' + pageId);
       if (!priceEl) return;
-
-      const mode = _getOvPriceMode(page);
-
-      if (mode === 'fixed') {
-        // 무관 카드 — 학년과 무관하게 항상 금액 표시
-        priceEl.innerHTML = _buildFixedPriceHtml(page);
-      } else {
-        // 학년 카드 — 기본 모드: priceLabel / 학년 모드: 해당 학년 금액 굵게
-        if (grade === 0) {
-          priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
-        } else {
-          const amt = (page.ovCard.ovPrices || {})[grade];
-          priceEl.innerHTML = amt
-            ? '<strong>고' + grade + ' ' + fmt(amt) + '</strong>'
-            : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
-        }
-      }
+      priceEl.innerHTML = _buildOvPriceHtml(page, grade);
     });
   }
 
@@ -424,17 +423,9 @@ const UI = (() => {
           </div>
         </div>`).join('');
 
-      // prices[]에서 자동 생성 (없으면 priceLabel 폴백)
-      let priceHtml = '';
-      if (page.prices && page.prices.length) {
-        priceHtml = page.prices.map(pr => {
-          const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
-          const gradeStr = pr.grade && pr.grade !== '1,2,3' ? `고${pr.grade} ` : '';
-          return gradeStr + man + '<br>';
-        }).join('');
-      } else {
-        priceHtml = (ov.priceLabel || []).map(p => p + '<br>').join('');
-      }
+      // 초기 priceHtml — _buildOvPriceHtml로 생성 (업데이트 로직과 동일)
+      const currentGrade = Calc.getGrade ? Calc.getGrade() : 0;
+      const priceHtml = _buildOvPriceHtml(page, currentGrade);
 
       const ovEditBtn = _isAdminMode()
         ? `<button class="edit-mode-btn ov-edit-btn" onclick="event.stopPropagation();UI.openOvCardEdit('${pageId}')" title="카드 편집" style="position:absolute;bottom:8px;right:8px;"><i class="ti ti-pencil"></i> 편집</button>`
@@ -448,7 +439,6 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          ${ov.desc ? `<div class="ov-desc">${ov.desc}</div>` : ''}
           <div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
