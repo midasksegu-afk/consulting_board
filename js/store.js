@@ -22,10 +22,11 @@ const Store = (() => {
     ? new BroadcastChannel('mk_config_sync') : null;
 
   const KEYS = {
-    CONFIG:  'mk_config',
-    SESSION: 'mk_session',
-    LOG:     'mk_admin_log',
-    CACHE:   'mk_stu_cache',
+    CONFIG:          'mk_config',
+    CONFIG_SAVED_AT: 'mk_config_saved_at',  // 로컬 저장 시각 (sync 충돌 방지용)
+    SESSION:         'mk_session',
+    LOG:             'mk_admin_log',
+    CACHE:           'mk_stu_cache',
   };
 
 
@@ -133,32 +134,30 @@ const Store = (() => {
    *  loadConfig           : localStorage 캐시 반환 (동기 — 기존 호출부 무변경)
    *  syncConfigFromServer : Supabase → localStorage 동기화 (초기화 시 1회 호출)
    * ============================================================ */
-  async function saveConfig(data) {
-    // Supabase 먼저 저장 (Primary) — 완료 확인 후 localStorage 캐시
-    try {
-      const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
-        method: 'GET',
-        headers: _headers({ 'Accept': 'application/json' }),
-      });
-      if (!checkRes.ok) throw new Error(`status ${checkRes.status}`);
-      const rows   = await checkRes.json();
+  function saveConfig(data) {
+    _write(KEYS.CONFIG, data);
+    // 로컬 저장 시각 기록 — syncConfigFromServer의 덮어쓰기 방지용
+    localStorage.setItem(KEYS.CONFIG_SAVED_AT, new Date().toISOString());
+    // 같은 브라우저 다른 탭에 설정 변경 알림
+    _configChannel?.postMessage({ type: 'config_updated' });
+    // Supabase 백그라운드 저장 (app_config 테이블, key='settings' 단일 행)
+    fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
+      method: 'GET',
+      headers: _headers({ 'Accept': 'application/json' }),
+    })
+    .then(r => r.json())
+    .then(rows => {
       const method = (rows && rows.length > 0) ? 'PATCH' : 'POST';
       const url    = method === 'PATCH'
         ? `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`
         : `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}`;
-      const saveRes = await fetch(url, {
+      return fetch(url, {
         method,
         headers: _headers({ 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ key: 'settings', data, updated_at: new Date().toISOString() }),
       });
-      if (!saveRes.ok) throw new Error(`status ${saveRes.status}`);
-    } catch (e) {
-      console.warn('[Store] saveConfig → Supabase 실패:', e);
-      throw e; // 호출부에서 실패 처리
-    }
-    // Supabase 저장 완료 후 localStorage 캐시
-    _write(KEYS.CONFIG, data);
-    _configChannel?.postMessage({ type: 'config_updated' });
+    })
+    .catch(e => console.warn('[Store] saveConfig → Supabase 실패:', e));
     return true;
   }
 
@@ -176,13 +175,23 @@ const Store = (() => {
   async function syncConfigFromServer() {
     try {
       const res  = await fetch(
-        `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings&select=data&limit=1`,
+        `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings&select=data,updated_at&limit=1`,
         { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
       );
       if (!res.ok) throw new Error(`status ${res.status}`);
       const rows = await res.json();
       if (rows && rows.length > 0 && rows[0].data) {
-        const data = rows[0].data;
+        const data       = rows[0].data;
+        const serverAt   = rows[0].updated_at ? new Date(rows[0].updated_at).getTime() : 0;
+        const localSavedAt = localStorage.getItem(KEYS.CONFIG_SAVED_AT);
+        const localAt    = localSavedAt ? new Date(localSavedAt).getTime() : 0;
+
+        // 로컬이 더 최신이면 서버값으로 덮어쓰지 않음 (저장 직후 롤백 방지)
+        if (localAt > serverAt) {
+          console.info('[Store] syncConfigFromServer: 로컬이 최신 — 서버 덮어쓰기 스킵');
+          return false;
+        }
+
         _write(KEYS.CONFIG, data);
         // 저장된 pageOrder가 있으면 런타임에 반영
         if (data._pageOrder && Array.isArray(data._pageOrder) && typeof MK_CONFIG !== 'undefined') {
