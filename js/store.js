@@ -136,8 +136,6 @@ const Store = (() => {
    * ============================================================ */
   function saveConfig(data) {
     _write(KEYS.CONFIG, data);
-    // 로컬 저장 시각 기록 — syncConfigFromServer의 덮어쓰기 방지용
-    localStorage.setItem(KEYS.CONFIG_SAVED_AT, new Date().toISOString());
     // 같은 브라우저 다른 탭에 설정 변경 알림
     _configChannel?.postMessage({ type: 'config_updated' });
     // Supabase 백그라운드 저장 (app_config 테이블, key='settings' 단일 행)
@@ -151,10 +149,16 @@ const Store = (() => {
       const url    = method === 'PATCH'
         ? `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`
         : `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}`;
+      const savedAt = new Date().toISOString();
       return fetch(url, {
         method,
         headers: _headers({ 'Prefer': 'return=minimal' }),
-        body: JSON.stringify({ key: 'settings', data, updated_at: new Date().toISOString() }),
+        body: JSON.stringify({ key: 'settings', data, updated_at: savedAt }),
+      }).then(res => {
+        if (res.ok) {
+          // Supabase 저장 완료 후 로컬 시각 기록 — 서버와 동일 시각 보장
+          localStorage.setItem(KEYS.CONFIG_SAVED_AT, savedAt);
+        }
       });
     })
     .catch(e => console.warn('[Store] saveConfig → Supabase 실패:', e));
