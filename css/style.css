@@ -401,11 +401,19 @@ html, body {
 .ov-tree-sub   { font-size:10.5px; color:#43434A; margin-top:1px; line-height:1.4; }
 
 .global-notice {
-  background:#FFE3D4; border:1px solid #FFB89A; border-radius:var(--radius-md);
-  padding:14px 18px; font-size:13.5px; color:#8a4020;
-  display:flex; gap:10px; align-items:flex-start;
+  border-radius:var(--radius-md);
+  padding:10px 16px; font-size:13px; color:#8a4020;
+  display:flex; gap:8px; align-items:center;
+  margin-bottom:6px;
+  /* 기본 색상 — orange */
+  background:#FFE3D4; border:1px solid #FFB89A;
 }
-.global-notice i { font-size:16px; flex-shrink:0; margin-top:1px; }
+.global-notice i { font-size:15px; flex-shrink:0; }
+/* 공지 색상 테마 */
+.global-notice.n-orange { background:#FFE3D4; border-color:#FFB89A; color:#8a4020; }
+.global-notice.n-blue   { background:#E8F0FE; border-color:#93B4F5; color:#1a3a6e; }
+.global-notice.n-red    { background:#FDECEA; border-color:#F5A8A3; color:#7a1c1c; }
+.global-notice.n-green  { background:#E6F4EA; border-color:#86C98A; color:#1a5c2a; }
 
 /* ================================================================
    고3 추가 선택 옵션 (aoc)
@@ -1052,4 +1060,3 @@ select[title] { cursor: help; }
   font-size: 11px !important;
   padding: 4px 10px !important;
 }
-.drag-over { border-top: 2px solid var(--accent) !important; background: rgba(183,156,255,0.12) !important; }
