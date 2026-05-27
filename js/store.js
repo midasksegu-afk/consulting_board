@@ -23,7 +23,7 @@ const Store = (() => {
 
   const KEYS = {
     CONFIG:          'mk_config',
-    CONFIG_SAVED_AT: 'mk_config_saved_at',  // 로컬 저장 시각 (sync 충돌 방지용)
+    CONFIG_SAVED_AT: 'mk_config_saved_at',  // 로컬 저장 시각 (sync 덮어쓰기 방지용)
     SESSION:         'mk_session',
     LOG:             'mk_admin_log',
     CACHE:           'mk_stu_cache',
@@ -136,7 +136,9 @@ const Store = (() => {
    * ============================================================ */
   function saveConfig(data) {
     _write(KEYS.CONFIG, data);
-    // Supabase 백그라운드 저장 — postMessage는 저장 완료 후 전송 (수신 탭이 최신값 보장)
+    // 로컬 저장 시각 즉시 기록 — BroadcastChannel 수신 전 CONFIG_SAVED_AT 보장
+    localStorage.setItem(KEYS.CONFIG_SAVED_AT, new Date().toISOString());
+    // Supabase 백그라운드 저장 — 완료 후 postMessage 전송 (수신 탭 최신값 보장)
     fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
       method: 'GET',
       headers: _headers({ 'Accept': 'application/json' }),
@@ -154,7 +156,7 @@ const Store = (() => {
         body: JSON.stringify({ key: 'settings', data, updated_at: savedAt }),
       }).then(res => {
         if (res.ok) {
-          // 저장 완료 후 시각 기록 + 다른 탭 알림 (서버와 동일 시각 보장)
+          // Supabase 완료 후 시각 갱신 + 다른 탭 알림
           localStorage.setItem(KEYS.CONFIG_SAVED_AT, savedAt);
           _configChannel?.postMessage({ type: 'config_updated' });
         }
@@ -186,12 +188,12 @@ const Store = (() => {
       if (rows && rows.length > 0 && rows[0].data) {
         const data       = rows[0].data;
         const serverAt   = rows[0].updated_at ? new Date(rows[0].updated_at).getTime() : 0;
-        const localSavedAt = localStorage.getItem(KEYS.CONFIG_SAVED_AT);
-        const localAt    = localSavedAt ? new Date(localSavedAt).getTime() : 0;
+        const localAt    = localStorage.getItem(KEYS.CONFIG_SAVED_AT)
+          ? new Date(localStorage.getItem(KEYS.CONFIG_SAVED_AT)).getTime() : 0;
 
-        // 로컬이 더 최신이면 서버값으로 덮어쓰지 않음 (저장 직후 롤백 방지)
+        // 로컬이 더 최신이면 덮어쓰기 스킵 (저장 직후 롤백 방지)
         if (localAt > serverAt) {
-          console.info('[Store] syncConfigFromServer: 로컬이 최신 — 서버 덮어쓰기 스킵');
+          console.info('[Store] syncConfigFromServer: 로컬이 최신 — 덮어쓰기 스킵');
           return false;
         }
 
