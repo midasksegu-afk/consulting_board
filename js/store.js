@@ -22,10 +22,11 @@ const Store = (() => {
     ? new BroadcastChannel('mk_config_sync') : null;
 
   const KEYS = {
-    CONFIG:  'mk_config',
-    SESSION: 'mk_session',
-    LOG:     'mk_admin_log',
-    CACHE:   'mk_stu_cache',
+    CONFIG:          'mk_config',
+    CONFIG_SAVED_AT: 'mk_config_saved_at',  // 로컬 저장 시각 (sync 충돌 방지용)
+    SESSION:         'mk_session',
+    LOG:             'mk_admin_log',
+    CACHE:           'mk_stu_cache',
   };
 
 
@@ -135,8 +136,7 @@ const Store = (() => {
    * ============================================================ */
   function saveConfig(data) {
     _write(KEYS.CONFIG, data);
-    // Supabase 백그라운드 저장 (app_config 테이블, key='settings' 단일 행)
-    // ※ postMessage는 저장 완료 후 전송 — 수신 탭이 최신값을 보장받도록
+    // Supabase 백그라운드 저장 — postMessage는 저장 완료 후 전송 (수신 탭이 최신값 보장)
     fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
       method: 'GET',
       headers: _headers({ 'Accept': 'application/json' }),
@@ -154,7 +154,7 @@ const Store = (() => {
         body: JSON.stringify({ key: 'settings', data, updated_at: savedAt }),
       }).then(res => {
         if (res.ok) {
-          // 저장 완료 후 로컬 시각 기록 + 다른 탭에 반영 알림
+          // 저장 완료 후 시각 기록 + 다른 탭 알림 (서버와 동일 시각 보장)
           localStorage.setItem(KEYS.CONFIG_SAVED_AT, savedAt);
           _configChannel?.postMessage({ type: 'config_updated' });
         }
@@ -178,15 +178,24 @@ const Store = (() => {
   async function syncConfigFromServer() {
     try {
       const res  = await fetch(
-        `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings&select=data&limit=1`,
+        `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings&select=data,updated_at&limit=1`,
         { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
       );
       if (!res.ok) throw new Error(`status ${res.status}`);
       const rows = await res.json();
       if (rows && rows.length > 0 && rows[0].data) {
-        const data = rows[0].data;
+        const data       = rows[0].data;
+        const serverAt   = rows[0].updated_at ? new Date(rows[0].updated_at).getTime() : 0;
+        const localSavedAt = localStorage.getItem(KEYS.CONFIG_SAVED_AT);
+        const localAt    = localSavedAt ? new Date(localSavedAt).getTime() : 0;
+
+        // 로컬이 더 최신이면 서버값으로 덮어쓰지 않음 (저장 직후 롤백 방지)
+        if (localAt > serverAt) {
+          console.info('[Store] syncConfigFromServer: 로컬이 최신 — 서버 덮어쓰기 스킵');
+          return false;
+        }
+
         _write(KEYS.CONFIG, data);
-        // 저장된 pageOrder가 있으면 런타임에 반영
         if (data._pageOrder && Array.isArray(data._pageOrder) && typeof MK_CONFIG !== 'undefined') {
           MK_CONFIG.pageOrder = data._pageOrder;
         }
