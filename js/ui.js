@@ -139,9 +139,33 @@ const UI = (() => {
     const newGrade = Calc.setGrade(n);
     _updateOvCardPrices(newGrade);
     _autoCheckOvCards(newGrade);
+    // 학년 선택 시 개별/대입전략 해당 학년 항목 자동 체크
+    if (newGrade !== 0) _autoCheckGradeItems(newGrade);
+    // 학년 변경 시 전체 페이지 재렌더 — grade 기반 disabled 반영
+    renderPages();
+    go(_currentPageId);
     if (prev !== 0 && newGrade !== prev) {
       showToast('학년이 변경되어 선택이 초기화되었습니다', 'warn');
     }
+  }
+
+  /**
+   * 학년 선택 시 grade 일치 항목 자동 체크 (개별/대입전략)
+   * — 로드맵은 _autoCheckOvCards()가 처리하므로 제외
+   */
+  function _autoCheckGradeItems(grade) {
+    const config = cfg();
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page || page.group === 'roadmap' || page.isOverview) return;
+      (page.prices || []).forEach((price, idx) => {
+        if (!price.grade) return; // grade 없는 항목(학년 무관)은 자동체크 제외
+        const grades = String(price.grade).split(',').map(g => Number(g.trim()));
+        if (grades.includes(grade)) {
+          Calc.selectItem(pageId, idx, true);
+        }
+      });
+    });
   }
 
   // 카드 가격 표시 모드 판별
@@ -276,7 +300,8 @@ const UI = (() => {
         // grade 불일치 항목 비활성화
         const priceGrade = cb.getAttribute('data-grade');
         const curGrade   = Calc.getGrade();
-        const gradeOff   = priceGrade && curGrade !== 0 && Number(priceGrade) !== curGrade;
+        const gradeList  = priceGrade ? String(priceGrade).split(',').map(g => Number(g.trim())) : [];
+        const gradeOff   = gradeList.length > 0 && curGrade !== 0 && !gradeList.includes(curGrade);
         cb.disabled = gradeOff;
         if (gradeOff) cb.closest('label')?.classList.add('p-opt-disabled');
         else          cb.closest('label')?.classList.remove('p-opt-disabled');
@@ -666,7 +691,8 @@ const UI = (() => {
         : '';
 
       // grade 있는 항목 — 현재 학년과 불일치 시 disabled
-      const gradeDisabled = price.grade && currentGrade !== 0 && Number(price.grade) !== currentGrade;
+      const gradeList     = price.grade ? String(price.grade).split(',').map(g => Number(g.trim())) : [];
+      const gradeDisabled = gradeList.length > 0 && currentGrade !== 0 && !gradeList.includes(currentGrade);
       const disabledAttr  = gradeDisabled ? ' disabled' : '';
       const disabledCls   = gradeDisabled ? ' p-opt-disabled' : '';
 
