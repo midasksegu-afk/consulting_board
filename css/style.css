@@ -523,27 +523,27 @@ html, body {
 
 /* 가격 카드 */
 .price-card {
-  background:var(--surface); border:1.5px solid var(--border);
-  border-radius:var(--radius-lg); padding:20px; box-shadow:var(--shadow);
+  background:#1A1A2E; border:1px solid rgba(255,255,255,0.08);
+  border-radius:var(--radius-lg); padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.18);
   position:sticky; top:0;
 }
-.pc-title { font-size:12px; font-weight:600; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; }
+.pc-title { font-size:12px; font-weight:600; color:rgba(255,255,255,0.42); letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; }
 .p-opt {
   display:flex; align-items:flex-start; gap:12px;
-  padding:12px 0; border-bottom:1px solid var(--border);
+  padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08);
   cursor:pointer; transition:background 0.1s;
 }
 .p-opt:last-of-type { border-bottom:none; }
-.p-opt:hover { background:var(--surface2); margin:0 -4px; padding:12px 4px; border-radius:var(--radius-sm); }
-.p-opt input[type=checkbox] { width:17px; height:17px; cursor:pointer; flex-shrink:0; margin-top:2px; accent-color:#6c5ff5; }
+.p-opt:hover { background:rgba(255,255,255,0.06); margin:0 -4px; padding:12px 4px; border-radius:var(--radius-sm); }
+.p-opt input[type=checkbox] { width:17px; height:17px; cursor:pointer; flex-shrink:0; margin-top:2px; accent-color:#B79CFF; }
 .p-opt-lbl   { flex:1; }
-.p-opt-grade { font-size:15px; font-weight:600; color:var(--text-1); }
-.p-opt-note  { font-size:12px; color:var(--text-3); margin-top:2px; }
-.p-opt-amt   { font-size:15px; font-weight:700; color:#2a1450; white-space:nowrap; flex-shrink:0; }
-.pc-divider  { height:1px; background:var(--border); margin:14px 0; }
+.p-opt-grade { font-size:15px; font-weight:600; color:rgba(255,255,255,0.85); }
+.p-opt-note  { font-size:12px; color:rgba(255,255,255,0.42); margin-top:2px; }
+.p-opt-amt   { font-size:15px; font-weight:700; color:rgba(255,255,255,0.92); white-space:nowrap; flex-shrink:0; }
+.pc-divider  { height:1px; background:rgba(255,255,255,0.08); margin:14px 0; }
 .pc-total    { display:flex; justify-content:space-between; align-items:center; padding-top:4px; }
-.pc-total-lbl { font-size:13px; color:var(--text-2); }
-.pc-total-amt { font-size:18px; font-weight:700; color:#2a1450; }
+.pc-total-lbl { font-size:13px; color:rgba(255,255,255,0.42); }
+.pc-total-amt { font-size:18px; font-weight:700; color:rgba(255,255,255,0.92); }
 
 /* ================================================================
    공용 모달
