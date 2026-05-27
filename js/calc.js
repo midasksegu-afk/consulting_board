@@ -46,7 +46,9 @@ const Calc = (() => {
   function _gradeMatch(price) {
     if (!price.grade) return true;               // grade 없음 → 학년 무관, 항상 포함
     if (state.grade === 0) return true;          // 학년 미선택 → 전체 포함
-    return Number(price.grade) === state.grade;  // 학년 일치 여부
+    // '1,2,3' 복수값 처리 — 쉼표 구분 배열로 분리 후 포함 여부 확인
+    const grades = String(price.grade).split(',').map(g => Number(g.trim()));
+    return grades.includes(state.grade);
   }
 
   /**

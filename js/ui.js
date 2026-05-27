@@ -128,6 +128,14 @@ const UI = (() => {
 
     // 로컬 합계 갱신
     _updateLocalTotal(pageId);
+
+    // 개별/대입전략 페이지 진입 시 학년 버튼 비활성화 (로드맵만 학년 선택 가능)
+    const isRoadmap = page && page.group === 'roadmap';
+    document.querySelectorAll('.grade-btn').forEach(btn => {
+      btn.disabled = !isRoadmap;
+      btn.style.opacity = isRoadmap ? '' : '0.35';
+      btn.style.cursor  = isRoadmap ? '' : 'not-allowed';
+    });
   }
 
 
@@ -139,33 +147,11 @@ const UI = (() => {
     const newGrade = Calc.setGrade(n);
     _updateOvCardPrices(newGrade);
     _autoCheckOvCards(newGrade);
-    // 학년 선택 시 개별/대입전략 해당 학년 항목 자동 체크
-    if (newGrade !== 0) _autoCheckGradeItems(newGrade);
-    // 학년 변경 시 전체 페이지 재렌더 — grade 기반 disabled 반영
-    renderPages();
+    // 학년 버튼 disabled 상태 갱신 — go()의 grade-btn 처리 트리거
     go(_currentPageId);
     if (prev !== 0 && newGrade !== prev) {
       showToast('학년이 변경되어 선택이 초기화되었습니다', 'warn');
     }
-  }
-
-  /**
-   * 학년 선택 시 grade 일치 항목 자동 체크 (개별/대입전략)
-   * — 로드맵은 _autoCheckOvCards()가 처리하므로 제외
-   */
-  function _autoCheckGradeItems(grade) {
-    const config = cfg();
-    MK_CONFIG.pageOrder.forEach(pageId => {
-      const page = config.pages[pageId];
-      if (!page || page.group === 'roadmap' || page.isOverview) return;
-      (page.prices || []).forEach((price, idx) => {
-        if (!price.grade) return; // grade 없는 항목(학년 무관)은 자동체크 제외
-        const grades = String(price.grade).split(',').map(g => Number(g.trim()));
-        if (grades.includes(grade)) {
-          Calc.selectItem(pageId, idx, true);
-        }
-      });
-    });
   }
 
   // 카드 가격 표시 모드 판별
