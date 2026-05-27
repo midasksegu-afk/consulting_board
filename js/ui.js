@@ -273,8 +273,13 @@ const UI = (() => {
         cb.disabled = true;
         cb.closest('label')?.classList.add('p-opt-disabled');
       } else {
-        cb.disabled = false;
-        cb.closest('label')?.classList.remove('p-opt-disabled');
+        // grade 불일치 항목 비활성화
+        const priceGrade = cb.getAttribute('data-grade');
+        const curGrade   = Calc.getGrade();
+        const gradeOff   = priceGrade && curGrade !== 0 && Number(priceGrade) !== curGrade;
+        cb.disabled = gradeOff;
+        if (gradeOff) cb.closest('label')?.classList.add('p-opt-disabled');
+        else          cb.closest('label')?.classList.remove('p-opt-disabled');
       }
     });
 
@@ -652,6 +657,7 @@ const UI = (() => {
     const hasGrade = prices.some(p => p.grade);
     const label = hasGrade ? '학년 선택' : '항목 선택';
 
+    const currentGrade = Calc.getGrade();
     const opts = prices.map((price, idx) => {
       const gradeAttr = price.grade ? ` data-grade="${price.grade}"` : '';
       const noteHtml  = price.note ? `<div class="p-opt-note">${price.note}</div>` : '';
@@ -659,12 +665,17 @@ const UI = (() => {
         ? ` <span style="font-size:11px;background:linear-gradient(135deg,#6c5ff5,#9b4dfc);color:#fff;padding:1px 7px;border-radius:8px;font-weight:600;vertical-align:middle;">${price.badge}</span>`
         : '';
 
+      // grade 있는 항목 — 현재 학년과 불일치 시 disabled
+      const gradeDisabled = price.grade && currentGrade !== 0 && Number(price.grade) !== currentGrade;
+      const disabledAttr  = gradeDisabled ? ' disabled' : '';
+      const disabledCls   = gradeDisabled ? ' p-opt-disabled' : '';
+
       return `
-        <label class="p-opt">
+        <label class="p-opt${disabledCls}">
           <input type="checkbox"
             data-amt="${price.amt}"
             data-item-idx="${idx}"
-            ${gradeAttr}
+            ${gradeAttr}${disabledAttr}
             onchange="UI.handleItemCheck('${pageId}', ${idx}, this)">
           <div class="p-opt-lbl">
             <div class="p-opt-grade">${price.label}${badgeHtml}</div>

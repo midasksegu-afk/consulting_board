@@ -440,8 +440,8 @@ const MK_CONFIG = {
       iconColor:  '#1a56c4',
       iconClass:  'ti-send',
       prices: [
-        { label: '수시 원서 전략',   amt: 450000, note: '1회 / 고3' },
-        { label: '비교과 활동 기획서', amt: 300000, note: '고1 / 주제 5개 + 브리핑' },
+        { label: '수시 원서 전략',    amt: 450000, note: '1회 / 고3', grade: 3 },
+        { label: '비교과 활동 기획서', amt: 300000, note: '고1 / 주제 5개 + 브리핑', grade: 3 },
       ],
       programs: [
         { num: '❶', title: '수시 원서 전략 컨설팅', items: ['학생부 기반 지원 대학·학과 전략 수립', '전형별 유불리 분석 및 최종 조합 설계'] },
@@ -464,8 +464,8 @@ const MK_CONFIG = {
       iconColor:  '#0a5c35',
       iconClass:  'ti-message-dots',
       prices: [
-        { label: '일반 학과',       amt: 350000, note: '1회' },
-        { label: '의치한약수 · SKY', amt: 400000, note: '1회' },
+        { label: '일반 학과',       amt: 350000, note: '1회', grade: 3 },
+        { label: '의치한약수 · SKY', amt: 400000, note: '1회', grade: 3 },
       ],
       programs: [
         { num: '❶', title: '서류 기반 심층 면접 대비', items: ['학생부 기반 예상 질문 분석 및 질문지 작성', '1:1 대면 모의 면접 진행'] },
@@ -487,8 +487,8 @@ const MK_CONFIG = {
       iconColor:  '#7a4f00',
       iconClass:  'ti-calculator',
       prices: [
-        { label: '정시 원서 전략', amt: 350000, note: '가채점 포함 / 1회' },
-        { label: '가채점 컨설팅', amt: 100000, note: '단독 신청' },
+        { label: '정시 원서 전략', amt: 350000, note: '가채점 포함 / 1회', grade: 3 },
+        { label: '가채점 컨설팅', amt: 100000, note: '단독 신청', grade: 3 },
       ],
       programs: [
         { num: '❶', title: '정시 원서 전략 컨설팅', items: ['수능 성적 기반 지원 대학·학과 전략', '가채점 컨설팅 포함'] },

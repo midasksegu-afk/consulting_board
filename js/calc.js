@@ -39,6 +39,17 @@ const Calc = (() => {
    * ============================================================ */
 
   /**
+   * price.grade 와 현재 state.grade 가 맞는지 확인
+   * grade 없는 항목(학년 무관)은 항상 true
+   * grade 있는 항목은 현재 학년과 일치할 때만 true
+   */
+  function _gradeMatch(price) {
+    if (!price.grade) return true;               // grade 없음 → 학년 무관, 항상 포함
+    if (state.grade === 0) return true;          // 학년 미선택 → 전체 포함
+    return Number(price.grade) === state.grade;  // 학년 일치 여부
+  }
+
+  /**
    * 학년 토글 (같은 학년 재클릭 → 해제)
    * @returns {number} 변경 후 grade
    */
@@ -198,7 +209,7 @@ const Calc = (() => {
       if (sel && sel.size > 0) {
         sel.forEach(idx => {
           const price = (page.prices || [])[idx];
-          if (price) sum += price.amt;
+          if (price && _gradeMatch(price)) sum += price.amt;
         });
       }
     });
@@ -240,7 +251,7 @@ const Calc = (() => {
     if (sel) {
       sel.forEach(idx => {
         const price = (page.prices || [])[idx];
-        if (price) sum += price.amt;
+        if (price && _gradeMatch(price)) sum += price.amt;
       });
     }
 
@@ -369,7 +380,7 @@ const Calc = (() => {
           const sel = state.pages[pageId];
           if (sel) sel.forEach(idx => {
             const price = (page.prices || [])[idx];
-            if (price) pageSum += price.amt;
+            if (price && _gradeMatch(price)) pageSum += price.amt;
           });
         }
         const rate = disc[pageId] || 0;
