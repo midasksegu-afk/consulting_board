@@ -144,23 +144,56 @@ const UI = (() => {
     }
   }
 
-  // 연간관리형 카드 금액 — 선택된 학년만 표시
+  // 카드 가격 표시 모드 판별
+  //   'grade' : ovPrices 있음 → 학년 선택 시 해당 학년 금액 굵게 표시
+  //   'fixed' : ovPrices 없음(무관) → 학년 무관 항상 금액 표시
+  function _getOvPriceMode(page) {
+    if (page.ovCard.ovPrices) return 'grade';
+    return 'fixed';
+  }
+
+  // 무관(fixed) 카드 가격 HTML
+  function _buildFixedPriceHtml(page) {
+    if (page.prices && page.prices.length) {
+      return page.prices.map(pr => {
+        const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
+        return pr.label + ' ' + man + '<br>';
+      }).join('');
+    }
+    return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+  }
+
+  // 학년 grade 기준 priceHtml 생성 — 렌더와 업데이트 로직 통일
+  //   grade === 0 : 기본 모드 → 전 카드 동일하게 priceLabel (설명 문구)
+  //   grade > 0  : 학년 모드 → A,B: 해당 학년 금액 굵게 / C,D,E: 무관 금액
+  function _buildOvPriceHtml(page, grade) {
+    if (grade === 0) {
+      return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+    }
+    const mode = _getOvPriceMode(page);
+    if (mode === 'fixed') return _buildFixedPriceHtml(page);
+    const amt = (page.ovCard.ovPrices || {})[grade];
+    return amt
+      ? '<strong>고' + grade + ' ' + fmt(amt) + '</strong>'
+      : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+  }
+
+  // 연간관리형 카드 금액 — 학년 모드 / 기본 모드 전환
   function _updateOvCardPrices(grade) {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page || !page.ovCard || page.isOverview) return;
+      const descEl  = document.getElementById('ov-desc-display-' + pageId);
       const priceEl = document.getElementById('ov-price-' + pageId);
       if (!priceEl) return;
       if (grade === 0) {
-        priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+        if (descEl) descEl.style.display = '';
+        priceEl.style.display = descEl ? 'none' : '';
       } else {
-        const amt = (page.ovCard.ovPrices || {})[grade];
-        if (amt) {
-          priceEl.innerHTML = '<strong>고' + grade + ' ' + fmt(amt) + '</strong>';
-        } else {
-          priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
-        }
+        if (descEl) descEl.style.display = 'none';
+        priceEl.style.display = '';
+        priceEl.innerHTML = _buildOvPriceHtml(page, grade);
       }
     });
   }
@@ -199,12 +232,11 @@ const UI = (() => {
     document.querySelectorAll('.grade-btn').forEach(btn => {
       btn.classList.toggle('active', parseInt(btn.dataset.grade) === grade);
     });
-    // 고3 추가 옵션 섹션 show/hide
     const aocSection = document.getElementById('aoc-section');
     if (aocSection) aocSection.style.display = grade === 3 ? 'block' : 'none';
-    // 하단 global-notice 전체 — 고3 포함 항상 표시 (aoc-notice-card 제거됨)
+    // 하단 global-notice 전체 — 고3 선택 시 숨김
     document.querySelectorAll('#pg-rm-overview .global-notice').forEach(el => {
-      el.style.display = 'flex';
+      el.style.display = grade === 3 ? 'none' : 'flex';
     });
   }
 
@@ -406,17 +438,9 @@ const UI = (() => {
           </div>
         </div>`).join('');
 
-      // prices[]에서 자동 생성 (없으면 priceLabel 폴백)
-      let priceHtml = '';
-      if (page.prices && page.prices.length) {
-        priceHtml = page.prices.map(pr => {
-          const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
-          const gradeStr = pr.grade && pr.grade !== '1,2,3' ? `고${pr.grade} ` : '';
-          return gradeStr + man + '<br>';
-        }).join('');
-      } else {
-        priceHtml = (ov.priceLabel || []).map(p => p + '<br>').join('');
-      }
+      // 초기 priceHtml — _buildOvPriceHtml로 생성 (업데이트 로직과 동일)
+      const currentGrade = Calc.getGrade ? Calc.getGrade() : 0;
+      const priceHtml = _buildOvPriceHtml(page, currentGrade);
 
       const ovEditBtn = _isAdminMode()
         ? `<button class="edit-mode-btn ov-edit-btn" onclick="event.stopPropagation();UI.openOvCardEdit('${pageId}')" title="카드 편집" style="position:absolute;bottom:8px;right:8px;"><i class="ti ti-pencil"></i> 편집</button>`
@@ -430,9 +454,8 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          ${ov.desc
-            ? `<div class="ov-desc">${ov.desc}</div>`
-            : `<div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>`}
+          <div class="ov-desc" id="ov-desc-display-${pageId}" style="${ov.desc ? '' : 'display:none;'}">${ov.desc || ''}</div>
+          <div class="ov-price" id="ov-price-${pageId}" style="${ov.desc ? 'display:none;' : ''}">${priceHtml}</div>
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
@@ -475,7 +498,12 @@ const UI = (() => {
         </div>`;
     }).join('');
 
-    // overviewNotices 배열 — 하위 호환: 없으면 overviewNotice 단일값으로 폴백
+    const noticeCard = `
+        <div class="aoc-notice-card">
+          <i class="ti ti-alert-triangle"></i>
+          <span>${config.overviewNotice}</span>
+        </div>`;
+
     const notices = (config.overviewNotices && config.overviewNotices.length)
       ? config.overviewNotices
       : (config.overviewNotice
@@ -513,7 +541,7 @@ const UI = (() => {
         <div class="ov-grid">${cards}</div>
         <div class="aoc-section" id="aoc-section" style="display:none;">
           <div class="aoc-header"><i class="ti ti-plus"></i> 고3 추가 선택 항목</div>
-          <div class="aoc-grid">${addOnCards}</div>
+          <div class="aoc-grid">${addOnCards}${noticeCard}</div>
         </div>
         ${noticesHtml}
         ${noticeAddBtn}
@@ -1342,7 +1370,7 @@ const UI = (() => {
     // localStorage 갱신 후 즉시 렌더 (타이밍 보장)
     setTimeout(() => {
       renderPages();
-      go('rm-overview');
+      go(_currentPageId);
     }, 0);
     showToast('✓ 카드가 저장되었습니다', 'success');
   }
@@ -1700,18 +1728,17 @@ const UI = (() => {
     _refreshRows(pageId);
   }
 
-  // 아이콘 선택 목록 (10종)
   const _NOTICE_ICONS = [
-    { cls: 'ti-alert-triangle', label: '⚠ 경고'  },
-    { cls: 'ti-info-circle',    label: 'ℹ 정보'   },
-    { cls: 'ti-bell',           label: '🔔 알림'  },
-    { cls: 'ti-star',           label: '★ 별'    },
-    { cls: 'ti-check',          label: '✔ 확인'  },
-    { cls: 'ti-clock',          label: '⏰ 시간'  },
-    { cls: 'ti-flag',           label: '🚩 플래그' },
+    { cls: 'ti-alert-triangle', label: '⚠ 경고'    },
+    { cls: 'ti-info-circle',    label: 'ℹ 정보'     },
+    { cls: 'ti-bell',           label: '🔔 알림'    },
+    { cls: 'ti-star',           label: '★ 별'      },
+    { cls: 'ti-check',          label: '✔ 확인'    },
+    { cls: 'ti-clock',          label: '⏰ 시간'    },
+    { cls: 'ti-flag',           label: '🚩 플래그'  },
     { cls: 'ti-bulb',           label: '💡 아이디어' },
-    { cls: 'ti-pin',            label: '📌 핀'    },
-    { cls: 'ti-message',        label: '💬 메시지' },
+    { cls: 'ti-pin',            label: '📌 핀'      },
+    { cls: 'ti-message',        label: '💬 메시지'  },
   ];
 
   // idx >= 0: 편집 / idx === -1: 추가
@@ -1725,9 +1752,10 @@ const UI = (() => {
     window.mkEditDraft = _editDraft;
 
     const isNew   = (idx === -1);
-    const current = isNew ? { text: '', icon: 'ti-alert-triangle', color: 'orange' }
-                           : (_editDraft.overviewNotices[idx] || { text: '', icon: 'ti-alert-triangle', color: 'orange' });
-    const title   = isNew ? '공지 추가' : '공지 편집';
+    const current = isNew
+      ? { text: '', icon: 'ti-alert-triangle', color: 'orange' }
+      : (_editDraft.overviewNotices[idx] || { text: '', icon: 'ti-alert-triangle', color: 'orange' });
+    const title = isNew ? '공지 추가' : '공지 편집';
 
     const colorOpts = ['orange','blue','red','green'].map(c =>
       `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
@@ -1896,6 +1924,7 @@ const UI = (() => {
     openNoticeEdit,
     _saveNoticeEdit,
     _deleteNotice,
+    getCurrentPageId: () => _currentPageId,
     _richCmd,
     _insertText,
     _toggleScPopup,
@@ -1916,8 +1945,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 서버 최신 설정 동기화 후 UI 갱신
   Store.syncConfigFromServer().then(updated => {
     if (updated) {
-      renderSidebar();
-      renderPages();
+      UI.renderSidebar();
+      UI.renderPages();
       UI.go('rm-overview');
     }
   });
@@ -1926,11 +1955,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
-      // 관리자가 저장했으므로 무조건 최신값 sync 후 갱신
-      Store.syncConfigFromServer().then(() => {
-        renderSidebar();
-        renderPages();
-        UI.go('rm-overview');
+      // 관리자가 Supabase 저장 완료 후 신호를 보내므로 최신값 보장
+      Store.syncConfigFromServer().then(updated => {
+        if (updated) {
+          UI.renderSidebar();
+          UI.renderPages();
+          UI.go(UI.getCurrentPageId());
+        }
       });
     };
   }
