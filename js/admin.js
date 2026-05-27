@@ -21,8 +21,9 @@ const Admin = (() => {
   function checkPin() {
     const input = document.getElementById('pin-input')?.value;
     if (Store.verifyPin(input)) {
+      _unlocked = true;
       localStorage.setItem('mk_admin_auth', '1');  // localStorage — 메인화면 자물쇠와 공유
-      initDraft();
+      _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
       switchTab('tab-program');
@@ -122,8 +123,15 @@ const Admin = (() => {
             <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
               onclick="event.stopPropagation();Admin.moveProgram('${id}',1)" title="아래로">▼</button>
           </span>` : '';
+        const draggable = tabPrefix === 'program'
+          ? `draggable="true"
+             ondragstart="Admin._dragStart(event,'${id}')"
+             ondragover="Admin._dragOver(event,'${id}')"
+             ondrop="Admin._dragDrop(event,'${id}')"
+             ondragend="Admin._dragEnd()"` : '';
         html += `
-          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;">
+          <div class="ct-side-item ${active}" onclick="Admin.${fn}('${id}')" style="display:flex;align-items:center;" ${draggable}>
+            <i class="ti ti-grip-vertical" style="font-size:12px;color:var(--text-3);flex-shrink:0;cursor:grab;margin-right:2px;" onclick="event.stopPropagation()"></i>
             <i class="ti ${p.sbIcon}" style="font-size:14px;flex-shrink:0;"></i>
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px;">${p.sbLabel}</span>
             ${orderBtns}
@@ -271,6 +279,24 @@ const Admin = (() => {
         <input class="admin-input admin-input-md"
           value="${page.sbLabel || ''}"
           oninput="Admin.updateNameField('${pageId}', 'sbLabel', this.value)">
+      </div>
+
+      <div class="admin-field-group">
+        <label class="admin-field-label">사이드바 아이콘</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="icon-preview-${pageId}" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+            background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);">
+            <i class="ti ${page.sbIcon}" style="font-size:18px;color:var(--accent);"></i>
+          </div>
+          <button class="admin-add-btn" style="margin-top:0;" onclick="Admin._toggleIconPicker('${pageId}')">
+            <i class="ti ti-brush"></i> 아이콘 변경
+          </button>
+        </div>
+        <div id="icon-picker-${pageId}" style="display:none;margin-top:10px;
+          max-height:200px;overflow-y:auto;
+          display:none;flex-wrap:wrap;gap:4px;
+          background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;">
+        </div>
       </div>
       <div style="font-size:12px;color:var(--blue-tx);background:var(--blue-bg);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:4px;">
         <i class="ti ti-info-circle"></i> 페이지 제목·부제목·콘텐츠는 메인화면 <b>편집</b> 버튼에서 수정하세요.
@@ -485,6 +511,105 @@ const Admin = (() => {
     Store.saveConfig(_draft);
     renderProgramTab();
     loadProgramPage(pageId);
+  }
+
+  // 드래그 순서 변경 — moveProgram 재활용
+  let _dragSrcId = null;
+  function _dragStart(e, id) {
+    _dragSrcId = id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.4';
+  }
+  function _dragOver(e, id) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    // 드롭 대상 하이라이트
+    document.querySelectorAll('#tab-program .ct-side-item').forEach(el => el.style.outline = '');
+    const target = e.currentTarget;
+    if (_dragSrcId && _dragSrcId !== id) target.style.outline = '2px solid var(--accent)';
+  }
+  function _dragDrop(e, targetId) {
+    e.preventDefault();
+    document.querySelectorAll('#tab-program .ct-side-item').forEach(el => el.style.outline = '');
+    if (!_dragSrcId || _dragSrcId === targetId) return;
+    const order    = MK_CONFIG.pageOrder;
+    const srcIdx   = order.indexOf(_dragSrcId);
+    const tgtIdx   = order.indexOf(targetId);
+    if (srcIdx < 0 || tgtIdx < 0) return;
+    // 같은 그룹 내에서만
+    if (_draft.pages[_dragSrcId]?.group !== _draft.pages[targetId]?.group) return;
+    order.splice(srcIdx, 1);
+    order.splice(tgtIdx, 0, _dragSrcId);
+    _draft._pageOrder = [...order];
+    Store.saveConfig(_draft);
+    renderProgramTab();
+    loadProgramPage(_dragSrcId);
+  }
+  function _dragEnd() {
+    _dragSrcId = null;
+    document.querySelectorAll('#tab-program .ct-side-item').forEach(el => {
+      el.style.opacity = '';
+      el.style.outline = '';
+    });
+  }
+
+  // 아이콘 피커 — tabler 아이콘 목록
+  const _SIDEBAR_ICONS = [
+    'ti-circle','ti-star','ti-heart','ti-bolt','ti-flag','ti-bookmark',
+    'ti-pencil','ti-edit','ti-writing','ti-file-text','ti-clipboard',
+    'ti-book','ti-books','ti-notebook','ti-school','ti-certificate',
+    'ti-users','ti-user','ti-user-check','ti-user-star','ti-id-badge',
+    'ti-target','ti-trophy','ti-medal','ti-crown','ti-award',
+    'ti-chart-bar','ti-chart-line','ti-chart-pie','ti-trending-up',
+    'ti-map','ti-map-pin','ti-compass','ti-route',
+    'ti-calendar','ti-clock','ti-alarm','ti-hourglass',
+    'ti-settings','ti-settings-2','ti-adjustments','ti-tool',
+    'ti-bulb','ti-brain','ti-atom','ti-dna','ti-microscope',
+    'ti-message','ti-messages','ti-phone','ti-mail',
+    'ti-home','ti-building','ti-door','ti-key',
+    'ti-check','ti-check-circle','ti-circle-check','ti-shield-check',
+    'ti-info-circle','ti-alert-circle','ti-help-circle',
+    'ti-plus','ti-minus','ti-x','ti-search','ti-zoom-in',
+    'ti-arrow-up','ti-arrow-right','ti-arrow-down','ti-arrow-left',
+    'ti-player-play','ti-player-pause','ti-refresh',
+    'ti-sun','ti-moon','ti-cloud','ti-snowflake',
+    'ti-device-laptop','ti-device-mobile','ti-printer','ti-camera',
+  ];
+
+  function _toggleIconPicker(pageId) {
+    const picker = document.getElementById(`icon-picker-${pageId}`);
+    if (!picker) return;
+    const isOpen = picker.style.display === 'flex';
+    if (isOpen) {
+      picker.style.display = 'none';
+      return;
+    }
+    // 아이콘 목록 렌더 (최초 1회)
+    if (!picker.dataset.rendered) {
+      picker.innerHTML = _SIDEBAR_ICONS.map(cls => `
+        <button type="button" title="${cls}"
+          onclick="Admin._selectIcon('${pageId}','${cls}')"
+          style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+            background:var(--surface);border:1px solid var(--border);border-radius:6px;cursor:pointer;">
+          <i class="ti ${cls}" style="font-size:16px;color:var(--text-1);"></i>
+        </button>`).join('');
+      picker.dataset.rendered = '1';
+    }
+    picker.style.display = 'flex';
+  }
+
+  function _selectIcon(pageId, iconCls) {
+    // draft 업데이트
+    updateNameField(pageId, 'sbIcon', iconCls);
+    // 미리보기 갱신
+    const preview = document.getElementById(`icon-preview-${pageId}`);
+    if (preview) preview.innerHTML = `<i class="ti ${iconCls}" style="font-size:18px;color:var(--accent);"></i>`;
+    // 피커 닫기
+    const picker = document.getElementById(`icon-picker-${pageId}`);
+    if (picker) picker.style.display = 'none';
+    // 에디터 타이틀 갱신
+    const titleEl = document.querySelector('.admin-editor-title');
+    if (titleEl) titleEl.innerHTML = `<i class="ti ${iconCls}"></i> ${_draft.pages[pageId]?.sbLabel || ''}`;
   }
 
   function _confirmWithPin(callback) {
@@ -1139,11 +1264,6 @@ const Admin = (() => {
   }
 
   function initDraft() {
-    // 신규 추가 페이지 순서 복원 — syncConfigFromServer와 동일 패턴
-    const saved = Store.loadConfig();
-    if (saved?._pageOrder && Array.isArray(saved._pageOrder)) {
-      MK_CONFIG.pageOrder = saved._pageOrder;
-    }
     _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
     _unlocked = true;
   }
@@ -1154,6 +1274,8 @@ const Admin = (() => {
     renderProgramTab, loadProgramPage, saveProgram,
     updateGroupLabel, saveGroupLabels, loadGroupLabelEditor,
     addProgram, deleteProgram, moveProgram,
+    _dragStart, _dragOver, _dragDrop, _dragEnd,
+    _toggleIconPicker, _selectIcon,
     _confirmWithPin, _pinConfirmSubmit,
     _toggleGroup,
     updateTreeField, addTreeItem, deleteTreeItem,
