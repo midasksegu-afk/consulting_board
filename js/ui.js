@@ -82,12 +82,6 @@ const UI = (() => {
       _syncOvCards(state);
     });
 
-    // 로컬 캐시의 _pageOrder를 MK_CONFIG.pageOrder에 반영 (새 프로그램 포함)
-    const _cachedCfg = Store.loadConfig();
-    if (_cachedCfg && _cachedCfg._pageOrder && Array.isArray(_cachedCfg._pageOrder)) {
-      MK_CONFIG.pageOrder = _cachedCfg._pageOrder;
-    }
-
     // 렌더링
     renderSidebar();
     renderPages();
@@ -280,8 +274,7 @@ const UI = (() => {
     const config  = cfg();
     const groups  = config.groups;
     const pages   = config.pages;
-    // _pageOrder(저장된 순서, 새 프로그램 포함)를 우선 사용하고 없으면 기본 pageOrder 사용
-    const order   = config._pageOrder || MK_CONFIG.pageOrder;
+    const order   = MK_CONFIG.pageOrder;
 
     // 그룹별로 페이지 묶기
     const grouped = {}; // { groupKey: [pageId, ...] }
@@ -352,11 +345,9 @@ const UI = (() => {
     if (!container) return;
 
     const config = cfg();
-    // _pageOrder(저장된 순서, 새 프로그램 포함)를 우선 사용
-    const order = config._pageOrder || MK_CONFIG.pageOrder;
     let html = '';
 
-    order.forEach(pageId => {
+    MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page) return;
 
@@ -1316,16 +1307,16 @@ const UI = (() => {
     _refreshOvTreeRows(pageId);
   }
 
-  async function _saveOvCardEdit(pageId) {
+  function _saveOvCardEdit(pageId) {
     _editDraft = window.mkEditDraft;
-    showToast('저장 중...', 'success', true);
-    try {
-      await Store.saveConfig(_editDraft);
-      document.getElementById('ovcard-edit-modal')?.remove();
+    Store.saveConfig(_editDraft);
+    document.getElementById('ovcard-edit-modal')?.remove();
+    // localStorage 갱신 후 즉시 렌더 (타이밍 보장)
+    setTimeout(() => {
       renderPages();
-      go('rm-overview');
-      showToast('✓ 카드가 저장되었습니다', 'success', true);
-    } catch(e) { showToast('저장 실패 — 네트워크 확인', 'error', true); }
+      go(_currentPageId);
+    }, 0);
+    showToast('✓ 카드가 저장되었습니다', 'success');
   }
 
   function openPageEdit(pageId) {
@@ -1716,35 +1707,31 @@ const UI = (() => {
     document.body.appendChild(modal);
   }
 
-  async function _saveNoticeEdit() {
+  function _saveNoticeEdit() {
     _editDraft = window.mkEditDraft;
-    showToast('저장 중...', 'success', true);
-    try {
-      await Store.saveConfig(_editDraft);
-      document.getElementById('notice-edit-modal')?.remove();
-      renderPages();
-      go('rm-overview');
-      showToast('✓ 공지가 저장되었습니다', 'success', true);
-    } catch(e) { showToast('저장 실패 — 네트워크 확인', 'error', true); }
+    Store.saveConfig(_editDraft);
+    document.getElementById('notice-edit-modal')?.remove();
+    renderPages();
+    go(_currentPageId);
+    showToast('✓ 공지가 저장되었습니다', 'success');
   }
 
-  async function _savePageEdit(pageId) {
+  function _savePageEdit(pageId) {
     if (!confirm('수정사항을 반영하시겠습니까?')) return;
     _editDraft = window.mkEditDraft;
-    showToast('저장 중...', 'success', true);
-    try {
-      await Store.saveConfig(_editDraft);
-      document.getElementById('page-edit-modal')?.remove();
+    Store.saveConfig(_editDraft);
+    document.getElementById('page-edit-modal')?.remove();
+    setTimeout(() => {
       renderPages();
       go(pageId);
-      showToast('✓ 수정사항이 반영되었습니다', 'success', true);
-    } catch(e) { showToast('저장 실패 — 네트워크 확인', 'error', true); }
+    }, 0);
+    showToast('✓ 수정사항이 반영되었습니다', 'success');
   }
 
   /* ============================================================
    * 13. 토스트 알림
    * ============================================================ */
-  function showToast(msg, type = 'success', center = false) {
+  function showToast(msg, type = 'success') {
     let toast = document.getElementById('mk-toast');
     if (!toast) {
       toast = document.createElement('div');
@@ -1758,12 +1745,9 @@ const UI = (() => {
       error:   { bg: '#FFD3E1',color: '#8b1c3a',  border: '#FF8FB1' },
     };
     const c = colorMap[type] || colorMap.success;
-    const pos = center
-      ? 'top:50%; left:50%; transform:translate(-50%,-50%);'
-      : 'bottom:36px; left:50%; transform:translateX(-50%);';
 
     toast.style.cssText = `
-      position:fixed; ${pos}
+      position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
       background:${c.bg}; color:${c.color};
       padding:12px 28px; border-radius:12px;
       font-size:14px; font-weight:600;
@@ -1836,8 +1820,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 서버 최신 설정 동기화 후 UI 갱신
   Store.syncConfigFromServer().then(updated => {
     if (updated) {
-      UI.renderSidebar();
-      UI.renderPages();
+      renderSidebar();
+      renderPages();
       UI.go('rm-overview');
     }
   });
@@ -1846,9 +1830,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
+      // 관리자가 저장했으므로 무조건 최신값 sync 후 갱신
       Store.syncConfigFromServer().then(() => {
-        UI.renderSidebar();
-        UI.renderPages();
+        renderSidebar();
+        renderPages();
         UI.go('rm-overview');
       });
     };
