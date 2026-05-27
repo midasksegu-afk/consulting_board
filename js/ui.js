@@ -144,51 +144,35 @@ const UI = (() => {
     }
   }
 
-  // 카드 가격 표시 모드 판별
-  //   'grade' : ovPrices 있음 → 학년 선택 시 해당 금액 굵게 표시
-  //   'fixed' : ovPrices 없음(무관) → 학년 무관 항상 금액 표시
-  function _getOvPriceMode(page) {
-    if (page.ovCard.ovPrices) return 'grade';
-    return 'fixed';
-  }
-
-  // 무관(fixed) 카드 가격 HTML
-  function _buildFixedPriceHtml(page) {
-    if (page.prices && page.prices.length) {
-      return page.prices.map(pr => {
-        const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
-        return pr.label + ' ' + man + '<br>';
-      }).join('');
-    }
-    return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
-  }
-
-  // 학년 grade 기준 priceHtml 생성 — 렌더와 업데이트 로직 통일
-  //   grade === 0 : 기본 모드 → 전 카드 동일하게 priceLabel (설명 문구)
-  //   grade > 0  : 학년 모드 → A,B: 해당 학년 금액 굵게 / C,D,E: 무관 금액
-  function _buildOvPriceHtml(page, grade) {
-    // 기본 모드 — 전 카드 동일하게 priceLabel 표시
-    if (grade === 0) {
-      return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
-    }
-    // 학년 모드 — 모드 분기
-    const mode = _getOvPriceMode(page);
-    if (mode === 'fixed') return _buildFixedPriceHtml(page);
-    const amt = (page.ovCard.ovPrices || {})[grade];
-    return amt
-      ? '<strong>고' + grade + ' ' + fmt(amt) + '</strong>'
-      : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
-  }
-
-  // 연간관리형 카드 금액 업데이트 — _buildOvPriceHtml 위임
+  // 연간관리형 카드 금액 — 학년 모드 / 기본 모드 전환
+  //   grade === 0 : 기본 모드 → ov.desc 표시, ov-price 숨김
+  //   grade > 0  : 학년 모드 → ov.desc 숨김, ov-price에 금액 표시
   function _updateOvCardPrices(grade) {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page || !page.ovCard || page.isOverview) return;
+
+      const descEl  = document.getElementById('ov-desc-display-' + pageId);
       const priceEl = document.getElementById('ov-price-' + pageId);
       if (!priceEl) return;
-      priceEl.innerHTML = _buildOvPriceHtml(page, grade);
+
+      if (grade === 0) {
+        // 기본 모드 — ov.desc 있으면 표시, ov-price 숨김
+        if (descEl) descEl.style.display = '';
+        priceEl.style.display = descEl ? 'none' : '';
+      } else {
+        // 학년 모드 — ov.desc 숨기고 금액 표시
+        if (descEl) descEl.style.display = 'none';
+        priceEl.style.display = '';
+        // A,B: 해당 학년 금액 굵게 / C,D,E: 무관 금액 (ovPrices 없으면 priceLabel)
+        const amt = (page.ovCard.ovPrices || {})[grade];
+        if (amt) {
+          priceEl.innerHTML = '<strong>고' + grade + ' ' + fmt(amt) + '</strong>';
+        } else {
+          priceEl.innerHTML = (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+        }
+      }
     });
   }
 
@@ -423,9 +407,17 @@ const UI = (() => {
           </div>
         </div>`).join('');
 
-      // 초기 priceHtml — _buildOvPriceHtml로 생성 (업데이트 로직과 동일)
-      const currentGrade = Calc.getGrade ? Calc.getGrade() : 0;
-      const priceHtml = _buildOvPriceHtml(page, currentGrade);
+      // prices[]에서 자동 생성 (없으면 priceLabel 폴백)
+      let priceHtml = '';
+      if (page.prices && page.prices.length) {
+        priceHtml = page.prices.map(pr => {
+          const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
+          const gradeStr = pr.grade && pr.grade !== '1,2,3' ? `고${pr.grade} ` : '';
+          return gradeStr + man + '<br>';
+        }).join('');
+      } else {
+        priceHtml = (ov.priceLabel || []).map(p => p + '<br>').join('');
+      }
 
       const ovEditBtn = _isAdminMode()
         ? `<button class="edit-mode-btn ov-edit-btn" onclick="event.stopPropagation();UI.openOvCardEdit('${pageId}')" title="카드 편집" style="position:absolute;bottom:8px;right:8px;"><i class="ti ti-pencil"></i> 편집</button>`
@@ -439,7 +431,8 @@ const UI = (() => {
           </div>
           <div class="ov-badge">${ov.badge}</div>
           <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
-          <div class="ov-price" id="ov-price-${pageId}">${priceHtml}</div>
+          <div class="ov-desc" id="ov-desc-display-${pageId}" style="${ov.desc ? '' : 'display:none;'}">${ov.desc || ''}</div>
+          <div class="ov-price" id="ov-price-${pageId}" style="${ov.desc ? 'display:none;' : ''}">${priceHtml}</div>
           <div style="flex:1;min-height:8px;"></div>
           <button class="ov-detail-btn" onclick="UI.go('${pageId}')">
             <i class="ti ti-arrow-right"></i> 자세히 보기
