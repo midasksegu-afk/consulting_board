@@ -491,11 +491,12 @@ html, body {
 
 /* 프로그램 항목 */
 .p-item {
-  background: #fafafa;
-  border: 1px solid rgba(0,0,0,0.07);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 16px 18px;
-  margin-bottom: 10px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
 }
 .p-item:last-child { margin-bottom: 0; }
 .p-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
@@ -765,8 +766,8 @@ html, body {
 
 /* 콘텐츠 편집 사이드바 */
 .ct-sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 200px;
+  min-width: 200px;
   border-right: 1px solid var(--border);
   padding: 8px 0;
   overflow-y: auto;
