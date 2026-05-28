@@ -110,7 +110,7 @@ const Portfolio = (() => {
 
       return `
         <div class="pf-section">
-          <div class="pf-section-header">${label}</div>
+          <div class="pf-section-header"><div class="pf-section-bar"></div><span class="pf-section-label">${label}</span></div>
           <table><tbody>${rows}</tbody></table>
           ${subtotalHtml}
         </div>`;
@@ -136,54 +136,48 @@ const Portfolio = (() => {
 
     return `
       <div class="pf-doc">
-        <!-- 헤더 -->
         <div class="pf-header">
-          <div class="pf-brand">마이더스K교육컨설팅</div>
-          <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
-          <div class="pf-license">${config.app.license}</div>
+          <div class="pf-logo-area">
+            <div class="pf-logo-mk">MK</div>
+            <div class="pf-logo-text">
+              <span class="pf-logo-main">Midas K</span>
+              <span class="pf-logo-sub">Education Consulting</span>
+            </div>
+          </div>
+          <div class="pf-header-right">
+            <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
+            <div class="pf-license">${config.app.license}</div>
+          </div>
         </div>
 
-        <!-- 학생 정보 -->
         <div class="pf-info-card">
-          <div class="pf-info-item">
-            <span class="pf-info-label">학년</span>
-            <span class="pf-info-value">${gradeStr}</span>
-          </div>
-          ${stuName ? `<div class="pf-info-item">
-            <span class="pf-info-label">학생명</span>
-            <span class="pf-info-value">${stuName}</span>
-          </div>` : ''}
-          ${stuSchool ? `<div class="pf-info-item">
-            <span class="pf-info-label">학교</span>
-            <span class="pf-info-value">${stuSchool}</span>
-          </div>` : ''}
-          ${stuGoal ? `<div class="pf-info-item">
-            <span class="pf-info-label">진로목표</span>
-            <span class="pf-info-value">${stuGoal}</span>
-          </div>` : ''}
-          <div class="pf-info-item">
-            <span class="pf-info-label">작성일</span>
-            <span class="pf-info-value">${today()}</span>
+          <div class="pf-info-row">
+            <div class="pf-info-item"><span class="pf-info-label">학년</span><span class="pf-info-value">${gradeStr}</span></div>
+            ${stuName   ? `<div class="pf-info-item"><span class="pf-info-label">학생명</span><span class="pf-info-value">${stuName}</span></div>` : ''}
+            ${stuSchool ? `<div class="pf-info-item"><span class="pf-info-label">학교</span><span class="pf-info-value">${stuSchool}</span></div>` : ''}
+            ${stuGoal   ? `<div class="pf-info-item"><span class="pf-info-label">진로목표</span><span class="pf-info-value">${stuGoal}</span></div>` : ''}
+            <div class="pf-info-item"><span class="pf-info-label">작성일</span><span class="pf-info-value">${today()}</span></div>
           </div>
         </div>
 
-        <!-- 선택 프로그램 -->
         <div class="pf-programs">
-          <div class="pf-programs-title">[ 선택 프로그램 ]</div>
+          <div class="pf-programs-title">선택 프로그램</div>
           ${sectionHtml('roadmap',    items.roadmap,    totals.roadmap,    totalsDc.roadmap)}
           ${sectionHtml('individual', items.individual, totals.individual, totalsDc.individual)}
           ${sectionHtml('strategy',   items.strategy,   totals.strategy,   totalsDc.strategy)}
         </div>
 
-        <!-- 합계 -->
         ${totalHtml}
 
-        <!-- 하단 고정문구 -->
         <div class="pf-footer">
-          <p style="font-size:13px;color:#43434A;line-height:1.8;">
-            티처스 컨설턴트의 학생부 관리 컨설팅<br>
-            상담문의 : 053-782-0331
-          </p>
+          <div class="pf-footer-left">
+            <div class="pf-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div>
+            <div class="pf-footer-contact">
+              <span class="pf-footer-ci">☎ 053-782-0331</span>
+              <span class="pf-footer-ci">평일 09:00 – 18:00</span>
+            </div>
+          </div>
+          <div class="pf-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
         </div>
       </div>`;
   }
@@ -209,31 +203,46 @@ const Portfolio = (() => {
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding:0}
 @page{margin:12mm 14mm;size:A4}
-.pf-doc{max-width:680px;margin:0 auto;padding:24px 32px}
-.pf-header{text-align:center;padding-bottom:16px;border-bottom:2px solid #15151A;margin-bottom:20px}
-.pf-brand{font-size:11px;font-weight:700;letter-spacing:.2em;color:#8870C8;text-transform:uppercase;margin-bottom:6px}
-.pf-main-title{font-size:20px;font-weight:700;margin-bottom:6px}
-.pf-license{font-size:11px;color:#A8A4AB}
-.pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin-bottom:20px;border:2px solid #15151A}
-.pf-info-item{display:flex;gap:6px;font-size:12.5px;margin-right:20px}
-.pf-info-label{color:#A8A4AB}
+:root{--mk-blue:#2B4BAF;--mk-blue-lt:#EEF2FB;--mk-line:#e2e2e2}
+.pf-doc{max-width:680px;margin:0 auto;padding:0}
+.pf-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 28px;border-bottom:2px solid var(--mk-blue);margin-bottom:20px}
+.pf-logo-area{display:flex;align-items:center;gap:10px}
+.pf-logo-mk{font-size:26px;font-weight:700;color:var(--mk-blue);letter-spacing:-.02em;line-height:1}
+.pf-logo-text{display:flex;flex-direction:column;gap:1px}
+.pf-logo-main{font-size:12px;font-weight:700;letter-spacing:.18em;color:#15151A;text-transform:uppercase}
+.pf-logo-sub{font-size:9.5px;letter-spacing:.1em;color:#888;text-transform:uppercase}
+.pf-header-right{text-align:right}
+.pf-main-title{font-size:16px;font-weight:700;color:#15151A}
+.pf-license{font-size:10px;color:#999;margin-top:3px}
+.pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin:0 0 20px;border:2px solid #15151A}
+.pf-info-row{display:flex;flex-wrap:wrap;gap:6px 22px}
+.pf-info-item{display:flex;align-items:center;gap:6px;font-size:12.5px}
+.pf-info-label{color:#999;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .pf-info-value{font-weight:700;color:#15151A}
-.pf-programs-title{font-size:11px;font-weight:700;letter-spacing:.1em;color:#A8A4AB;text-transform:uppercase;margin-bottom:12px}
-.pf-section{margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)}
-.pf-section-header{padding:10px 16px;font-size:13px;font-weight:700;color:#5b35c4;background:#f3f0ff;border-left:4px solid #B79CFF}
+.pf-programs-title{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#aaa;margin-bottom:12px}
+.pf-section{margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--mk-line)}
+.pf-section-header{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--mk-blue-lt);border-bottom:1px solid var(--mk-line)}
+.pf-section-bar{width:3px;height:14px;border-radius:0;background:var(--mk-blue);flex-shrink:0}
+.pf-section-label{font-size:12.5px;font-weight:700;color:var(--mk-blue)}
 .pf-section table{width:100%;border-collapse:collapse;background:#fff}
-.pf-section td{padding:8px 16px;font-size:13px;border-bottom:1px solid #f5f5f5}
-.pf-section td:last-child{text-align:right;font-weight:600;white-space:nowrap}
+.pf-section td{padding:8px 14px;font-size:13px;border-bottom:1px solid #f5f5f5}
+.pf-section td:last-child{text-align:right;font-weight:600;white-space:nowrap;color:#15151A}
+.pf-section td:first-child{color:#43434A}
 .pf-section tr:last-child td{border-bottom:none}
-.pf-subtotal{text-align:right;padding:8px 16px;font-size:13px;font-weight:600;color:#5b35c4;background:#faf8ff;border-top:1px solid rgba(183,156,255,0.2)}
+.pf-subtotal{text-align:right;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--mk-blue);background:var(--mk-blue-lt);border-top:1px solid var(--mk-line)}
+.pf-subtotal s{opacity:.45;margin-right:4px;color:#888}
 .pf-total-box{margin:16px 0;padding:16px 20px;background:#fff;border:2px solid #15151A;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
 .pf-total-label{font-size:15px;font-weight:700;color:#15151A}
 .pf-total-right{text-align:right}
-.pf-total-raw{font-size:12px;color:#A8A4AB;text-decoration:line-through;margin-bottom:2px}
-.pf-total-amt{font-size:22px;font-weight:700;color:#5b35c4}
-.pf-tax{font-size:11px;color:#A8A4AB;text-align:right;margin-bottom:20px}
-.pf-footer{border-top:1px solid #e8e8e8;padding-top:16px;margin-top:8px;font-size:12.5px;color:#6B6970;line-height:1.8}
-.print-btn{position:fixed;bottom:24px;right:24px;padding:12px 24px;background:linear-gradient(105deg,#FFB89A,#FF8FB1,#B79CFF);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(183,156,255,0.4)}
+.pf-total-raw{font-size:11px;color:#aaa;text-decoration:line-through;margin-bottom:2px}
+.pf-total-amt{font-size:22px;font-weight:700;color:var(--mk-blue)}
+.pf-footer{border-top:2px solid var(--mk-blue);padding:16px 0 0;margin-top:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pf-footer-left{display:flex;flex-direction:column;gap:5px}
+.pf-footer-brand{font-size:12.5px;font-weight:700;color:#15151A}
+.pf-footer-contact{display:flex;align-items:center;gap:16px;margin-top:2px}
+.pf-footer-ci{font-size:11.5px;color:#555}
+.pf-footer-badge{padding:7px 13px;border:1.5px solid var(--mk-blue);border-radius:8px;font-size:10.5px;color:var(--mk-blue);text-align:center;line-height:1.7;font-weight:600;white-space:nowrap}
+.print-btn{position:fixed;bottom:24px;right:24px;padding:12px 24px;background:var(--mk-blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 @media print{.print-btn{display:none}}
 </style>
 </head>
