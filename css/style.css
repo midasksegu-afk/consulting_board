@@ -174,12 +174,12 @@ html, body {
 /* 존1: 학생 */
 .tb-zone-student {
   display:flex; align-items:center;
-  gap:12px; padding:0 20px 0 24px;
+  gap:12px; padding:0 24px 0 28px;
   flex-shrink:0;
 }
 .tb-student-left {
   display:flex; flex-direction:column; justify-content:center;
-  gap:4px; width:220px; min-width:220px; flex-shrink:0;
+  gap:4px; width:260px; min-width:260px; flex-shrink:0;
 }
 .tb-student-label {
   font-size:10px; font-weight:700; color:var(--text-3);
@@ -187,7 +187,8 @@ html, body {
 }
 .tb-student-name {
   font-size:13px; font-weight:600; color:var(--text-1);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:260px; text-align:center; letter-spacing:-.02em;
 }
 /* tb-student-right 제거 — 버튼 3개 tb-student-mid로 통합 */
 
