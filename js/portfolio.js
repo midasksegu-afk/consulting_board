@@ -138,15 +138,11 @@ const Portfolio = (() => {
       <div class="pf-doc">
         <div class="pf-header">
           <div class="pf-logo-area">
-            <div class="pf-logo-mk">MK</div>
-            <div class="pf-logo-text">
-              <span class="pf-logo-main">Midas K</span>
-              <span class="pf-logo-sub">Education Consulting</span>
-            </div>
+            <div class="pf-logo-main">마이더스K교육컨설팅</div>
+            <div class="pf-logo-sub">Teachers Consultant</div>
           </div>
           <div class="pf-header-right">
-            <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
-            <div class="pf-license">${config.app.license}</div>
+            <div class="pf-main-title">Consulting Portfolio</div>
           </div>
         </div>
 
@@ -174,7 +170,7 @@ const Portfolio = (() => {
             <div class="pf-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div>
             <div class="pf-footer-contact">
               <span class="pf-footer-ci">☎ 053-782-0331</span>
-              <span class="pf-footer-ci">평일 09:00 – 18:00</span>
+              <span class="pf-footer-ci">월~토 AM 10:00 - PM 18:30</span>
             </div>
           </div>
           <div class="pf-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
@@ -198,22 +194,20 @@ const Portfolio = (() => {
 <meta charset="UTF-8">
 <title>마이더스K 컨설팅 포트폴리오</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding:0}
 @page{margin:12mm 14mm;size:A4}
-:root{--mk-blue:#2B4BAF;--mk-blue-lt:#EEF2FB;--mk-line:#e2e2e2}
+:root{--mk-blue:#2B4BAF;--mk-blue-lt:#F0F4FC;--mk-line:#e2e2e2}
 .pf-doc{max-width:680px;margin:0 auto;padding:0}
-.pf-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 28px;border-bottom:2px solid var(--mk-blue);margin-bottom:20px}
-.pf-logo-area{display:flex;align-items:center;gap:10px}
-.pf-logo-mk{font-size:26px;font-weight:700;color:var(--mk-blue);letter-spacing:-.02em;line-height:1}
-.pf-logo-text{display:flex;flex-direction:column;gap:1px}
-.pf-logo-main{font-size:12px;font-weight:700;letter-spacing:.18em;color:#15151A;text-transform:uppercase}
-.pf-logo-sub{font-size:9.5px;letter-spacing:.1em;color:#888;text-transform:uppercase}
+.pf-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 28px;border-bottom:2px solid var(--mk-blue);margin-bottom:20px}
+.pf-logo-area{display:flex;flex-direction:column;gap:3px}
+.pf-logo-main{font-family:'Noto Sans KR',sans-serif;font-size:17px;font-weight:700;color:#15151A;letter-spacing:.04em}
+.pf-logo-sub{font-size:10.5px;font-weight:600;color:#888;letter-spacing:.12em;text-transform:uppercase}
 .pf-header-right{text-align:right}
-.pf-main-title{font-size:16px;font-weight:700;color:#15151A}
-.pf-license{font-size:10px;color:#999;margin-top:3px}
+.pf-main-title{font-family:'Cormorant Garamond','Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--mk-blue);letter-spacing:.06em;line-height:1.1}
 .pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin:0 0 20px;border:2px solid #15151A}
 .pf-info-row{display:flex;flex-wrap:wrap;gap:6px 22px}
 .pf-info-item{display:flex;align-items:center;gap:6px;font-size:12.5px}
@@ -235,7 +229,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-total-label{font-size:15px;font-weight:700;color:#15151A}
 .pf-total-right{text-align:right}
 .pf-total-raw{font-size:11px;color:#aaa;text-decoration:line-through;margin-bottom:2px}
-.pf-total-amt{font-size:22px;font-weight:700;color:var(--mk-blue)}
+.pf-total-amt{font-family:'Cormorant Garamond','Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--mk-blue)}
 .pf-footer{border-top:2px solid var(--mk-blue);padding:16px 0 0;margin-top:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .pf-footer-left{display:flex;flex-direction:column;gap:5px}
 .pf-footer-brand{font-size:12.5px;font-weight:700;color:#15151A}
