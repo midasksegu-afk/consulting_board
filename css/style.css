@@ -479,37 +479,89 @@ html, body {
 ================================================================ */
 .detail-header {
   display:flex; align-items:center; gap:14px;
-  margin-bottom:24px; padding-bottom:20px;
-  border-bottom:1.5px solid var(--border);
+  margin-bottom:24px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:4px solid var(--accent);
+  border-radius:var(--radius-lg);
+  padding:16px 22px;
+  box-shadow:var(--shadow);
 }
-.detail-icon { width:52px; height:52px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
-.detail-title { font-size:19px; font-weight:700; color:var(--text-1); }
-.detail-sub   { font-size:14px; color:var(--text-2); margin-top:3px; }
+.detail-icon { display:none; }
+.detail-title {
+  font-size:19px; font-weight:800; color:var(--text-1);
+  display:flex; align-items:center; gap:10px;
+}
+.detail-section-badge {
+  font-size:10px; font-weight:700;
+  color:var(--blue-tx); background:var(--blue-bg);
+  padding:3px 9px; border-radius:4px;
+  letter-spacing:.18em; font-family:monospace; flex-shrink:0;
+}
+.detail-sub   { font-size:13.5px; color:var(--text-2); margin-top:4px; }
 
 .detail-grid { display:grid; grid-template-columns:1fr 1fr 260px; gap:20px; align-items:start; }
-.d-col-label { font-size:11.5px; font-weight:600; color:var(--text-3); letter-spacing:.1em; text-transform:uppercase; margin-bottom:14px; }
+.d-col-label {
+  display:flex; align-items:center; gap:8px;
+  font-size:12.5px; font-weight:700; color:var(--text-2);
+  letter-spacing:.1em; text-transform:uppercase;
+  margin-bottom:14px; padding-bottom:10px;
+  border-bottom:2px solid var(--border);
+}
+.d-col-num {
+  font-size:10px; font-weight:800;
+  color:var(--blue-tx); background:var(--blue-bg);
+  padding:2px 7px; border-radius:4px;
+  letter-spacing:.08em; font-family:monospace; flex-shrink:0;
+}
 
 /* 프로그램 항목 */
 .p-item {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 18px 20px;
   margin-bottom: 12px;
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 .p-item:last-child { margin-bottom: 0; }
-.p-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.p-header {
+  display:flex; align-items:center; gap:10px;
+  background:linear-gradient(180deg,var(--surface2) 0%,#EDE8F8 100%);
+  border-bottom:1px solid rgba(183,156,255,0.2);
+  padding:10px 16px;
+}
+.p-num-badge {
+  font-size:10px; font-weight:700;
+  color:#fff; background:var(--blue-tx);
+  padding:3px 9px; border-radius:5px;
+  letter-spacing:.06em; font-family:monospace;
+  white-space:nowrap; flex-shrink:0;
+}
 .p-num { display: none; }
-.p-title { font-size:15px; font-weight:800; color:#15151A; margin-bottom:8px; }
-.p-desc  { font-size:13.5px; color:var(--text-2); line-height:1.8; }
+.p-title { font-size:14.5px; font-weight:800; color:#2a1450; }
+.p-desc  { font-size:13.5px; color:var(--text-2); line-height:1.8; padding:12px 16px; }
 .p-desc ul { padding-left:16px; }
 .p-desc li { margin-bottom:3px; list-style:disc; }
 
 /* 조건 박스 */
-.c-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:12px; box-shadow:var(--shadow); }
-.c-title { font-size:14px; font-weight:700; color:var(--text-1); margin-bottom:10px; }
-.c-txt   { font-size:13.5px; color:var(--text-2); line-height:1.85; }
+.c-box {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-md); margin-bottom:12px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.c-title {
+  display:flex; align-items:center;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+}
+.c-peg {
+  width:4px; height:18px; background:var(--accent);
+  border-radius:2px; margin-right:10px; flex-shrink:0;
+}
+.c-title-text { font-size:14px; font-weight:700; color:var(--text-1); }
+.c-txt   { font-size:13.5px; color:var(--text-2); line-height:1.85; padding:12px 16px; }
 .c-tag   { display:inline-block; background:#E1D6FF; color:#5b35c4; font-size:12px; font-weight:500; padding:3px 10px; border-radius:20px; margin:2px 3px 4px 0; }
 
 /* 노티스 */
