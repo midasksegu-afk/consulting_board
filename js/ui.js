@@ -767,11 +767,14 @@ const UI = (() => {
 
   /** 연간관리형 카드 체크 */
   function handleOvCheck(pageId, cb) {
-    const ok = Calc.selectOv(pageId, cb.checked);
-    if (!ok) {
+    const result = Calc.selectOv(pageId, cb.checked);
+    if (!result) {
       cb.checked = false;
       showToast('학년을 먼저 선택해 주세요', 'warn');
       return;
+    }
+    if (result === 'switched') {
+      showToast('프로그램 전환되어 금액이 초기화됩니다', 'warn');
     }
     const card = document.getElementById('ovcard-' + pageId);
     if (card) card.classList.toggle('card-selected', cb.checked);
@@ -784,7 +787,13 @@ const UI = (() => {
       showToast('연간관리형으로 이미 포함된 항목입니다', 'warn');
       return;
     }
-    Calc.selectItem(pageId, idx, cb.checked);
+    const result = Calc.selectItem(pageId, idx, cb.checked);
+    if (result === 'switched') {
+      showToast('프로그램 전환되어 금액이 초기화됩니다', 'warn');
+      // 반대 그룹 체크박스 UI 즉시 동기화
+      _syncCheckboxes(Calc.state);
+      _syncOvCards(Calc.state);
+    }
     _updateLocalTotal(pageId);
   }
 

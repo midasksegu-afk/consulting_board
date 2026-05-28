@@ -121,9 +121,53 @@ const Calc = (() => {
    * ============================================================ */
 
   /**
+   * 상호 배타 초기화 헬퍼
+   * - 로드맵(calcGroup 없는 roadmap) 체크 시 → 개별(individual) 초기화
+   * - 개별(individual) 체크 시 → 로드맵(calcGroup 없는 roadmap) 초기화
+   * - rm-c(calcGroup:'individual') → 예외, 양쪽 공존
+   * @returns {boolean} 실제 초기화 발생 여부
+   */
+  function _clearOppositeGroup(pageId) {
+    const config = cfg();
+    const page   = config.pages[pageId];
+    if (!page) return false;
+
+    // rm-c 등 calcGroup 있는 페이지는 공존 — 초기화 없음
+    if (page.calcGroup) return false;
+
+    const isRoadmap    = page.group === 'roadmap';
+    const isIndividual = page.group === 'individual';
+    if (!isRoadmap && !isIndividual) return false;
+
+    let cleared = false;
+
+    if (isRoadmap) {
+      // 로드맵 체크 → 개별(individual group) 전체 초기화
+      MK_CONFIG.pageOrder.forEach(pid => {
+        const p = config.pages[pid];
+        if (!p || p.group !== 'individual') return;
+        if (state.ov[pid] || (state.pages[pid] && state.pages[pid].size > 0)) cleared = true;
+        delete state.ov[pid];
+        delete state.pages[pid];
+      });
+    } else if (isIndividual) {
+      // 개별 체크 → 로드맵(calcGroup 없는) 전체 초기화
+      MK_CONFIG.pageOrder.forEach(pid => {
+        const p = config.pages[pid];
+        if (!p || p.group !== 'roadmap' || p.calcGroup) return;
+        if (state.ov[pid] || (state.pages[pid] && state.pages[pid].size > 0)) cleared = true;
+        delete state.ov[pid];
+        delete state.pages[pid];
+      });
+    }
+
+    return cleared;
+  }
+
+  /**
    * @param {string}  pageId   'rm-a' | 'rm-b' | 'rm-c'
    * @param {boolean} checked
-   * @returns {boolean} 성공 여부 (학년 미선택 시 false)
+   * @returns {boolean|'switched'} false=학년미선택, 'switched'=상대그룹 초기화 발생, true=정상
    */
   function selectOv(pageId, checked) {
     if (state.grade === 0) return false; // 학년 미선택
@@ -131,7 +175,9 @@ const Calc = (() => {
     const page = cfg().pages[pageId];
     if (!page || !page.ovCard || page.ovCard.fixed) return false;
 
+    let switched = false;
     if (checked) {
+      switched = _clearOppositeGroup(pageId);
       const amt = (page.ovCard.ovPrices || {})[state.grade] || 0;
       state.ov[pageId] = { amt };
     } else {
@@ -139,7 +185,7 @@ const Calc = (() => {
     }
 
     _notifyChange();
-    return true;
+    return switched ? 'switched' : true;
   }
 
   function isOvSelected(pageId) {
@@ -155,12 +201,15 @@ const Calc = (() => {
    * @param {string}  pageId
    * @param {number}  itemIdx  prices[] 배열 인덱스
    * @param {boolean} checked
+   * @returns {boolean|'switched'}
    */
   function selectItem(pageId, itemIdx, checked) {
     if (!state.pages[pageId]) {
       state.pages[pageId] = new Set();
     }
+    let switched = false;
     if (checked) {
+      switched = _clearOppositeGroup(pageId);
       state.pages[pageId].add(itemIdx);
     } else {
       state.pages[pageId].delete(itemIdx);
@@ -168,6 +217,7 @@ const Calc = (() => {
     // 세션 자동 저장
     Store.saveSession(toSnapshot());
     _notifyChange();
+    return switched ? 'switched' : true;
   }
 
   function isItemSelected(pageId, itemIdx) {
