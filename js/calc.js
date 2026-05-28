@@ -61,10 +61,30 @@ const Calc = (() => {
     } else {
       state.grade = n;
     }
+
+    // 학년 무관 페이지 선택값 보존 — prices 전체에 grade 속성이 없는 페이지
+    // (학년 변경과 무관한 상품이므로 초기화 대상에서 제외)
+    const config = cfg();
+    const gradeAgnosticPages = {};
+    const gradeAgnosticOv    = {};
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page) return;
+      const prices = page.prices || [];
+      const isGradeAgnostic = prices.length > 0 && prices.every(p => !p.grade);
+      if (!isGradeAgnostic) return;
+      if (state.pages[pageId]) gradeAgnosticPages[pageId] = state.pages[pageId];
+      if (state.ov[pageId])    gradeAgnosticOv[pageId]    = state.ov[pageId];
+    });
+
     // 학년 바뀌면 전체 선택 초기화
     state.ov          = {};
     state.pages       = {};
     state.pageVisited = {};
+
+    // 학년 무관 페이지 선택값 복원
+    Object.assign(state.pages, gradeAgnosticPages);
+    Object.assign(state.ov,    gradeAgnosticOv);
 
     // 학년 선택 시 rm-d/e isDefault 항목 즉시 자동 체크
     if (state.grade !== 0) {
