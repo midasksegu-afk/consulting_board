@@ -8,7 +8,8 @@ const Portfolio = (() => {
 
   function fmt(n) {
     if (n === 0) return '0원';
-    return n.toLocaleString('ko-KR') + '원';
+    const man = Math.round(n / 10000);
+    return man > 0 ? `${man.toLocaleString('ko-KR')}만원` : `${n.toLocaleString('ko-KR')}원`;
   }
 
   function today() {
