@@ -197,13 +197,16 @@ const Calc = (() => {
 
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
-      if (!page || page.group !== group || page.isOverview) return;
+      if (!page || page.isOverview) return;
 
-      // 연간관리형 카드 체크 금액 (rm-a/b/c)
-      // ov 선택 시 pages 금액은 무시 (이중 합산 방지)
+      // calcGroup 플래그 있으면 해당 값으로 버킷 판단, 없으면 group 사용
+      const effectiveGroup = page.calcGroup || page.group;
+      if (effectiveGroup !== group) return;
+
+      // 연간관리형 카드 체크 금액
       if (state.ov[pageId]) {
         sum += state.ov[pageId].amt;
-        return; // pages 금액 합산 건너뜀
+        return;
       }
 
       // ov 미선택 시만 상세 페이지 체크 금액 합산
@@ -356,25 +359,23 @@ const Calc = (() => {
 
   /**
    * DC 적용된 그룹 합계 반환
-   * 관리자 설정 할인율 적용
+   * calcGroup 플래그 있는 페이지는 어떤 DC도 적용하지 않음
    */
   function getDcTotal(group) {
     if (!state.dc[group]) return getGroupTotal(group);
     const disc   = (cfg().discount || {})[group];
     const config = cfg();
 
-    // 로드맵: 단일 할인율
-    // dcGroup:'individual' 플래그 페이지(rm-c 등)는 자체 할인 내장 상품이므로 로드맵 DC 적용 제외
+    // 로드맵 DC: calcGroup 없는 순수 roadmap 페이지에만 할인율 적용
     if (group === 'roadmap') {
       const rate = typeof disc === 'number' ? disc : 0;
-      let dcSum    = 0;  // 할인 적용 대상 합계
-      let noDiscSum = 0; // 할인 제외 합계 (dcGroup 플래그 페이지)
+      let dcSum = 0;
 
       MK_CONFIG.pageOrder.forEach(pageId => {
         const page = config.pages[pageId];
-        if (!page || page.group !== 'roadmap' || page.isOverview) return;
+        // calcGroup 있는 페이지(rm-c 등)는 roadmap DC 계산에서 완전 제외
+        if (!page || page.group !== 'roadmap' || page.isOverview || page.calcGroup) return;
 
-        // 해당 페이지 금액 계산
         let pageAmt = 0;
         if (state.ov[pageId]) {
           pageAmt = state.ov[pageId].amt;
@@ -385,25 +386,37 @@ const Calc = (() => {
             if (price && _gradeMatch(price)) pageAmt += price.amt;
           });
         }
-
-        // dcGroup 플래그 있으면 할인 제외 버킷에 누적
-        if (page.dcGroup && page.dcGroup !== 'roadmap') {
-          noDiscSum += pageAmt;
-        } else {
-          dcSum += pageAmt;
-        }
+        dcSum += pageAmt;
       });
 
-      return Math.round(dcSum * (1 - rate / 100)) + noDiscSum;
+      // calcGroup 페이지 금액은 DC 없이 그대로 getGroupTotal('individual')에 포함됨
+      return Math.round(dcSum * (1 - rate / 100));
     }
 
-    // 개별: 항목별 할인율 적용
+    // 개별 DC: calcGroup='individual' 페이지는 DC 제외 (이미 자체 할인된 금액)
     if (group === 'individual' && typeof disc === 'object') {
       let sum = 0;
       MK_CONFIG.pageOrder.forEach(pageId => {
         const page = config.pages[pageId];
-        if (!page || page.group !== 'individual' || page.isOverview) return;
-        // 해당 페이지 합계
+        const effectiveGroup = page?.calcGroup || page?.group;
+        if (!page || effectiveGroup !== 'individual' || page.isOverview) return;
+
+        // calcGroup 플래그 페이지는 DC 적용 제외 — 자체 할인 내장 상품
+        if (page.calcGroup) {
+          let pageAmt = 0;
+          if (state.ov[pageId]) pageAmt = state.ov[pageId].amt;
+          else {
+            const sel = state.pages[pageId];
+            if (sel) sel.forEach(idx => {
+              const price = (page.prices || [])[idx];
+              if (price && _gradeMatch(price)) pageAmt += price.amt;
+            });
+          }
+          sum += pageAmt; // DC 없이 원금 그대로
+          return;
+        }
+
+        // 순수 individual 페이지 — 항목별 할인율 적용
         let pageSum = 0;
         if (state.ov[pageId]) pageSum += state.ov[pageId].amt;
         else {

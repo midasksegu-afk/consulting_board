@@ -179,7 +179,7 @@ const MK_CONFIG = {
     /* ── 로드맵 C ── */
     'rm-c': {
       group:      'roadmap',
-      dcGroup:    'individual',  // DC 합산 시 individual 취급 — 자체 할인(40%/50%) 내장 상품이므로 로드맵 DC 적용 제외
+      calcGroup:  'individual',  // 합산 계산 전용 — 사이드바는 roadmap 유지, 금액은 개별 버킷 합산 + 어떤 DC도 적용 안 함
       sbIcon:     'ti-bulb',
       sbLabel:    'C. 주제 추천',
       title:      'C. 주제 추천',

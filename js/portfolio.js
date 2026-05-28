@@ -30,8 +30,9 @@ const Portfolio = (() => {
       const page = config.pages[pageId];
       if (!page || page.isOverview) return;
 
-      const group  = page.group;
-      const bucket = result[group];
+      // calcGroup 플래그 있으면 해당 버킷, 없으면 group 사용
+      const effectiveGroup = page.calcGroup || page.group;
+      const bucket = result[effectiveGroup];
       if (!bucket) return;
 
       // 연간관리형 카드 선택 (rm-a/b/c)
