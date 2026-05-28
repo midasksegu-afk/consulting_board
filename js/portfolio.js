@@ -137,13 +137,9 @@ const Portfolio = (() => {
     return `
       <div class="pf-doc">
         <div class="pf-header">
-          <div class="pf-header-top">
-            <span class="pf-logo-main">마이더스K교육컨설팅</span>
-            <span class="pf-logo-divider">·</span>
-            <span class="pf-logo-sub">Teachers Consultant</span>
-          </div>
-          <div class="pf-main-title">Consulting<br>Portfolio</div>
-          <div class="pf-header-line"></div>
+          <div class="pf-brand">마이더스K교육컨설팅</div>
+          <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
+          <div class="pf-license">${config.app.license}</div>
         </div>
 
         <div class="pf-info-card">
@@ -194,21 +190,18 @@ const Portfolio = (() => {
 <meta charset="UTF-8">
 <title>마이더스K 컨설팅 포트폴리오</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding:0}
 @page{margin:12mm 14mm;size:A4}
 :root{--mk-blue:#2B4BAF;--mk-blue-lt:#F0F4FC;--mk-line:#e2e2e2}
-.pf-doc{max-width:680px;margin:0 auto;padding:0}
-.pf-header{padding:28px 32px 22px;border-bottom:2px solid var(--mk-blue);margin-bottom:24px}
-.pf-header-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.pf-logo-main{font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:#555;letter-spacing:.08em}
-.pf-logo-divider{color:#ccc;font-size:11px}
-.pf-logo-sub{font-size:11px;font-weight:500;color:#999;letter-spacing:.12em}
-.pf-main-title{font-family:'Cormorant Garamond','Playfair Display',Georgia,serif;font-size:42px;font-weight:700;color:#15151A;letter-spacing:.02em;line-height:1.05}
-.pf-header-line{width:48px;height:3px;background:var(--mk-blue);margin-top:14px;border-radius:0}
+.pf-doc{max-width:680px;margin:0 auto;padding:24px 32px}
+.pf-header{text-align:center;padding-bottom:16px;border-bottom:2px solid #15151A;margin-bottom:20px}
+.pf-brand{font-size:11px;font-weight:700;letter-spacing:.2em;color:#8870C8;text-transform:uppercase;margin-bottom:6px}
+.pf-main-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.pf-license{font-size:11px;color:#A8A4AB}
 .pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin:0 0 20px;border:2px solid #15151A}
 .pf-info-row{display:flex;flex-wrap:wrap;gap:6px 22px}
 .pf-info-item{display:flex;align-items:center;gap:6px;font-size:12.5px}
