@@ -93,14 +93,12 @@ const Portfolio = (() => {
         </div>`;
     }
 
-    // DC 적용 여부
-    const dcRoadmap    = Calc.isDcActive('roadmap');
-    const dcIndividual = Calc.isDcActive('individual');
+    // DC 적용값은 getAllTotalsDc()로 일괄 처리 — isDcActive 별도 판단 불필요
 
     const sectionHtml = (groupKey, arr, rawTotal, dcTotal) => {
       if (!arr.length) return '';
       const label = config.groups?.[groupKey]?.label || groupKey;
-      const hasDc = rawTotal !== dcTotal;
+      const hasDc = dcTotal !== rawTotal;
       const rows = arr.map(item => `
         <tr>
           <td>${item.label}</td>
@@ -109,7 +107,7 @@ const Portfolio = (() => {
 
       const subtotalHtml = hasDc
         ? `<div class="pf-subtotal">원가: <span style="text-decoration:line-through;opacity:.6;">${fmt(rawTotal)}</span> → 할인 후: ${fmt(dcTotal)}</div>`
-        : `<div class="pf-subtotal">소계: ${fmt(rawTotal)}</div>`;
+        : `<div class="pf-subtotal">소계: ${fmt(dcTotal)}</div>`;
 
       return `
         <div class="pf-section">
@@ -119,9 +117,10 @@ const Portfolio = (() => {
         </div>`;
     };
 
-    const grandRaw = totals.grand;
+    // 합계: DC 적용된 최종값 기준
+    const grandRaw = totals.roadmap + totals.individual + totals.strategy;
     const grandDc  = totalsDc.grand;
-    const hasDcAny = grandRaw !== grandDc;
+    const hasDcAny = grandDc !== grandRaw;
 
     const totalHtml = hasDcAny ? `
       <div class="pf-total-box">
@@ -133,7 +132,7 @@ const Portfolio = (() => {
       </div>` : `
       <div class="pf-total-box">
         <span class="pf-total-label">합계금액</span>
-        <div class="pf-total-amt">${fmt(grandRaw)}</div>
+        <div class="pf-total-amt">${fmt(grandDc)}</div>
       </div>`;
 
     return `
@@ -179,7 +178,6 @@ const Portfolio = (() => {
 
         <!-- 합계 -->
         ${totalHtml}
-        <div class="pf-tax">※ 부가세 별도</div>
 
         <!-- 하단 고정문구 -->
         <div class="pf-footer">
@@ -217,7 +215,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-brand{font-size:11px;font-weight:700;letter-spacing:.2em;color:#8870C8;text-transform:uppercase;margin-bottom:6px}
 .pf-main-title{font-size:20px;font-weight:700;margin-bottom:6px}
 .pf-license{font-size:11px;color:#A8A4AB}
-.pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#f8f6ff;border-radius:8px;margin-bottom:20px;border:1px solid #e0d8ff}
+.pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin-bottom:20px;border:2px solid #15151A}
 .pf-info-item{display:flex;gap:6px;font-size:12.5px;margin-right:20px}
 .pf-info-label{color:#A8A4AB}
 .pf-info-value{font-weight:700;color:#15151A}
