@@ -75,11 +75,12 @@ const Portfolio = (() => {
     const grade    = Calc.getGrade();
     const gradeStr = grade ? `고${grade}학년` : '학년 미선택';
 
-    // 학생 정보 파싱 (tb-title: 이름 · 학교 · 진로)
+    // 학생 정보 파싱 (tb-title: 이름 · 학교 · 학년 · 진로목표)
     const parts     = (studentKey || '').split(' · ');
     const stuName   = parts[0]?.trim() || '';
     const stuSchool = parts[1]?.trim() || '';
-    const stuGoal   = parts[2]?.trim() || '';
+    // parts[2] = 학년 문자열 (고1/고2/고3) — grade는 Calc.getGrade()로 별도 취득하므로 미사용
+    const stuGoal   = parts[3]?.trim() || '';
 
     const hasItems = Object.values(items).some(arr => arr.length > 0);
 
