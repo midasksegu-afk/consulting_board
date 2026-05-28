@@ -137,9 +137,11 @@ const Portfolio = (() => {
     return `
       <div class="pf-doc">
         <div class="pf-header">
-          <div class="pf-brand">마이더스K교육컨설팅</div>
+          <div class="pf-header-top">
+            <span class="pf-brand">마이더스K교육컨설팅</span>
+            <span class="pf-teachers-box">티처스 컨설턴트</span>
+          </div>
           <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
-          <div class="pf-teachers-box">티처스 컨설턴트</div>
         </div>
 
         <div class="pf-info-card">
@@ -199,9 +201,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 :root{--mk-blue:#2B4BAF;--mk-blue-lt:#F0F4FC;--mk-line:#e2e2e2}
 .pf-doc{max-width:680px;margin:0 auto;padding:24px 32px}
 .pf-header{text-align:center;padding-bottom:16px;border-bottom:2px solid #15151A;margin-bottom:20px}
-.pf-brand{font-size:16px;font-weight:700;letter-spacing:.12em;color:#2B4BAF;text-transform:uppercase;margin-bottom:6px}
-.pf-main-title{font-size:20px;font-weight:700;margin-bottom:12px}
-.pf-teachers-box{display:inline-block;font-size:12px;font-weight:700;color:#2B4BAF;letter-spacing:.08em;border:1.5px solid #2B4BAF;border-radius:4px;padding:4px 14px}
+.pf-header-top{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
+.pf-brand{font-size:16px;font-weight:700;letter-spacing:.12em;color:#2B4BAF;text-transform:uppercase}
+.pf-main-title{font-size:20px;font-weight:700;margin-bottom:0}
+.pf-teachers-box{display:inline-block;font-size:11px;font-weight:700;color:#2B4BAF;letter-spacing:.08em;border:1.5px solid #2B4BAF;border-radius:4px;padding:3px 10px}
 .pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin:0 0 20px;border:2px solid #15151A}
 .pf-info-row{display:flex;flex-wrap:wrap;gap:6px 22px}
 .pf-info-item{display:flex;align-items:center;gap:6px;font-size:12.5px}
