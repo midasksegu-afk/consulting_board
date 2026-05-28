@@ -1356,17 +1356,36 @@ const UI = (() => {
 
   function _buildOvTreeRows(pageId) {
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
-    return (ov.tree || []).map((t, idx) => `
-      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-        <input class="admin-input" style="flex:1;" value="${t.label || ''}"
-          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
-          placeholder="트리 제목">
-        <input class="admin-input" style="flex:1;" value="${t.sub || ''}"
-          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
-          placeholder="트리 부제">
-        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
-      </div>`).join('');
+    return (ov.tree || []).map((t, idx) => {
+      const labelId = `ovtree-label-${pageId}-${idx}`;
+      const subId   = `ovtree-sub-${pageId}-${idx}`;
+      return `
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--accent);">항목 ${idx + 1}</span>
+          <button type="button" class="btn btn-sm" style="color:var(--red-tx);"
+            onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div class="d-col-label" style="margin-bottom:4px;font-size:11px;">트리 제목</div>
+          ${_richToolbar(labelId)}
+          <div id="${labelId}" class="admin-input rich-editor"
+            contenteditable="true"
+            style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:36px;padding:6px 8px;"
+            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.innerHTML"
+          >${t.label || ''}</div>
+        </div>
+        <div>
+          <div class="d-col-label" style="margin-bottom:4px;font-size:11px;">트리 부제</div>
+          ${_richToolbar(subId)}
+          <div id="${subId}" class="admin-input rich-editor"
+            contenteditable="true"
+            style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:36px;padding:6px 8px;"
+            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.innerHTML"
+          >${t.sub || ''}</div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function _refreshOvTreeRows(pageId) {
@@ -1486,6 +1505,7 @@ const UI = (() => {
         <span class="rich-sep">|</span>
         <select class="rich-select" title="글자 크기" onchange="UI._richCmd('fontSize',this.value,'${targetId}');this.value=''">
           <option value="">크기</option>
+          <option value="0">기본</option>
           <option value="1">소</option>
           <option value="3">중</option>
           <option value="5">대</option>
@@ -1538,8 +1558,17 @@ const UI = (() => {
       document.getElementById(targetId)?.focus();
       document.execCommand('foreColor', false, val);
     } else if (cmd === 'fontSize') {
-      document.getElementById(targetId)?.focus();
-      document.execCommand('fontSize', false, val);
+      const el = document.getElementById(targetId);
+      el?.focus();
+      if (val === '0') {
+        // "기본" — 선택 범위의 font size 속성만 제거 (색상·볼드 등 다른 서식은 유지)
+        // 1) 선택 범위에 임시 fontSize 적용해 <font> 래핑 확보
+        document.execCommand('fontSize', false, '4');
+        // 2) 방금 생성된 <font size="4"> 포함, el 내 모든 font[size] 속성 제거
+        if (el) el.querySelectorAll('font[size]').forEach(f => f.removeAttribute('size'));
+      } else {
+        document.execCommand('fontSize', false, val);
+      }
     } else {
       document.getElementById(targetId)?.focus();
       document.execCommand(cmd, false, null);
