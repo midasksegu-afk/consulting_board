@@ -445,12 +445,13 @@ const UI = (() => {
              </div>
            </div>`;
 
+      const treeFontSize = ov.treeFontSize ? `font-size:${ov.treeFontSize}pt;` : '';
       const treeHtml = (ov.tree || []).map(t => `
         <div class="ov-tree-item">
           <div class="ov-tree-dot"></div>
           <div>
-            <div class="ov-tree-label">${t.label}</div>
-            <div class="ov-tree-sub">${t.sub}</div>
+            <div class="ov-tree-label" style="${treeFontSize}">${t.label}</div>
+            <div class="ov-tree-sub"  style="${treeFontSize}">${t.sub}</div>
           </div>
         </div>`).join('');
 
@@ -1336,9 +1337,25 @@ const UI = (() => {
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <div class="d-col-label">🩷 구성 요약 트리</div>
-              <button type="button" class="btn btn-sm btn-primary" onclick="UI._addOvTree('${pageId}')">
-                <i class="ti ti-plus"></i> 항목 추가
-              </button>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <select class="rich-select" title="트리 전체 글자 크기"
+                  onchange="UI._setTreeFontSize('${pageId}',this.value)">
+                  <option value="">글자 크기</option>
+                  <option value="0">기본</option>
+                  <option value="8">8pt</option>
+                  <option value="9">9pt</option>
+                  <option value="10">10pt</option>
+                  <option value="11">11pt</option>
+                  <option value="12">12pt</option>
+                  <option value="13">13pt</option>
+                  <option value="14">14pt</option>
+                  <option value="16">16pt</option>
+                  <option value="18">18pt</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-primary" onclick="UI._addOvTree('${pageId}')">
+                  <i class="ti ti-plus"></i> 항목 추가
+                </button>
+              </div>
             </div>
             <div id="ovtree-rows-${pageId}">${treeRows}</div>
           </div>
@@ -1384,6 +1401,13 @@ const UI = (() => {
   function _removeOvTree(pageId, idx) {
     window.mkEditDraft.pages[pageId].ovCard.tree.splice(idx, 1);
     _refreshOvTreeRows(pageId);
+  }
+
+  // 트리 전체 공용 글자 크기 설정 — draft에 treeFontSize 저장
+  function _setTreeFontSize(pageId, val) {
+    if (!window.mkEditDraft.pages[pageId].ovCard) return;
+    // val === '0' or '' → 기본(CSS) 복원, 그 외 pt 숫자 문자열
+    window.mkEditDraft.pages[pageId].ovCard.treeFontSize = (val === '0' || val === '') ? '' : val;
   }
 
   function _saveOvCardEdit(pageId) {
@@ -1500,10 +1524,15 @@ const UI = (() => {
         <select class="rich-select" title="글자 크기" onchange="UI._richCmd('fontSize',this.value,'${targetId}');this.value=''">
           <option value="">크기</option>
           <option value="0">기본</option>
-          <option value="1">소</option>
-          <option value="3">중</option>
-          <option value="5">대</option>
-          <option value="7">특대</option>
+          <option value="8">8pt</option>
+          <option value="9">9pt</option>
+          <option value="10">10pt</option>
+          <option value="11">11pt</option>
+          <option value="12">12pt</option>
+          <option value="13">13pt</option>
+          <option value="14">14pt</option>
+          <option value="16">16pt</option>
+          <option value="18">18pt</option>
         </select>
         <span class="rich-sep">|</span>
         ${[
@@ -1553,14 +1582,14 @@ const UI = (() => {
       document.execCommand('foreColor', false, val);
     } else if (cmd === 'fontSize') {
       const el = document.getElementById(targetId);
-      el?.focus();
-      if (val === '0') {
-        // "기본" — <font size> 태그를 완전히 unwrap하여 CSS 기본값 복원
-        // removeAttribute만으로는 <font> 태그 껍질이 남아 CSS 스타일이 override됨
-        // → 선택 범위 내 모든 font[size] 태그를 자식 노드로 교체(unwrap)
+      if (!el) return;
+      el.focus();
+      if (val === '0' || val === '') {
+        // "기본" — font-size 인라인 스타일 span 완전 unwrap → CSS 기본값(카드 글씨) 복원
         _unwrapFontSize(el);
       } else {
-        document.execCommand('fontSize', false, val);
+        // pt 단위 직접 적용 — execCommand 미사용 (1~7 정수만 지원하는 레거시 API)
+        _applyFontSize(el, val + 'pt');
       }
     } else {
       document.getElementById(targetId)?.focus();
@@ -1568,17 +1597,56 @@ const UI = (() => {
     }
   }
 
-  // font[size] 태그를 자식 노드로 교체 — CSS 기본 스타일이 온전히 적용되도록
+  // 선택 범위를 <span style="font-size:Npt">로 래핑
+  function _applyFontSize(el, ptVal) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    // 선택 범위가 el 안에 있는지 확인
+    if (!el.contains(range.commonAncestorContainer)) return;
+    const span = document.createElement('span');
+    span.style.fontSize = ptVal;
+    try {
+      range.surroundContents(span);
+    } catch (e) {
+      // surroundContents 실패(부분 태그 교차) → extractContents 후 삽입
+      const frag = range.extractContents();
+      span.appendChild(frag);
+      range.insertNode(span);
+    }
+    // 커서를 span 뒤로 이동
+    const newRange = document.createRange();
+    newRange.setStartAfter(span);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    // oninput 트리거로 draft 동기화
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  // font-size 인라인 스타일 span을 자식 노드로 교체(unwrap) — CSS 기본값 복원
   function _unwrapFontSize(el) {
     if (!el) return;
-    // querySelectorAll은 live가 아니므로 Array로 복사 후 역순 처리(중첩 대응)
+    // font-size style을 가진 span 전체 대상 (역순으로 중첩 안전 처리)
+    Array.from(el.querySelectorAll('span[style*="font-size"]')).reverse().forEach(s => {
+      // font-size 외 다른 인라인 스타일이 있으면 font-size만 제거
+      s.style.fontSize = '';
+      // 스타일이 완전히 비었으면 span 태그 자체를 unwrap
+      if (!s.getAttribute('style') || s.getAttribute('style').trim() === '') {
+        const parent = s.parentNode;
+        if (!parent) return;
+        while (s.firstChild) parent.insertBefore(s.firstChild, s);
+        parent.removeChild(s);
+      }
+    });
+    // 기존 <font size> 태그도 혹시 남아있으면 함께 정리
     Array.from(el.querySelectorAll('font[size]')).reverse().forEach(f => {
       const parent = f.parentNode;
       if (!parent) return;
-      // 자식 노드를 font 태그 바로 앞에 삽입 후 font 태그 제거
       while (f.firstChild) parent.insertBefore(f.firstChild, f);
       parent.removeChild(f);
     });
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   // 특수문자 삽입
@@ -1978,7 +2046,7 @@ const UI = (() => {
     openOvCardEdit,
     _saveOvCardEdit,
     _buildOvTreeRows, _refreshOvTreeRows,
-    _addOvTree, _removeOvTree,
+    _addOvTree, _removeOvTree, _setTreeFontSize,
     openNoticeEdit,
     _saveNoticeEdit,
     _deleteNotice,
