@@ -576,27 +576,27 @@ const UI = (() => {
     return `
       <div id="pg-${pageId}" class="page">
         <div class="detail-header">
-          <div class="detail-icon" style="background:${page.iconBg};color:${page.iconColor};">
-            <i class="ti ${page.iconClass}"></i>
-          </div>
           <div style="flex:1;">
-            <div class="detail-title">${page.title}</div>
+            <div class="detail-title">
+              <span class="detail-section-badge">SECTION</span>
+              ${page.title}
+            </div>
             <div class="detail-sub">${page.subtitle || ''}</div>
           </div>
           ${_isAdminMode() ? `<button class="edit-mode-btn" onclick="UI.openPageEdit('${pageId}')" title="이 페이지 편집"><i class="ti ti-pencil"></i> 편집</button>` : ''}
         </div>
         <div class="detail-grid">
           <div>
-            <div class="d-col-label">프로그램 구성</div>
+            <div class="d-col-label"><span class="d-col-num">01</span>프로그램 구성</div>
             ${programsHtml}
           </div>
           <div>
-            <div class="d-col-label">제공 조건 및 세부 내용</div>
+            <div class="d-col-label"><span class="d-col-num">02</span>제공 조건 및 세부 내용</div>
             ${conditionsHtml}
             ${notesHtml}
           </div>
           <div>
-            <div class="d-col-label">개별가 선택</div>
+            <div class="d-col-label"><span class="d-col-num">03</span>개별가 선택</div>
             ${priceCardHtml}
           </div>
         </div>
@@ -604,7 +604,9 @@ const UI = (() => {
   }
 
   function _renderPrograms(programs) {
-    return programs.map(p => {
+    return programs.map((p, idx) => {
+      // 번호: idx+1 기반 자동 부여 — 항목 추가/삭제 시 항상 재정렬
+      const numStr = String(idx + 1).padStart(2, '0');
       const hasLink = p.title.includes('세특구원자');
       const titleHtml = hasLink
         ? `${p.title} <a href="https://naver.me/GfMeckyJ" target="_blank" rel="noopener"
@@ -614,7 +616,10 @@ const UI = (() => {
         : p.title;
       return `
       <div class="p-item">
-        <div class="p-title">${titleHtml}</div>
+        <div class="p-header">
+          <span class="p-num-badge">PROGRAM · ${numStr}</span>
+          <span class="p-title">${titleHtml}</span>
+        </div>
         <div class="p-desc">
           <ul>${(p.items || []).map(i => `<li>${i}</li>`).join('')}</ul>
         </div>
@@ -634,7 +639,7 @@ const UI = (() => {
       }
       return `
         <div class="c-box">
-          <div class="c-title">${c.title}</div>
+          <div class="c-title"><div class="c-peg"></div><span class="c-title-text">${c.title}</span></div>
           <div class="c-txt">${body}</div>
         </div>`;
     }).join('');
