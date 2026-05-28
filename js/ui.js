@@ -1356,36 +1356,17 @@ const UI = (() => {
 
   function _buildOvTreeRows(pageId) {
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
-    return (ov.tree || []).map((t, idx) => {
-      const labelId = `ovtree-label-${pageId}-${idx}`;
-      const subId   = `ovtree-sub-${pageId}-${idx}`;
-      return `
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;font-weight:600;color:var(--accent);">항목 ${idx + 1}</span>
-          <button type="button" class="btn btn-sm" style="color:var(--red-tx);"
-            onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
-        </div>
-        <div style="margin-bottom:8px;">
-          <div class="d-col-label" style="margin-bottom:4px;font-size:11px;">트리 제목</div>
-          ${_richToolbar(labelId)}
-          <div id="${labelId}" class="admin-input rich-editor"
-            contenteditable="true"
-            style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:36px;padding:6px 8px;"
-            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.innerHTML"
-          >${t.label || ''}</div>
-        </div>
-        <div>
-          <div class="d-col-label" style="margin-bottom:4px;font-size:11px;">트리 부제</div>
-          ${_richToolbar(subId)}
-          <div id="${subId}" class="admin-input rich-editor"
-            contenteditable="true"
-            style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:36px;padding:6px 8px;"
-            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.innerHTML"
-          >${t.sub || ''}</div>
-        </div>
-      </div>`;
-    }).join('');
+    return (ov.tree || []).map((t, idx) => `
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <input class="admin-input" style="flex:1;" value="${(t.label || '').replace(/"/g,'&quot;')}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
+          placeholder="트리 제목">
+        <input class="admin-input" style="flex:1;" value="${(t.sub || '').replace(/"/g,'&quot;')}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
+          placeholder="트리 부제">
+        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
   }
 
   function _refreshOvTreeRows(pageId) {
@@ -1407,6 +1388,19 @@ const UI = (() => {
 
   function _saveOvCardEdit(pageId) {
     _editDraft = window.mkEditDraft;
+    // tree label/sub: 이전 버전에서 innerHTML로 저장된 HTML 태그 strip
+    const tree = _editDraft.pages?.[pageId]?.ovCard?.tree;
+    if (Array.isArray(tree)) {
+      const _strip = str => {
+        const d = document.createElement('div');
+        d.innerHTML = str || '';
+        return d.innerText;
+      };
+      tree.forEach(t => {
+        t.label = _strip(t.label);
+        t.sub   = _strip(t.sub);
+      });
+    }
     Store.saveConfig(_editDraft);
     document.getElementById('ovcard-edit-modal')?.remove();
     // localStorage 갱신 후 즉시 렌더 (타이밍 보장)
@@ -1561,11 +1555,10 @@ const UI = (() => {
       const el = document.getElementById(targetId);
       el?.focus();
       if (val === '0') {
-        // "기본" — 선택 범위의 font size 속성만 제거 (색상·볼드 등 다른 서식은 유지)
-        // 1) 선택 범위에 임시 fontSize 적용해 <font> 래핑 확보
-        document.execCommand('fontSize', false, '4');
-        // 2) 방금 생성된 <font size="4"> 포함, el 내 모든 font[size] 속성 제거
-        if (el) el.querySelectorAll('font[size]').forEach(f => f.removeAttribute('size'));
+        // "기본" — <font size> 태그를 완전히 unwrap하여 CSS 기본값 복원
+        // removeAttribute만으로는 <font> 태그 껍질이 남아 CSS 스타일이 override됨
+        // → 선택 범위 내 모든 font[size] 태그를 자식 노드로 교체(unwrap)
+        _unwrapFontSize(el);
       } else {
         document.execCommand('fontSize', false, val);
       }
@@ -1573,6 +1566,19 @@ const UI = (() => {
       document.getElementById(targetId)?.focus();
       document.execCommand(cmd, false, null);
     }
+  }
+
+  // font[size] 태그를 자식 노드로 교체 — CSS 기본 스타일이 온전히 적용되도록
+  function _unwrapFontSize(el) {
+    if (!el) return;
+    // querySelectorAll은 live가 아니므로 Array로 복사 후 역순 처리(중첩 대응)
+    Array.from(el.querySelectorAll('font[size]')).reverse().forEach(f => {
+      const parent = f.parentNode;
+      if (!parent) return;
+      // 자식 노드를 font 태그 바로 앞에 삽입 후 font 태그 제거
+      while (f.firstChild) parent.insertBefore(f.firstChild, f);
+      parent.removeChild(f);
+    });
   }
 
   // 특수문자 삽입
