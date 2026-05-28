@@ -1521,7 +1521,9 @@ const UI = (() => {
         <button type="button" class="rich-btn" title="기울임" onclick="UI._richCmd('italic','${targetId}')"><i>I</i></button>
         <button type="button" class="rich-btn" title="밑줄" onclick="UI._richCmd('underline','${targetId}')"><u>U</u></button>
         <span class="rich-sep">|</span>
-        <select class="rich-select" title="글자 크기" onchange="UI._richCmd('fontSize',this.value,'${targetId}');this.value=''">
+        <select class="rich-select" title="글자 크기"
+          onmousedown="UI._saveSelection()"
+          onchange="UI._richCmd('fontSize',this.value,'${targetId}');this.value=''">
           <option value="">크기</option>
           <option value="0">기본</option>
           <option value="8">8pt</option>
@@ -1583,12 +1585,12 @@ const UI = (() => {
     } else if (cmd === 'fontSize') {
       const el = document.getElementById(targetId);
       if (!el) return;
+      // select 클릭으로 포커스 잃었으므로 저장된 selection 복원 후 적용
       el.focus();
+      _restoreSelection();
       if (val === '0' || val === '') {
-        // "기본" — font-size 인라인 스타일 span 완전 unwrap → CSS 기본값(카드 글씨) 복원
         _unwrapFontSize(el);
       } else {
-        // pt 단위 직접 적용 — execCommand 미사용 (1~7 정수만 지원하는 레거시 API)
         _applyFontSize(el, val + 'pt');
       }
     } else {
@@ -1597,12 +1599,30 @@ const UI = (() => {
     }
   }
 
+  // selection 저장 — select onmousedown 에서 호출 (포커스 이탈 직전)
+  let _savedRange = null;
+  function _saveSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      _savedRange = sel.getRangeAt(0).cloneRange();
+    }
+  }
+
+  // selection 복원 — _richCmd fontSize 분기에서 호출
+  function _restoreSelection() {
+    if (!_savedRange) return;
+    const sel = window.getSelection();
+    if (sel) {
+      sel.removeAllRanges();
+      sel.addRange(_savedRange);
+    }
+  }
+
   // 선택 범위를 <span style="font-size:Npt">로 래핑
   function _applyFontSize(el, ptVal) {
     const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
-    // 선택 범위가 el 안에 있는지 확인
     if (!el.contains(range.commonAncestorContainer)) return;
     const span = document.createElement('span');
     span.style.fontSize = ptVal;
@@ -1620,6 +1640,7 @@ const UI = (() => {
     newRange.collapse(true);
     sel.removeAllRanges();
     sel.addRange(newRange);
+    _savedRange = null;
     // oninput 트리거로 draft 동기화
     el.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -2052,6 +2073,7 @@ const UI = (() => {
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
     _richCmd,
+    _saveSelection, _restoreSelection,
     _insertText,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
