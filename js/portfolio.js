@@ -137,13 +137,13 @@ const Portfolio = (() => {
     return `
       <div class="pf-doc">
         <div class="pf-header">
-          <div class="pf-logo-area">
-            <div class="pf-logo-main">마이더스K교육컨설팅</div>
-            <div class="pf-logo-sub">Teachers Consultant</div>
+          <div class="pf-header-top">
+            <span class="pf-logo-main">마이더스K교육컨설팅</span>
+            <span class="pf-logo-divider">·</span>
+            <span class="pf-logo-sub">Teachers Consultant</span>
           </div>
-          <div class="pf-header-right">
-            <div class="pf-main-title">Consulting Portfolio</div>
-          </div>
+          <div class="pf-main-title">Consulting<br>Portfolio</div>
+          <div class="pf-header-line"></div>
         </div>
 
         <div class="pf-info-card">
@@ -202,12 +202,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 @page{margin:12mm 14mm;size:A4}
 :root{--mk-blue:#2B4BAF;--mk-blue-lt:#F0F4FC;--mk-line:#e2e2e2}
 .pf-doc{max-width:680px;margin:0 auto;padding:0}
-.pf-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 28px;border-bottom:2px solid var(--mk-blue);margin-bottom:20px}
-.pf-logo-area{display:flex;flex-direction:column;gap:3px}
-.pf-logo-main{font-family:'Noto Sans KR',sans-serif;font-size:17px;font-weight:700;color:#15151A;letter-spacing:.04em}
-.pf-logo-sub{font-size:10.5px;font-weight:600;color:#888;letter-spacing:.12em;text-transform:uppercase}
-.pf-header-right{text-align:right}
-.pf-main-title{font-family:'Cormorant Garamond','Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--mk-blue);letter-spacing:.06em;line-height:1.1}
+.pf-header{padding:28px 32px 22px;border-bottom:2px solid var(--mk-blue);margin-bottom:24px}
+.pf-header-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.pf-logo-main{font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:#555;letter-spacing:.08em}
+.pf-logo-divider{color:#ccc;font-size:11px}
+.pf-logo-sub{font-size:11px;font-weight:500;color:#999;letter-spacing:.12em}
+.pf-main-title{font-family:'Cormorant Garamond','Playfair Display',Georgia,serif;font-size:42px;font-weight:700;color:#15151A;letter-spacing:.02em;line-height:1.05}
+.pf-header-line{width:48px;height:3px;background:var(--mk-blue);margin-top:14px;border-radius:0}
 .pf-info-card{display:flex;flex-wrap:wrap;gap:8px 0;padding:12px 16px;background:#fff;border-radius:10px;margin:0 0 20px;border:2px solid #15151A}
 .pf-info-row{display:flex;flex-wrap:wrap;gap:6px 22px}
 .pf-info-item{display:flex;align-items:center;gap:6px;font-size:12.5px}
@@ -229,7 +230,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-total-label{font-size:15px;font-weight:700;color:#15151A}
 .pf-total-right{text-align:right}
 .pf-total-raw{font-size:11px;color:#aaa;text-decoration:line-through;margin-bottom:2px}
-.pf-total-amt{font-family:'Cormorant Garamond','Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--mk-blue)}
+.pf-total-amt{font-size:28px;font-weight:700;color:var(--mk-blue)}
 .pf-footer{border-top:2px solid var(--mk-blue);padding:16px 0 0;margin-top:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .pf-footer-left{display:flex;flex-direction:column;gap:5px}
 .pf-footer-brand{font-size:12.5px;font-weight:700;color:#15151A}
