@@ -222,5 +222,16 @@
 <script src="js/config.js"></script>
 <script src="js/store.js"></script>
 <script src="js/admin.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // 메인화면에서 이미 PIN 인증된 경우 PIN 화면 자동 스킵
+  if (localStorage.getItem('mk_admin_auth') === '1') {
+    Admin.initDraft();
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('admin-body').style.display = 'flex';
+    Admin.switchTab('tab-program');
+  }
+});
+</script>
 </body>
 </html>
