@@ -1377,6 +1377,7 @@ const Admin = (() => {
     updateDiscountField, saveDcDiscount,
     renderDiscountTab, loadDiscountSection,
     updateIndividualDiscount, saveDiscountSection,
+    updateSelectDcField, updateSemesterAmt,
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)
