@@ -1199,8 +1199,7 @@ const Admin = (() => {
           <i class="ti ti-device-floppy"></i> 저장
         </button>
       </div>`;
-    return;
-  }
+  
 
   if (section === 'selectDc') {
     el.innerHTML = `
@@ -1266,7 +1265,7 @@ const Admin = (() => {
       </div>`;
     return;
   }
-
+}
   function updateIndividualDiscount(pageId, value) {
     if (!_draft.discount) _draft.discount = {};
     if (typeof _draft.discount.individual !== 'object') _draft.discount.individual = {};
