@@ -182,9 +182,11 @@ const UI = (() => {
     }
     const mode = _getOvPriceMode(page);
     if (mode === 'fixed') return _buildFixedPriceHtml(page);
-    const amt = (page.ovCard.ovPrices || {})[grade];
-    return amt
-      ? '<strong>고' + grade + ' ' + fmt(amt) + '</strong>'
+    const gradeItems = (page.prices || []).filter(p =>
+      p.grade && String(p.grade).split(',').map(Number).includes(grade)
+    );
+    return gradeItems.length
+      ? gradeItems.map(p => '<strong>' + p.label + ' ' + fmt(p.amt) + '</strong>').join('<br>')
       : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
   }
 
