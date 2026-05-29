@@ -30,7 +30,7 @@ const Calc = (() => {
     ov:          {},  // 연간관리형 카드 선택 { 'rm-a': { amt:2300000 }, ... }
     pages:       {},  // 상세 페이지 체크 { 'rm-a': Set([0,1,...]), 'rm-d': Set([0,1]) }
     pageVisited: {},  // 첫 진입 여부 { 'rm-d': true }
-    dc:          { roadmap: false, individual: false }, // DC 토글 상태
+    dc:          { roadmap: false, individual: false, select: false }, // DC 토글 상태
   };
 
 
@@ -178,7 +178,10 @@ const Calc = (() => {
     let switched = false;
     if (checked) {
       switched = _clearOppositeGroup(pageId);
-      const amt = (page.ovCard.ovPrices || {})[state.grade] || 0;
+      // prices[] 직접 참조 — 관리자 수정값 즉시 반영 (note 없는 항목 = 연간 대표 단가)
+      // _gradeMatch() 헬퍼 재사용 — 원칙4 중복 코드 금지
+      const _ovPrice = (page.prices || []).find(p => _gradeMatch(p) && p.grade && !p.note);
+      const amt = _ovPrice ? _ovPrice.amt : 0;
       state.ov[pageId] = { amt };
     } else {
       delete state.ov[pageId];
@@ -372,7 +375,11 @@ const Calc = (() => {
 
     state.pageVisited = snapshot.pageVisited || {};
     if (snapshot.dc) {
-      state.dc = { roadmap: !!snapshot.dc.roadmap, individual: !!snapshot.dc.individual };
+      state.dc = {
+        roadmap:    !!snapshot.dc.roadmap,
+        individual: !!snapshot.dc.individual,
+        select:     !!snapshot.dc.select,
+      };
     }
 
     _notifyChange();
@@ -387,7 +394,7 @@ const Calc = (() => {
     state.ov          = {};
     state.pages       = {};
     state.pageVisited = {};
-    state.dc          = { roadmap: false, individual: false };
+    state.dc          = { roadmap: false, individual: false, select: false };
     Store.clearSession();
     _notifyChange();
   }
@@ -521,6 +528,70 @@ const Calc = (() => {
   }
 
   /* ============================================================
+   * 선택가 DC — 로드맵 1개만 선택 시 적용하는 별도 할인
+   * 기존 roadmap DC 로직과 독립 운영 (상호 간섭 없음)
+   * ============================================================ */
+
+  function toggleSelectDc() {
+    state.dc.select = !state.dc.select;
+    _notifyChange();
+    return state.dc.select;
+  }
+
+  function isSelectDcActive() {
+    return !!state.dc.select;
+  }
+
+  /**
+   * 선택DC 적용된 roadmap 합계 반환
+   * — roadmap DC와 동일한 순수 roadmap 페이지 대상
+   * — roadmap DC와 중복 적용 시 각각 독립 계산 후 합산
+   */
+  function getSelectDcTotal() {
+    // 선택DC 비활성 → 기존 로드맵DC 그대로 반환
+    if (!state.dc.select) return getDcTotal('roadmap');
+
+    const config     = cfg();
+    const selectRate = (config.discount || {}).selectDc || 0;
+
+    // 순수 roadmap 페이지 합산 (calcGroup 제외 — 기존 getDcTotal 패턴 동일)
+    // 로드맵DC와 상호 배타 — 선택DC만 단독 적용
+    let rawSum = 0;
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page || page.group !== 'roadmap' || page.isOverview || page.calcGroup) return;
+      let pageAmt = 0;
+      if (state.ov[pageId]) {
+        pageAmt = state.ov[pageId].amt;
+      } else {
+        const sel = state.pages[pageId];
+        if (sel) sel.forEach(idx => {
+          const price = (page.prices || [])[idx];
+          if (price && _gradeMatch(price)) pageAmt += price.amt;
+        });
+      }
+      rawSum += pageAmt;
+    });
+
+    return Math.round(rawSum * (1 - selectRate / 100));
+  }
+
+  /**
+   * 선택DC 포함 전체 합계
+   */
+  function getAllTotalsDcWithSelect() {
+    const roadmap    = getSelectDcTotal();
+    const individual = getDcTotal('individual');
+    const strategy   = getGroupTotal('strategy');
+    return {
+      roadmap,
+      individual,
+      strategy,
+      grand: roadmap + individual + strategy,
+    };
+  }
+
+  /* ============================================================
    * Public API
    * ============================================================ */
   return {
@@ -540,6 +611,8 @@ const Calc = (() => {
     reset,
     // DC 할인
     toggleDc, isDcActive, getDcTotal, getAllTotalsDc,
+    // 선택가 DC
+    toggleSelectDc, isSelectDcActive, getSelectDcTotal, getAllTotalsDcWithSelect,
     // 변경 구독
     onChange,
     // state 직접 참조 (읽기 전용)
