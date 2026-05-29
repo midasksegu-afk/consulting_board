@@ -75,7 +75,7 @@ const UI = (() => {
   function init() {
     // Calc 변경 구독 → UI 갱신
     Calc.onChange((totals, state) => {
-      _updateTotalBoxes(Calc.getAllTotalsDc());
+      _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
       _updateLocalTotal(_currentPageId);
       _syncCheckboxes(state);
       _syncGradeButtons(state.grade);
@@ -185,9 +185,18 @@ const UI = (() => {
     const gradeItems = (page.prices || []).filter(p =>
       p.grade && String(p.grade).split(',').map(Number).includes(grade)
     );
-    return gradeItems.length
-      ? gradeItems.map(p => '<strong>' + p.label + ' ' + fmt(p.amt) + '</strong>').join('<br>')
-      : (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+    if (!gradeItems.length) {
+      return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
+    }
+    // prices[] 기반 해당 학년 항목 전체 출력
+    let priceHtmlStr = gradeItems.map(p => '<strong>' + p.label + ' ' + fmt(p.amt) + '</strong>').join('<br>');
+    // 2학기 금액 — 관리자 설정값 (합산 제외, 표시 전용)
+    const _pageId = Object.keys(cfg().pages).find(id => cfg().pages[id] === page);
+    const _semAmt = ((cfg().discount || {}).semesterAmt || {})[_pageId];
+    if (_semAmt && _semAmt > 0) {
+      priceHtmlStr += '<br><span style="font-size:12px;color:var(--text-3);">2학기 ' + fmt(_semAmt) + '</span>';
+    }
+    return priceHtmlStr;
   }
 
   // 연간관리형 카드 금액 — 학년 모드 / 기본 모드 전환
@@ -1239,12 +1248,21 @@ const UI = (() => {
       }
     }
 
+    // 로드맵DC 활성 시 선택DC 상호 배타 — 선택DC 자동 해제
+    let mutualMsg = '';
+    if (group === 'roadmap' && Calc.isSelectDcActive()) {
+      Calc.toggleSelectDc(); // 선택DC OFF
+      mutualMsg = '선택가 DC가 해제되었습니다. 1개만 적용 가능합니다';
+    }
+
     const isOn = Calc.toggleDc(group);
     _updateDcButtons();
     _updateTotalBoxes(Calc.getAllTotalsDc());
 
     const label = group === 'roadmap' ? '로드맵' : '개별';
-    if (isOn) {
+    if (mutualMsg) {
+      showToast(mutualMsg, 'warn');
+    } else if (isOn) {
       showToast(`${label} DC 할인이 적용되었습니다`, 'success');
     } else {
       showToast(`${label} DC 할인이 해제되었습니다`, 'warn');
@@ -1256,14 +1274,21 @@ const UI = (() => {
     const config = cfg();
     const disc   = config.discount || {};
 
-    const btn1 = document.querySelector('.pkg-btn-1');
-    const btn2 = document.querySelector('.pkg-btn-2');
+    const btn1      = document.querySelector('.pkg-btn-1');
+    const btn2      = document.querySelector('.pkg-btn-2');
+    const btnSelect = document.querySelector('.pkg-btn-select');
 
     if (btn1) {
       const rate = disc.roadmap || 0;
       const isOn = Calc.isDcActive('roadmap');
       btn1.textContent = `로드맵 DC (${rate}%)`;
       btn1.classList.toggle('pkg-btn-active', isOn);
+    }
+    if (btnSelect) {
+      const rate = disc.selectDc || 0;
+      const isOn = Calc.isSelectDcActive();
+      btnSelect.textContent = `선택가 DC (${rate}%)`;
+      btnSelect.classList.toggle('pkg-btn-active', isOn);
     }
     if (btn2) {
       const indDisc = disc.individual || {};
@@ -1278,6 +1303,47 @@ const UI = (() => {
         btn2.textContent = `개별 DC`;
         btn2.classList.toggle('pkg-btn-active', isOn);
       }
+    }
+  }
+
+  // 선택가 DC 토글
+  function applySelectDc() {
+    const config = cfg();
+    const rate   = (config.discount || {}).selectDc || 0;
+    if (!rate) {
+      showToast('선택가 DC 할인율이 설정되지 않았습니다', 'warn');
+      return;
+    }
+
+    // 세특(rm-a) / 수행(rm-b) 선택 상태 확인
+    const rmAOn = Calc.isOvSelected('rm-a');
+    const rmBOn = Calc.isOvSelected('rm-b');
+
+    // 케이스1: 둘 다 미선택
+    if (!rmAOn && !rmBOn) {
+      showToast('세특 또는 수행 관리 중 1개를 먼저 선택해 주세요', 'warn');
+      return;
+    }
+
+    // 케이스2: 둘 다 선택 → 로드맵DC 안내
+    if (rmAOn && rmBOn) {
+      showToast('두 프로그램 모두 선택 시 로드맵 DC를 이용해 주세요', 'warn');
+      return;
+    }
+
+    // 케이스3: 1개만 선택 → 정상 적용
+    // 로드맵DC 상호 배타 — 로드맵DC 자동 해제
+    if (Calc.isDcActive('roadmap')) {
+      Calc.toggleDc('roadmap');
+    }
+
+    const isOn = Calc.toggleSelectDc();
+    _updateDcButtons();
+    _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
+    if (isOn) {
+      showToast(`선택가 DC (${rate}%) 할인이 적용되었습니다`, 'success');
+    } else {
+      showToast('선택가 DC 할인이 해제되었습니다', 'warn');
     }
   }
 
@@ -2076,6 +2142,7 @@ const UI = (() => {
     _filterStudentList,
     newSession,
     applyPackage,
+    applySelectDc,
     showToast,
     toggleAdminMode,
     openPageEdit,
