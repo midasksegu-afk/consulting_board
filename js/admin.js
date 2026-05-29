@@ -310,15 +310,7 @@ const Admin = (() => {
         </button>
       </div>
 
-      ${(_draft.discount?.semesterAmt && pageId in (_draft.discount?.semesterAmt || {})) ? `
-      <div class="admin-section-title" style="margin-top:20px;">2학기 금액</div>
-      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">전체보기 카드 고3 선택 시 표시 (합산 제외)</div>
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-        <input class="admin-input" style="width:80px;text-align:right;" type="number" min="0"
-          value="${_draft.discount.semesterAmt[pageId] ? Math.round(_draft.discount.semesterAmt[pageId]/10000) : 0}"
-          oninput="Admin.updateSemesterAmt('${pageId}', this.value)">
-        <span style="font-size:13px;color:var(--text-2);">만원</span>
-      </div>` : ''}
+      ${(_draft.discount?.semesterAmt && pageId in (_draft.discount?.semesterAmt || {})) ? _buildSemesterRows(pageId) : ''}
 
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
         <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveProgram('${pageId}')">
@@ -1251,6 +1243,50 @@ const Admin = (() => {
     _draft.discount.semesterAmt[pageId] = num * 10000;
   }
 
+  // 2학기 섹션 행 렌더 — loadProgramPage에서 호출
+  function _buildSemesterRows(pageId) {
+    const semEntry = (_draft.discount?.semesterAmt || {})[pageId] || {};
+    const gradeLabels = { 1: '고 1', 2: '고 2', 3: '고 3' };
+    let html = '<div class="admin-section-title" style="margin-top:20px;">2학기 금액</div>';
+    html += '<div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">전체보기 카드 해당 학년 선택 시 표시 (합산 제외)</div>';
+    [1, 2, 3].forEach(g => {
+      const gData  = (semEntry && typeof semEntry === 'object') ? (semEntry[g] || {}) : {};
+      const amtVal = gData.amt ? Math.round(gData.amt / 10000) : 0;
+      const noteVal = (gData.note || '').replace(/"/g, '&quot;');
+      html += `
+        <div class="admin-price-row" style="gap:6px;flex-wrap:nowrap;">
+          <span class="admin-input" style="flex:0.5;min-width:60px;max-width:80px;display:inline-flex;align-items:center;background:var(--surface2);color:var(--text-2);font-weight:600;">${gradeLabels[g]}</span>
+          <input class="admin-input" style="flex:1;min-width:60px;max-width:160px;"
+            value="${noteVal}" placeholder="비고"
+            oninput="Admin.updateSemesterField('${pageId}', ${g}, 'note', this.value)">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input class="admin-input" style="width:70px;text-align:right;" type="number" min="0"
+              value="${amtVal}"
+              oninput="Admin.updateSemesterField('${pageId}', ${g}, 'amt', this.value)">
+            <span style="font-size:13px;color:var(--text-2);font-weight:600;">만원</span>
+          </div>
+        </div>`;
+    });
+    return html;
+  }
+
+  // 학년별 2학기 필드 업데이트 (label/note/amt)
+  function updateSemesterField(pageId, grade, field, value) {
+    if (!_draft.discount) _draft.discount = {};
+    if (!_draft.discount.semesterAmt) _draft.discount.semesterAmt = {};
+    if (!_draft.discount.semesterAmt[pageId] || typeof _draft.discount.semesterAmt[pageId] !== 'object') {
+      _draft.discount.semesterAmt[pageId] = {};
+    }
+    if (!_draft.discount.semesterAmt[pageId][grade]) {
+      _draft.discount.semesterAmt[pageId][grade] = { note: '', amt: 0 };
+    }
+    if (field === 'amt') {
+      _draft.discount.semesterAmt[pageId][grade].amt = (parseInt(value) || 0) * 10000;
+    } else {
+      _draft.discount.semesterAmt[pageId][grade][field] = value;
+    }
+  }
+
   function saveDiscountSection(section) {
     const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액' };
     if (!confirm(`${labelMap[section] || section} 설정을 저장하시겠습니까?`)) return;
@@ -1343,7 +1379,7 @@ const Admin = (() => {
     updateDiscountField, saveDcDiscount,
     renderDiscountTab, loadDiscountSection,
     updateIndividualDiscount, saveDiscountSection,
-    updateSelectDcField, updateSemesterAmt,
+    updateSelectDcField, updateSemesterAmt, updateSemesterField,
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)

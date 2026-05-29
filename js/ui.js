@@ -191,10 +191,19 @@ const UI = (() => {
     // prices[] 기반 해당 학년 항목 전체 출력
     let priceHtmlStr = gradeItems.map(p => '<strong>' + p.label + ' ' + fmt(p.amt) + '</strong>').join('<br>');
     // 2학기 금액 — 관리자 설정값 (합산 제외, 표시 전용)
-    const _pageId = Object.keys(cfg().pages).find(id => cfg().pages[id] === page);
-    const _semAmt = ((cfg().discount || {}).semesterAmt || {})[_pageId];
-    if (_semAmt && _semAmt > 0) {
-      priceHtmlStr += '<br><span style="font-size:12px;color:var(--text-3);">2학기 ' + fmt(_semAmt) + '</span>';
+    // pageId는 _updateOvCardPrices에서 순회 시 알고 있으므로 pageId 기반으로 직접 접근
+    const _semData = ((cfg().discount || {}).semesterAmt || {});
+    const _pageId  = Object.keys(cfg().pages).find(id => cfg().pages[id] === page);
+    if (_pageId) {
+      const _semEntry = _semData[_pageId];
+      // 학년별 객체 구조 { 1:{note,amt}, 2:{note,amt}, 3:{note,amt} }
+      if (_semEntry && typeof _semEntry === 'object' && !Array.isArray(_semEntry)) {
+        const _gradeData = _semEntry[grade];
+        if (_gradeData && _gradeData.amt > 0) {
+          const _noteStr = _gradeData.note ? ' (' + _gradeData.note + ')' : '';
+          priceHtmlStr += '<br><span style="font-size:12px;color:var(--text-3);">2학기' + _noteStr + ' ' + fmt(_gradeData.amt) + '</span>';
+        }
+      }
     }
     return priceHtmlStr;
   }
