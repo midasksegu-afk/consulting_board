@@ -180,7 +180,7 @@ const Calc = (() => {
       switched = _clearOppositeGroup(pageId);
       // prices[] 직접 참조 — 관리자 수정값 즉시 반영 (note 없는 항목 = 연간 대표 단가)
       // _gradeMatch() 헬퍼 재사용 — 원칙4 중복 코드 금지
-      const _ovPrice = (page.prices || []).find(p => _gradeMatch(p) && p.grade && !p.note);
+      const _ovPrice = (page.prices || []).find(p => _gradeMatch(p) && p.grade);
       const amt = _ovPrice ? _ovPrice.amt : 0;
       state.ov[pageId] = { amt };
     } else {
