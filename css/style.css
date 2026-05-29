@@ -289,6 +289,8 @@ html, body {
 .pkg-btn-1:hover { background:rgba(255,143,177,0.2); border-color:#FF8FB1; }
 .pkg-btn-2 { background:rgba(183,156,255,0.13); color:#15151A; border:1px solid rgba(183,156,255,0.35); }
 .pkg-btn-2:hover { background:rgba(183,156,255,0.22); border-color:#B79CFF; }
+.pkg-btn-select { background:rgba(255,184,154,0.15); color:#15151A; border:1px solid rgba(255,143,177,0.35); }
+.pkg-btn-select:hover { background:rgba(255,143,177,0.2); border-color:#FF8FB1; }
 
 /* 버튼 공통 */
 .btn {
