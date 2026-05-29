@@ -310,6 +310,16 @@ const Admin = (() => {
         </button>
       </div>
 
+      ${(_draft.discount?.semesterAmt && pageId in (_draft.discount?.semesterAmt || {})) ? `
+      <div class="admin-section-title" style="margin-top:20px;">2학기 금액</div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">전체보기 카드 고3 선택 시 표시 (합산 제외)</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+        <input class="admin-input" style="width:80px;text-align:right;" type="number" min="0"
+          value="${_draft.discount.semesterAmt[pageId] ? Math.round(_draft.discount.semesterAmt[pageId]/10000) : 0}"
+          oninput="Admin.updateSemesterAmt('${pageId}', this.value)">
+        <span style="font-size:13px;color:var(--text-2);">만원</span>
+      </div>` : ''}
+
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
         <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveProgram('${pageId}')">
           <i class="ti ti-device-floppy"></i> 저장
@@ -1105,14 +1115,9 @@ const Admin = (() => {
         onclick="Admin.loadDiscountSection('individual')">
         <i class="ti ti-user-check" style="font-size:14px;"></i> 개별 DC
       </div>
-      <div class="ct-group-label" style="margin-top:8px;">추가 설정</div>
       <div class="ct-side-item ${_discountSection === 'selectDc' ? 'ct-side-active' : ''}"
         onclick="Admin.loadDiscountSection('selectDc')">
         <i class="ti ti-adjustments" style="font-size:14px;"></i> 선택가 DC
-      </div>
-      <div class="ct-side-item ${_discountSection === 'semester' ? 'ct-side-active' : ''}"
-        onclick="Admin.loadDiscountSection('semester')">
-        <i class="ti ti-calendar-stats" style="font-size:14px;"></i> 2학기 금액
       </div>`;
 
     el.innerHTML = `
@@ -1226,46 +1231,8 @@ const Admin = (() => {
       </div>`;
     return;
   }
-
-  if (section === 'semester') {
-    const semAmt = disc.semesterAmt || {};
-    const semPages = MK_CONFIG.pageOrder.filter(id => {
-      const p = _draft.pages[id];
-      return p && p.group === 'roadmap' && !p.isOverview && !p.calcGroup && p.ovCard;
-    });
-    const semRows = semPages.map(id => {
-      const p   = _draft.pages[id];
-      const amt = semAmt[id] ? Math.round(semAmt[id] / 10000) : 0;
-      return `
-        <div class="admin-price-row" style="gap:10px;">
-          <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1);">
-            <i class="ti ${p.sbIcon}" style="font-size:13px;color:var(--accent);"></i>
-            ${p.sbLabel}
-          </span>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <input class="admin-input" style="width:80px;text-align:right;"
-              type="number" min="0" value="${amt}"
-              oninput="Admin.updateSemesterAmt('${id}', this.value)">
-            <span style="font-size:13px;color:var(--text-2);">만원</span>
-          </div>
-        </div>`;
-    }).join('');
-    el.innerHTML = `
-      <div class="admin-editor-title">
-        <i class="ti ti-calendar-stats"></i> 2학기 금액 설정
-      </div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;">
-        전체보기 카드에서 고3 선택 시 표시되는 2학기 금액입니다. 합산에는 포함되지 않습니다.
-      </div>
-      <div>${semRows}</div>
-      <div style="margin-top:20px;">
-        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('semester')">
-          <i class="ti ti-device-floppy"></i> 저장
-        </button>
-      </div>`;
-    return;
-  }
 }
+
   function updateIndividualDiscount(pageId, value) {
     if (!_draft.discount) _draft.discount = {};
     if (typeof _draft.discount.individual !== 'object') _draft.discount.individual = {};
