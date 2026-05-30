@@ -115,13 +115,7 @@ const Admin = (() => {
         const fn = tabPrefix === 'program' ? 'loadProgramPage' : 'loadContentPage';
         const currentId = tabPrefix === 'program' ? _programPageId : _contentPageId;
         const active = id === currentId ? 'ct-side-active' : '';
-        const orderBtns = tabPrefix === 'program' ? `
-          <span style="display:flex;flex-direction:column;gap:1px;margin-left:auto;flex-shrink:0;">
-            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
-              onclick="event.stopPropagation();Admin.moveProgram('${id}',-1)" title="위로">▲</button>
-            <button type="button" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-3);font-size:10px;"
-              onclick="event.stopPropagation();Admin.moveProgram('${id}',1)" title="아래로">▼</button>
-          </span>` : '';
+        const orderBtns = '';
         const draggable = tabPrefix === 'program'
           ? `draggable="true"
              ondragstart="Admin._dragStart(event,'${id}')"
