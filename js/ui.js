@@ -645,7 +645,7 @@ const UI = (() => {
           <span class="p-title">${titleHtml}</span>
         </div>
         <div class="p-desc">
-          <ul>${(p.items || []).map(i => `<li>${i}</li>`).join('')}</ul>
+          ${(p.items || []).map(i => `<div class="p-item-line">${i}</div>`).join('')}
         </div>
       </div>`;
     }).join('');
