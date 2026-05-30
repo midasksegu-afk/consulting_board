@@ -1755,9 +1755,12 @@ const UI = (() => {
           <div style="display:flex;gap:12px;">
             <div style="flex:1;">
               <div class="d-col-label" style="margin-bottom:6px;">페이지 제목</div>
-              <input class="admin-input" style="width:100%;" value="${page.title || ''}"
-                oninput="window.mkEditDraft.pages['${pageId}'].title=this.value"
-                placeholder="페이지 제목">
+              ${_richToolbar('title-' + pageId)}
+              <div id="title-${pageId}" class="admin-input rich-editor"
+                contenteditable="true"
+                style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:38px;padding:8px;"
+                oninput="window.mkEditDraft.pages['${pageId}'].title=this.innerHTML"
+              >${page.title || ''}</div>
             </div>
             <div style="flex:2;">
               <div class="d-col-label" style="margin-bottom:6px;">부제목</div>
