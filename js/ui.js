@@ -1458,8 +1458,8 @@ const UI = (() => {
             <div id="ov-name-${pageId}" class="admin-input rich-editor"
               contenteditable="true"
               style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:42px;padding:8px;"
-              onclick="UI._syncSizeBtn('ov-name-${pageId}')"
-              onkeyup="UI._syncSizeBtn('ov-name-${pageId}')"
+              onclick="UI._syncSizeBtn('ov-name-${pageId}');UI._syncColorBtn('ov-name-${pageId}')"
+              onkeyup="UI._syncSizeBtn('ov-name-${pageId}');UI._syncColorBtn('ov-name-${pageId}')"
               oninput="window.mkEditDraft.pages['${pageId}'].ovCard.name=this.innerHTML"
             >${ov.name || page.sbLabel.replace(/^[A-E]\. /, '')}</div>
           </div>
@@ -1470,8 +1470,8 @@ const UI = (() => {
             <div id="ov-desc-${pageId}" class="admin-input rich-editor"
               contenteditable="true"
               style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:80px;padding:8px;"
-              onclick="UI._syncSizeBtn('ov-desc-${pageId}')"
-              onkeyup="UI._syncSizeBtn('ov-desc-${pageId}')"
+              onclick="UI._syncSizeBtn('ov-desc-${pageId}');UI._syncColorBtn('ov-desc-${pageId}')"
+              onkeyup="UI._syncSizeBtn('ov-desc-${pageId}');UI._syncColorBtn('ov-desc-${pageId}')"
               oninput="window.mkEditDraft.pages['${pageId}'].ovCard.desc=this.innerHTML"
             >${ov.desc || ''}</div>
           </div>
@@ -1498,6 +1498,7 @@ const UI = (() => {
     setTimeout(() => {
       modal.querySelectorAll('.rich-editor').forEach(el => {
         if (el.id) UI._syncSizeBtn(el.id);
+        if (el.id) UI._syncColorBtn(el.id);
       });
     }, 0);
   }
@@ -1721,8 +1722,9 @@ const UI = (() => {
           ['#868e96','⚪','회색'],
           ['#ffffff','◻','흰색'],
         ].map(([color, icon, label]) =>
-          `<button type="button" class="rich-btn rich-color-btn"
+          `<button type="button" class="rich-btn rich-color-btn color-btn"
             title="${label}"
+            data-color="${color}"
             style="background:${color};border-color:${color};min-width:22px;height:22px;border-radius:50%;padding:0;"
             onclick="UI._richCmd('foreColor','${color}','${targetId}')"></button>`
         ).join('')}
@@ -1754,6 +1756,7 @@ const UI = (() => {
       // 색상 명령
       document.getElementById(targetId)?.focus();
       document.execCommand('foreColor', false, val);
+      _syncColorBtn(targetId, val);
     } else if (cmd === 'fontSize') {
       const el = document.getElementById(targetId);
       if (!el) return;
@@ -1826,6 +1829,35 @@ const UI = (() => {
     });
   }
 
+  // 색상 버튼 활성화 — 커서 위치 색상 읽어 반영
+  function _syncColorBtn(targetId, hexColor) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    const toolbar = el.previousElementSibling;
+    if (!toolbar || !toolbar.classList.contains('rich-toolbar')) return;
+    // hex 없으면 커서 위치 색상 읽기
+    let activeHex = hexColor || '';
+    if (!activeHex) {
+      const sel = window.getSelection();
+      let node = null;
+      if (sel && sel.rangeCount > 0) {
+        const n = sel.getRangeAt(0).startContainer;
+        node = n.nodeType === 3 ? n.parentElement : n;
+      }
+      if (node && el.contains(node)) {
+        const rgb = window.getComputedStyle(node).color;
+        // rgb(r,g,b) → #rrggbb 변환
+        const m = rgb.match(/\d+/g);
+        if (m) activeHex = '#' + m.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+      }
+    }
+    toolbar.querySelectorAll('.color-btn').forEach(btn => {
+      const isActive = btn.dataset.color === activeHex;
+      btn.style.outline = isActive ? '2px solid var(--accent)' : '';
+      btn.style.outlineOffset = isActive ? '2px' : '';
+    });
+  }
+
   function _openEditModal(pageId) {
     const config = MK_CONFIG.resolve();
     if (!config.pages[pageId]) return;
@@ -1866,8 +1898,8 @@ const UI = (() => {
               <div id="title-${pageId}" class="admin-input rich-editor"
                 contenteditable="true"
                 style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:38px;padding:8px;"
-                onclick="UI._syncSizeBtn('title-${pageId}')"
-                onkeyup="UI._syncSizeBtn('title-${pageId}')"
+                onclick="UI._syncSizeBtn('title-${pageId}');UI._syncColorBtn('title-${pageId}')"
+                onkeyup="UI._syncSizeBtn('title-${pageId}');UI._syncColorBtn('title-${pageId}')"
                 oninput="window.mkEditDraft.pages['${pageId}'].title=this.innerHTML"
               >${page.title || ''}</div>
             </div>
@@ -1877,8 +1909,8 @@ const UI = (() => {
               <div id="subtitle-${pageId}" class="admin-input rich-editor"
                 contenteditable="true"
                 style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:38px;padding:8px;"
-                onclick="UI._syncSizeBtn('subtitle-${pageId}')"
-                onkeyup="UI._syncSizeBtn('subtitle-${pageId}')"
+                onclick="UI._syncSizeBtn('subtitle-${pageId}');UI._syncColorBtn('subtitle-${pageId}')"
+                onkeyup="UI._syncSizeBtn('subtitle-${pageId}');UI._syncColorBtn('subtitle-${pageId}')"
                 oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.innerHTML"
               >${page.subtitle || ''}</div>
             </div>
@@ -1928,6 +1960,7 @@ const UI = (() => {
     setTimeout(() => {
       modal.querySelectorAll('.rich-editor').forEach(el => {
         if (el.id) UI._syncSizeBtn(el.id);
+        if (el.id) UI._syncColorBtn(el.id);
       });
     }, 0);
   }
@@ -1952,8 +1985,8 @@ const UI = (() => {
         <div id="${tid}" class="admin-input rich-editor"
           contenteditable="true"
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
-          onclick="UI._syncSizeBtn('${tid}')"
-          onkeyup="UI._syncSizeBtn('${tid}')"
+          onclick="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
+          onkeyup="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
           oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean).length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean):[this.innerHTML.trim()]"
         >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
       </div>`;
@@ -1976,8 +2009,8 @@ const UI = (() => {
         <div id="${tid}" class="admin-input rich-editor"
           contenteditable="true"
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
-          onclick="UI._syncSizeBtn('${tid}')"
-          onkeyup="UI._syncSizeBtn('${tid}')"
+          onclick="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
+          onkeyup="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
           oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
         >${(c.text || '').replace(/\n/g,'<br>')}</div>
       </div>`;
@@ -2242,7 +2275,7 @@ const UI = (() => {
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
     _richCmd,
-    _syncSizeBtn,
+    _syncSizeBtn, _syncColorBtn,
     _insertText,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
