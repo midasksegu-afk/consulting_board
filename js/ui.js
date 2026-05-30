@@ -1446,9 +1446,9 @@ const UI = (() => {
                    'ti-target','ti-trophy','ti-chart-bar','ti-trending-up',
                    'ti-calendar','ti-brain','ti-atom','ti-message','ti-home','ti-shield-check'
                   ].map(cls => `
-                  <button type="button"
+                  <button type="button" data-icon="${cls}"
                     style="width:32px;height:32px;border-radius:6px;border:2px solid ${page.iconClass===cls?'var(--accent)':'var(--border)'};background:${page.iconBg};display:flex;align-items:center;justify-content:center;cursor:pointer;"
-                    onclick="window.mkEditDraft.pages['${pageId}'].iconClass='${cls}';UI.openOvCardEdit('${pageId}')">
+                    onclick="window.mkEditDraft.pages['${pageId}'].iconClass='${cls}';UI._syncOvIconBtns('${pageId}')">
                     <i class='ti ${cls}' style='font-size:15px;color:${page.iconColor};'></i>
                   </button>`).join('')}
               </div>
@@ -1461,9 +1461,9 @@ const UI = (() => {
                   ['#D4ECFF','#0a4a8a'],['#D4F5E3','#1a6b3c'],['#FFF3D4','#8b6200'],
                   ['#F0F0F0','#333333'],['#1a1d2e','#ffffff']
                 ].map(([bg, color]) => `
-                  <button type="button"
+                  <button type="button" data-bg="${bg}"
                     style="width:28px;height:28px;border-radius:50%;background:${bg};border:3px solid ${page.iconBg===bg?'var(--accent)':'transparent'};cursor:pointer;"
-                    onclick="window.mkEditDraft.pages['${pageId}'].iconBg='${bg}';window.mkEditDraft.pages['${pageId}'].iconColor='${color}';UI.openOvCardEdit('${pageId}')">
+                    onclick="window.mkEditDraft.pages['${pageId}'].iconBg='${bg}';window.mkEditDraft.pages['${pageId}'].iconColor='${color}';UI._syncOvIconBtns('${pageId}')">
                   </button>`).join('')}
               </div>
             </div>
@@ -1890,6 +1890,25 @@ const UI = (() => {
     });
   }
 
+  // 아이콘/배경색 버튼 활성화 DOM 갱신 — 모달 재오픈 없이 테두리만 업데이트
+  function _syncOvIconBtns(pageId) {
+    const draft = window.mkEditDraft?.pages[pageId];
+    if (!draft) return;
+    const modal = document.getElementById('ovcard-edit-modal');
+    if (!modal) return;
+    // 아이콘 버튼 테두리 갱신
+    modal.querySelectorAll('[data-icon]').forEach(btn => {
+      btn.style.border = `2px solid ${btn.dataset.icon === draft.iconClass ? 'var(--accent)' : 'var(--border)'}`;
+      btn.style.background = draft.iconBg;
+      const icon = btn.querySelector('i');
+      if (icon) icon.style.color = draft.iconColor;
+    });
+    // 배경색 버튼 테두리 갱신
+    modal.querySelectorAll('[data-bg]').forEach(btn => {
+      btn.style.border = `3px solid ${btn.dataset.bg === draft.iconBg ? 'var(--accent)' : 'transparent'}`;
+    });
+  }
+
   function _openEditModal(pageId) {
     const config = MK_CONFIG.resolve();
     if (!config.pages[pageId]) return;
@@ -2307,7 +2326,7 @@ const UI = (() => {
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
     _richCmd,
-    _syncSizeBtn, _syncColorBtn,
+    _syncSizeBtn, _syncColorBtn, _syncOvIconBtns,
     _insertText,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
