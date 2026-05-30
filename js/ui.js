@@ -167,7 +167,7 @@ const UI = (() => {
     if (page.prices && page.prices.length) {
       return page.prices.map(pr => {
         const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
-        return pr.label + ' ' + man + '<br>';
+        return pr.label + ' ' + man + (pr.note ? ' <span style="font-size:11px;color:var(--text-3);">(' + pr.note + ')</span>' : '') + '<br>';
       }).join('');
     }
     return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
