@@ -1507,6 +1507,8 @@ const UI = (() => {
       });
     }, 0);
   }
+
+  function _buildOvTreeRows(pageId) {
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
     return (ov.tree || []).map((t, idx) => `
       <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
