@@ -472,14 +472,24 @@ const UI = (() => {
            </div>`;
 
       const treeFontSize = ov.treeFontSize ? `font-size:${ov.treeFontSize}pt;` : '';
-      const treeHtml = (ov.tree || []).map(t => `
+      const treeHtml = (ov.tree || []).map(t => {
+        const labelStyle = [
+          treeFontSize || (t.labelSize ? `font-size:${t.labelSize}pt;` : ''),
+          t.labelColor ? `color:${t.labelColor};` : ''
+        ].join('');
+        const subStyle = [
+          treeFontSize || (t.subSize ? `font-size:${t.subSize}pt;` : ''),
+          t.subColor ? `color:${t.subColor};` : ''
+        ].join('');
+        return `
         <div class="ov-tree-item">
           <div class="ov-tree-dot"></div>
           <div>
-            <div class="ov-tree-label" style="${treeFontSize}">${t.label}</div>
-            <div class="ov-tree-sub"  style="${treeFontSize}">${t.sub}</div>
+            <div class="ov-tree-label" style="${labelStyle}">${t.label}</div>
+            <div class="ov-tree-sub"  style="${subStyle}">${t.sub}</div>
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
 
       // 초기 priceHtml — _buildOvPriceHtml로 생성 (업데이트 로직과 동일)
       const currentGrade = Calc.getGrade ? Calc.getGrade() : 0;
@@ -1510,16 +1520,40 @@ const UI = (() => {
 
   function _buildOvTreeRows(pageId) {
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
+    const sizes = [['0','기본'],['10','10'],['12','12'],['14','14'],['16','16'],['18','18'],['20','20']];
+    const colors = ['#000000','#e03131','#e8590c','#f08c00','#2f9e44','#1971c2','#7048e8','#c2255c','#868e96'];
+    const _sizeBtns = (field, idx) => sizes.map(([v,l]) =>
+      `<button type="button" class="rich-btn size-btn" style="font-size:10px;padding:1px 4px;"
+        onclick="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].${field}='${v === '0' ? '' : v}';UI._refreshOvTreeRows('${pageId}')">${l}</button>`
+    ).join('');
+    const _colorBtns = (field, idx) => colors.map(c =>
+      `<button type="button" style="width:14px;height:14px;border-radius:50%;background:${c};border:1px solid ${c};cursor:pointer;padding:0;"
+        onclick="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].${field}='${c}';UI._refreshOvTreeRows('${pageId}')"></button>`
+    ).join('');
     return (ov.tree || []).map((t, idx) => `
-      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-        <input class="admin-input" style="flex:1;" value="${(t.label || '').replace(/"/g,'&quot;')}"
-          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
-          placeholder="트리 제목">
-        <input class="admin-input" style="flex:1;" value="${(t.sub || '').replace(/"/g,'&quot;')}"
-          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
-          placeholder="트리 부제">
-        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;margin-bottom:6px;">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+          <input class="admin-input" style="flex:1;" value="${(t.label || '').replace(/"/g,'&quot;')}"
+            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
+            placeholder="트리 제목">
+          <input class="admin-input" style="flex:1;" value="${(t.sub || '').replace(/"/g,'&quot;')}"
+            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
+            placeholder="트리 부제">
+          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+            onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:10px;color:var(--text-3);">제목 크기</div>
+            <div style="display:flex;gap:2px;">${_sizeBtns('labelSize', idx)}</div>
+            <div style="display:flex;gap:2px;">${_colorBtns('labelColor', idx)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:10px;color:var(--text-3);">부제 크기</div>
+            <div style="display:flex;gap:2px;">${_sizeBtns('subSize', idx)}</div>
+            <div style="display:flex;gap:2px;">${_colorBtns('subColor', idx)}</div>
+          </div>
+        </div>
       </div>`).join('');
   }
 
