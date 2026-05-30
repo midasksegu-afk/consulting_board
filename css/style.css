@@ -1116,3 +1116,23 @@ select[title] { cursor: help; }
   font-size: 11px !important;
   padding: 4px 10px !important;
 }
+
+/* ================================================================
+   v9 카드 헤더 — 아이콘 + 뱃지/타이틀 가로 배치
+================================================================ */
+.ov-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ov-header .ov-icon {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+.ov-header .ov-badge {
+  margin-bottom: 2px;
+}
+.ov-header .ov-name {
+  margin-bottom: 0 !important;
+}
