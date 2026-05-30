@@ -1261,6 +1261,16 @@ const UI = (() => {
       }
     }
 
+    // 로드맵DC — 세특/수행 1개만 선택 시 선택가DC만 가능 안내
+    if (group === 'roadmap') {
+      const rmAOn = Calc.isOvSelected('rm-a');
+      const rmBOn = Calc.isOvSelected('rm-b');
+      if ((rmAOn || rmBOn) && !(rmAOn && rmBOn)) {
+        showToast('선택가 DC만 가능합니다', 'warn');
+        return;
+      }
+    }
+
     // 로드맵DC 활성 시 선택DC 상호 배타 — 선택DC 자동 해제
     let mutualMsg = '';
     if (group === 'roadmap' && Calc.isSelectDcActive()) {
