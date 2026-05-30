@@ -178,6 +178,12 @@ const UI = (() => {
   //   grade > 0  : 학년 모드 → A,B: 해당 학년 금액 굵게 / C,D,E: 무관 금액
   function _buildOvPriceHtml(page, grade) {
     if (grade === 0) {
+      if (page.prices && page.prices.length) {
+        return page.prices.map(pr => {
+          const man = pr.amt ? Math.round(pr.amt / 10000) + '만원' : '0원';
+          return pr.label + ' ' + man + (pr.note ? ' <span style="font-size:11px;color:var(--text-3);">(' + pr.note + ')</span>' : '') + '<br>';
+        }).join('');
+      }
       return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
     }
     const mode = _getOvPriceMode(page);
