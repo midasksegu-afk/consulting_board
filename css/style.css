@@ -535,7 +535,7 @@ html, body {
   padding:10px 16px;
 }
 .p-num-badge {
-  font-size:10px; font-weight:700;
+  font-size:12px; font-weight:700;
   color:#fff; background:var(--blue-tx);
   padding:3px 9px; border-radius:5px;
   letter-spacing:.06em; font-family:monospace;
