@@ -1691,9 +1691,9 @@ const UI = (() => {
     } else if (cmd === 'fontSize') {
       const el = document.getElementById(targetId);
       if (!el) return;
-      // select 클릭으로 포커스 잃었으므로 저장된 selection 복원 후 적용
-      el.focus();
+      // _restoreSelection 먼저 복원 후 focus (focus가 selection 초기화하는 브라우저 대응)
       _restoreSelection();
+      el.focus();
       if (val === '0' || val === '') {
         _unwrapFontSize(el);
       } else {
