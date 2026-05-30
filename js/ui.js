@@ -1284,10 +1284,16 @@ const UI = (() => {
       }
     }
 
-    // 로드맵DC — 세특/수행 1개만 선택 시 선택가DC만 가능 안내
+    // 로드맵DC — 세특/수행 선택 상태 확인
     if (group === 'roadmap') {
       const rmAOn = Calc.isOvSelected('rm-a');
       const rmBOn = Calc.isOvSelected('rm-b');
+      // 둘 다 미선택
+      if (!rmAOn && !rmBOn) {
+        showToast('세특 또는 수행 관리 중 하나를 먼저 선택해 주세요', 'warn');
+        return;
+      }
+      // 1개만 선택
       if ((rmAOn || rmBOn) && !(rmAOn && rmBOn)) {
         showToast('선택가 DC만 가능합니다', 'warn');
         return;
