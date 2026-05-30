@@ -492,7 +492,7 @@ const UI = (() => {
             </div>
             <div>
               <div class="ov-badge">${ov.badge}</div>
-              <div class="ov-name">${page.sbLabel.replace(/^[A-E]\. /, '')}</div>
+              <div class="ov-name">${ov.name || page.sbLabel.replace(/^[A-E]\. /, '')}</div>
             </div>
           </div>
           <div class="ov-desc" id="ov-desc-display-${pageId}" style="${ov.desc ? '' : 'display:none;'}">${ov.desc || ''}</div>
@@ -1406,20 +1406,27 @@ const UI = (() => {
 
           <div style="display:flex;gap:12px;">
             <div style="flex:2;">
-              <div class="d-col-label" style="margin-bottom:6px;">프로그램명 (카드 타이틀)</div>
-              ${_richToolbar('ov-name-' + pageId)}
-              <div id="ov-name-${pageId}" class="admin-input rich-editor"
-                contenteditable="true"
-                style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:42px;padding:8px;"
-                oninput="window.mkEditDraft.pages['${pageId}'].sbLabel=this.innerHTML"
-              >${page.sbLabel || ''}</div>
+              <div class="d-col-label" style="margin-bottom:6px;">프로그램명 (사이드바)</div>
+              <input class="admin-input" style="width:100%;" value="${page.sbLabel || ''}"
+                oninput="window.mkEditDraft.pages['${pageId}'].sbLabel=this.value"
+                placeholder="사이드바 메뉴명">
             </div>
             <div style="flex:1;">
               <div class="d-col-label" style="margin-bottom:6px;">뱃지</div>
-              <input class="admin-input" style="width:100%;margin-top:39px;" value="${ov.badge || ''}"
+              <input class="admin-input" style="width:100%;" value="${ov.badge || ''}"
                 oninput="window.mkEditDraft.pages['${pageId}'].ovCard.badge=this.value"
                 placeholder="예: 프로그램 A">
             </div>
+          </div>
+
+          <div>
+            <div class="d-col-label" style="margin-bottom:6px;">📌 카드 타이틀 (서식 적용)</div>
+            ${_richToolbar('ov-name-' + pageId)}
+            <div id="ov-name-${pageId}" class="admin-input rich-editor"
+              contenteditable="true"
+              style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:42px;padding:8px;"
+              oninput="window.mkEditDraft.pages['${pageId}'].ovCard.name=this.innerHTML"
+            >${ov.name || page.sbLabel.replace(/^[A-E]\. /, '')}</div>
           </div>
 
           <div>
@@ -1510,13 +1517,6 @@ const UI = (() => {
 
   function _saveOvCardEdit(pageId) {
     _editDraft = window.mkEditDraft;
-    // sbLabel: contenteditable innerHTML → innerText strip (태그 제거, 순수 텍스트 저장)
-    const rawLabel = _editDraft.pages?.[pageId]?.sbLabel;
-    if (rawLabel) {
-      const _d = document.createElement('div');
-      _d.innerHTML = rawLabel;
-      _editDraft.pages[pageId].sbLabel = _d.innerText.trim();
-    }
     // tree label/sub: 이전 버전에서 innerHTML로 저장된 HTML 태그 strip
     const tree = _editDraft.pages?.[pageId]?.ovCard?.tree;
     if (Array.isArray(tree)) {
