@@ -1627,7 +1627,7 @@ const UI = (() => {
         <button type="button" class="rich-btn" title="밑줄" onclick="UI._richCmd('underline','${targetId}')"><u>U</u></button>
         <span class="rich-sep">|</span>
         ${[['0','기본'],['10','10'],['12','12'],['14','14'],['16','16'],['18','18'],['20','20']].map(([v,l]) =>
-          `<button type="button" class="rich-btn" style="font-size:11px;padding:2px 6px;"
+          `<button type="button" class="rich-btn size-btn" data-size="${v}" style="font-size:11px;padding:2px 6px;"
             onclick="UI._richCmd('fontSize','${v}','${targetId}')">${l}</button>`
         ).join('')}
         <span class="rich-sep">|</span>
@@ -1691,6 +1691,7 @@ const UI = (() => {
           }
         });
         el.dispatchEvent(new Event('input', { bubbles: true }));
+        _syncSizeBtn(targetId);
       } else {
         // execCommand fontSize: 1~7 단계값 — 7 고정 후 font태그→span 변환
         document.execCommand('fontSize', false, '7');
@@ -1703,6 +1704,7 @@ const UI = (() => {
           f.parentNode.replaceChild(span, f);
         });
         el.dispatchEvent(new Event('input', { bubbles: true }));
+        _syncSizeBtn(targetId);
       }
     } else {
       document.getElementById(targetId)?.focus();
@@ -1717,6 +1719,33 @@ const UI = (() => {
     if (!el) return;
     el.focus();
     document.execCommand('insertText', false, char);
+  }
+
+  // 크기 버튼 활성화 — 커서 위치 또는 첫 텍스트 노드 폰트 크기 읽어 반영
+  function _syncSizeBtn(targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    const toolbar = el.previousElementSibling;
+    if (!toolbar || !toolbar.classList.contains('rich-toolbar')) return;
+    // 커서 위치 노드 또는 첫 자식 노드에서 font-size 읽기
+    const sel = window.getSelection();
+    let node = null;
+    if (sel && sel.rangeCount > 0) {
+      const n = sel.getRangeAt(0).startContainer;
+      node = n.nodeType === 3 ? n.parentElement : n;
+    }
+    if (!node || !el.contains(node)) {
+      // 커서 없으면 첫 텍스트 노드 사용
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const first = walker.nextNode();
+      node = first ? first.parentElement : el;
+    }
+    const pxVal = node ? window.getComputedStyle(node).fontSize : '';
+    const ptVal = pxVal ? Math.round(parseFloat(pxVal) * 0.75) : 0;
+    // 버튼 활성화
+    toolbar.querySelectorAll('.rich-btn.size-btn').forEach(btn => {
+      btn.classList.toggle('size-active', String(btn.dataset.size) === String(ptVal));
+    });
   }
 
   function _openEditModal(pageId) {
@@ -1759,6 +1788,8 @@ const UI = (() => {
               <div id="title-${pageId}" class="admin-input rich-editor"
                 contenteditable="true"
                 style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:38px;padding:8px;"
+                onclick="UI._syncSizeBtn('title-${pageId}')"
+                onkeyup="UI._syncSizeBtn('title-${pageId}')"
                 oninput="window.mkEditDraft.pages['${pageId}'].title=this.innerHTML"
               >${page.title || ''}</div>
             </div>
@@ -1768,6 +1799,8 @@ const UI = (() => {
               <div id="subtitle-${pageId}" class="admin-input rich-editor"
                 contenteditable="true"
                 style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:38px;padding:8px;"
+                onclick="UI._syncSizeBtn('subtitle-${pageId}')"
+                onkeyup="UI._syncSizeBtn('subtitle-${pageId}')"
                 oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.innerHTML"
               >${page.subtitle || ''}</div>
             </div>
@@ -1813,6 +1846,12 @@ const UI = (() => {
       </div>`;
 
     document.body.appendChild(modal);
+    // 편집기 열자마자 폰트 크기 버튼 활성화
+    setTimeout(() => {
+      modal.querySelectorAll('.rich-editor').forEach(el => {
+        if (el.id) UI._syncSizeBtn(el.id);
+      });
+    }, 0);
   }
 
   /* ============================================================
@@ -1835,6 +1874,8 @@ const UI = (() => {
         <div id="${tid}" class="admin-input rich-editor"
           contenteditable="true"
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
+          onclick="UI._syncSizeBtn('${tid}')"
+          onkeyup="UI._syncSizeBtn('${tid}')"
           oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean).length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean):[this.innerHTML.trim()]"
         >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
       </div>`;
@@ -1857,6 +1898,8 @@ const UI = (() => {
         <div id="${tid}" class="admin-input rich-editor"
           contenteditable="true"
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
+          onclick="UI._syncSizeBtn('${tid}')"
+          onkeyup="UI._syncSizeBtn('${tid}')"
           oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
         >${(c.text || '').replace(/\n/g,'<br>')}</div>
       </div>`;
@@ -2121,6 +2164,7 @@ const UI = (() => {
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
     _richCmd,
+    _syncSizeBtn,
     _insertText,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
