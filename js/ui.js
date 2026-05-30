@@ -1437,6 +1437,38 @@ const UI = (() => {
         </div>
         <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;">
 
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div>
+              <div class="d-col-label" style="margin-bottom:6px;">아이콘</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:280px;">
+                ${['ti-pencil','ti-layout-list','ti-bulb','ti-users','ti-settings',
+                   'ti-star','ti-heart','ti-bolt','ti-book','ti-school',
+                   'ti-target','ti-trophy','ti-chart-bar','ti-trending-up',
+                   'ti-calendar','ti-brain','ti-atom','ti-message','ti-home','ti-shield-check'
+                  ].map(cls => `
+                  <button type="button"
+                    style="width:32px;height:32px;border-radius:6px;border:2px solid ${page.iconClass===cls?'var(--accent)':'var(--border)'};background:${page.iconBg};display:flex;align-items:center;justify-content:center;cursor:pointer;"
+                    onclick="window.mkEditDraft.pages['${pageId}'].iconClass='${cls}';UI.openOvCardEdit('${pageId}')">
+                    <i class='ti ${cls}' style='font-size:15px;color:${page.iconColor};'></i>
+                  </button>`).join('')}
+              </div>
+            </div>
+            <div>
+              <div class="d-col-label" style="margin-bottom:6px;">배경색</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:160px;">
+                ${[
+                  ['#FFE3D4','#C45000'],['#FFD3E1','#8b1c3a'],['#E1D6FF','#5b35c4'],
+                  ['#D4ECFF','#0a4a8a'],['#D4F5E3','#1a6b3c'],['#FFF3D4','#8b6200'],
+                  ['#F0F0F0','#333333'],['#1a1d2e','#ffffff']
+                ].map(([bg, color]) => `
+                  <button type="button"
+                    style="width:28px;height:28px;border-radius:50%;background:${bg};border:3px solid ${page.iconBg===bg?'var(--accent)':'transparent'};cursor:pointer;"
+                    onclick="window.mkEditDraft.pages['${pageId}'].iconBg='${bg}';window.mkEditDraft.pages['${pageId}'].iconColor='${color}';UI.openOvCardEdit('${pageId}')">
+                  </button>`).join('')}
+              </div>
+            </div>
+          </div>
+
           <div style="display:flex;gap:12px;">
             <div style="flex:2;">
               <div class="d-col-label" style="margin-bottom:6px;">프로그램명 (사이드바)</div>
@@ -2305,14 +2337,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof BroadcastChannel !== 'undefined') {
     const ch = new BroadcastChannel('mk_config_sync');
     ch.onmessage = () => {
-      // 관리자가 Supabase 저장 완료 후 신호를 보내므로 최신값 보장
-      Store.syncConfigFromServer().then(updated => {
-        if (updated) {
-          UI.renderSidebar();
-          UI.renderPages();
-          UI.go(UI.getCurrentPageId());
-        }
-      });
+      // localStorage에 이미 최신값 저장됨 → 직접 읽어 즉시 렌더
+      UI.renderSidebar();
+      UI.renderPages();
+      UI.go(UI.getCurrentPageId());
     };
   }
 });
