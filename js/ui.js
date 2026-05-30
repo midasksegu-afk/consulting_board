@@ -1522,39 +1522,59 @@ const UI = (() => {
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
     const sizes = [['0','기본'],['10','10'],['12','12'],['14','14'],['16','16'],['18','18'],['20','20']];
     const colors = ['#000000','#e03131','#e8590c','#f08c00','#2f9e44','#1971c2','#7048e8','#c2255c','#868e96'];
-    const _sizeBtns = (field, idx) => sizes.map(([v,l]) =>
-      `<button type="button" class="rich-btn size-btn" style="font-size:10px;padding:1px 4px;"
-        onclick="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].${field}='${v === '0' ? '' : v}';UI._refreshOvTreeRows('${pageId}')">${l}</button>`
-    ).join('');
-    const _colorBtns = (field, idx) => colors.map(c =>
-      `<button type="button" style="width:14px;height:14px;border-radius:50%;background:${c};border:1px solid ${c};cursor:pointer;padding:0;"
-        onclick="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].${field}='${c}';UI._refreshOvTreeRows('${pageId}')"></button>`
-    ).join('');
-    return (ov.tree || []).map((t, idx) => `
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;margin-bottom:6px;">
-        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-          <input class="admin-input" style="flex:1;" value="${(t.label || '').replace(/"/g,'&quot;')}"
-            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
-            placeholder="트리 제목">
-          <input class="admin-input" style="flex:1;" value="${(t.sub || '').replace(/"/g,'&quot;')}"
-            oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
-            placeholder="트리 부제">
-          <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
-            onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
+
+    // 현재 적용값 (첫 번째 트리 항목 기준)
+    const first = (ov.tree || [])[0] || {};
+    const curLabelSize  = first.labelSize  || '0';
+    const curLabelColor = first.labelColor || '';
+    const curSubSize    = first.subSize    || '0';
+    const curSubColor   = first.subColor   || '';
+
+    // 전체 항목에 일괄 적용하는 함수 호출
+    const _allSizeSet = (field, val) =>
+      `UI._setOvTreeAll('${pageId}','${field}','${val}')`;
+    const _allColorSet = (field, val) =>
+      `UI._setOvTreeAll('${pageId}','${field}','${val}')`;
+
+    const _sizeBtns = (field, curVal) => sizes.map(([v,l]) => {
+      const active = (v === '0' ? '' : v) === (curVal === '0' ? '' : curVal) ? 'size-active' : '';
+      return `<button type="button" class="rich-btn size-btn ${active}" style="font-size:10px;padding:1px 4px;"
+        onclick="${_allSizeSet(field, v === '0' ? '' : v)}">${l}</button>`;
+    }).join('');
+
+    const _colorBtns = (field, curVal) => colors.map(c => {
+      const active = curVal === c ? 'outline:2px solid var(--accent);' : '';
+      return `<button type="button" style="width:14px;height:14px;border-radius:50%;background:${c};border:1px solid ${c};cursor:pointer;padding:0;${active}"
+        onclick="${_allColorSet(field, c)}"></button>`;
+    }).join('');
+
+    const headerHtml = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:var(--radius-sm);">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:10px;color:var(--text-3);font-weight:600;">A존 (제목) 크기 · 색상</div>
+          <div style="display:flex;gap:2px;">${_sizeBtns('labelSize', curLabelSize)}</div>
+          <div style="display:flex;gap:2px;">${_colorBtns('labelColor', curLabelColor)}</div>
         </div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div style="display:flex;flex-direction:column;gap:3px;">
-            <div style="font-size:10px;color:var(--text-3);">제목 크기</div>
-            <div style="display:flex;gap:2px;">${_sizeBtns('labelSize', idx)}</div>
-            <div style="display:flex;gap:2px;">${_colorBtns('labelColor', idx)}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:3px;">
-            <div style="font-size:10px;color:var(--text-3);">부제 크기</div>
-            <div style="display:flex;gap:2px;">${_sizeBtns('subSize', idx)}</div>
-            <div style="display:flex;gap:2px;">${_colorBtns('subColor', idx)}</div>
-          </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:10px;color:var(--text-3);font-weight:600;">B존 (부제) 크기 · 색상</div>
+          <div style="display:flex;gap:2px;">${_sizeBtns('subSize', curSubSize)}</div>
+          <div style="display:flex;gap:2px;">${_colorBtns('subColor', curSubColor)}</div>
         </div>
+      </div>`;
+
+    const rowsHtml = (ov.tree || []).map((t, idx) => `
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+        <input class="admin-input" style="flex:1;" value="${(t.label || '').replace(/"/g,'&quot;')}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].label=this.value"
+          placeholder="트리 제목">
+        <input class="admin-input" style="flex:1;" value="${(t.sub || '').replace(/"/g,'&quot;')}"
+          oninput="window.mkEditDraft.pages['${pageId}'].ovCard.tree[${idx}].sub=this.value"
+          placeholder="트리 부제">
+        <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
+          onclick="UI._removeOvTree('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
       </div>`).join('');
+
+    return headerHtml + rowsHtml;
   }
 
   function _refreshOvTreeRows(pageId) {
@@ -1566,6 +1586,14 @@ const UI = (() => {
     if (!window.mkEditDraft.pages[pageId].ovCard) window.mkEditDraft.pages[pageId].ovCard = {};
     if (!window.mkEditDraft.pages[pageId].ovCard.tree) window.mkEditDraft.pages[pageId].ovCard.tree = [];
     window.mkEditDraft.pages[pageId].ovCard.tree.push({ label: '', sub: '' });
+    _refreshOvTreeRows(pageId);
+  }
+
+  // 트리 전체 항목에 labelSize/labelColor/subSize/subColor 일괄 적용
+  function _setOvTreeAll(pageId, field, val) {
+    const tree = window.mkEditDraft.pages[pageId]?.ovCard?.tree;
+    if (!Array.isArray(tree)) return;
+    tree.forEach(t => { t[field] = val; });
     _refreshOvTreeRows(pageId);
   }
 
@@ -2224,7 +2252,7 @@ const UI = (() => {
     openOvCardEdit,
     _saveOvCardEdit,
     _buildOvTreeRows, _refreshOvTreeRows,
-    _addOvTree, _removeOvTree, _setTreeFontSize,
+    _addOvTree, _removeOvTree, _setTreeFontSize, _setOvTreeAll,
     openNoticeEdit,
     _saveNoticeEdit,
     _deleteNotice,
