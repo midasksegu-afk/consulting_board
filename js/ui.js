@@ -1626,22 +1626,10 @@ const UI = (() => {
         <button type="button" class="rich-btn" title="기울임" onclick="UI._richCmd('italic','${targetId}')"><i>I</i></button>
         <button type="button" class="rich-btn" title="밑줄" onclick="UI._richCmd('underline','${targetId}')"><u>U</u></button>
         <span class="rich-sep">|</span>
-        <select id="rich-size-${targetId}" class="rich-select" title="글자 크기"
-          onmousedown="UI._saveSelection()"
-          onpointerdown="UI._saveSelection()"
-          onchange="UI._richCmd('fontSize',this.value,'${targetId}')">
-          <option value="">크기</option>
-          <option value="0">기본</option>
-          <option value="8">8pt</option>
-          <option value="9">9pt</option>
-          <option value="10">10pt</option>
-          <option value="11">11pt</option>
-          <option value="12">12pt</option>
-          <option value="13">13pt</option>
-          <option value="14">14pt</option>
-          <option value="16">16pt</option>
-          <option value="18">18pt</option>
-        </select>
+        ${[['0','기본'],['10','10'],['12','12'],['14','14'],['16','16'],['18','18'],['20','20']].map(([v,l]) =>
+          `<button type="button" class="rich-btn" style="font-size:11px;padding:2px 6px;"
+            onclick="UI._richCmd('fontSize','${v}','${targetId}')">${l}</button>`
+        ).join('')}
         <span class="rich-sep">|</span>
         ${[
           ['#000000','⚫','기본'],
@@ -1691,13 +1679,30 @@ const UI = (() => {
     } else if (cmd === 'fontSize') {
       const el = document.getElementById(targetId);
       if (!el) return;
-      // _restoreSelection 먼저 복원 후 focus (focus가 selection 초기화하는 브라우저 대응)
-      _restoreSelection();
       el.focus();
       if (val === '0' || val === '') {
-        _unwrapFontSize(el);
+        // 기본값 복원 — font-size span 전체 제거
+        el.querySelectorAll('span[style*="font-size"]').forEach(s => {
+          s.style.fontSize = '';
+          if (!s.getAttribute('style') || s.getAttribute('style').trim() === '') {
+            const p = s.parentNode;
+            while (s.firstChild) p.insertBefore(s.firstChild, s);
+            p.removeChild(s);
+          }
+        });
+        el.dispatchEvent(new Event('input', { bubbles: true }));
       } else {
-        _applyFontSize(el, val + 'pt');
+        // execCommand fontSize: 1~7 단계값 — 7 고정 후 font태그→span 변환
+        document.execCommand('fontSize', false, '7');
+        el.querySelectorAll('font[size="7"]').forEach(f => {
+          const span = document.createElement('span');
+          span.style.fontSize = val + 'pt';
+          // font 태그의 다른 속성(color 등) 보존
+          if (f.style.color) span.style.color = f.style.color;
+          while (f.firstChild) span.appendChild(f.firstChild);
+          f.parentNode.replaceChild(span, f);
+        });
+        el.dispatchEvent(new Event('input', { bubbles: true }));
       }
     } else {
       document.getElementById(targetId)?.focus();
@@ -1705,83 +1710,6 @@ const UI = (() => {
     }
   }
 
-  // selection 저장 — select onmousedown 에서 호출 (포커스 이탈 직전)
-  let _savedRange = null;
-  function _saveSelection() {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      _savedRange = sel.getRangeAt(0).cloneRange();
-    }
-  }
-
-  // selection 복원 — _richCmd fontSize 분기에서 호출
-  function _restoreSelection() {
-    if (!_savedRange) return;
-    const sel = window.getSelection();
-    if (sel) {
-      sel.removeAllRanges();
-      sel.addRange(_savedRange);
-    }
-  }
-
-  // 선택 범위를 <span style="font-size:Npt">로 래핑
-  function _applyFontSize(el, ptVal) {
-    const sel = window.getSelection();
-    // selection 없으면 editor 전체 선택 fallback
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-      const r = document.createRange();
-      r.selectNodeContents(el);
-      sel.removeAllRanges();
-      sel.addRange(r);
-    }
-    if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
-    if (!el.contains(range.commonAncestorContainer)) return;
-    const span = document.createElement('span');
-    span.style.fontSize = ptVal;
-    try {
-      range.surroundContents(span);
-    } catch (e) {
-      // surroundContents 실패(부분 태그 교차) → extractContents 후 삽입
-      const frag = range.extractContents();
-      span.appendChild(frag);
-      range.insertNode(span);
-    }
-    // 커서를 span 뒤로 이동
-    const newRange = document.createRange();
-    newRange.setStartAfter(span);
-    newRange.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(newRange);
-    _savedRange = null;
-    // oninput 트리거로 draft 동기화
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
-  // font-size 인라인 스타일 span을 자식 노드로 교체(unwrap) — CSS 기본값 복원
-  function _unwrapFontSize(el) {
-    if (!el) return;
-    // font-size style을 가진 span 전체 대상 (역순으로 중첩 안전 처리)
-    Array.from(el.querySelectorAll('span[style*="font-size"]')).reverse().forEach(s => {
-      // font-size 외 다른 인라인 스타일이 있으면 font-size만 제거
-      s.style.fontSize = '';
-      // 스타일이 완전히 비었으면 span 태그 자체를 unwrap
-      if (!s.getAttribute('style') || s.getAttribute('style').trim() === '') {
-        const parent = s.parentNode;
-        if (!parent) return;
-        while (s.firstChild) parent.insertBefore(s.firstChild, s);
-        parent.removeChild(s);
-      }
-    });
-    // 기존 <font size> 태그도 혹시 남아있으면 함께 정리
-    Array.from(el.querySelectorAll('font[size]')).reverse().forEach(f => {
-      const parent = f.parentNode;
-      if (!parent) return;
-      while (f.firstChild) parent.insertBefore(f.firstChild, f);
-      parent.removeChild(f);
-    });
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-  }
 
   // 특수문자 삽입
   function _insertText(char, targetId) {
@@ -1833,9 +1761,12 @@ const UI = (() => {
             </div>
             <div style="flex:2;">
               <div class="d-col-label" style="margin-bottom:6px;">부제목</div>
-              <input class="admin-input" style="width:100%;" value="${page.subtitle || ''}"
-                oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.value"
-                placeholder="페이지 부제목">
+              ${_richToolbar('subtitle-' + pageId)}
+              <div id="subtitle-${pageId}" class="admin-input rich-editor"
+                contenteditable="true"
+                style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:38px;padding:8px;"
+                oninput="window.mkEditDraft.pages['${pageId}'].subtitle=this.innerHTML"
+              >${page.subtitle || ''}</div>
             </div>
           </div>
 
@@ -2187,7 +2118,6 @@ const UI = (() => {
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
     _richCmd,
-    _saveSelection, _restoreSelection,
     _insertText,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
