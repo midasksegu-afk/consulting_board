@@ -474,11 +474,11 @@ const UI = (() => {
       const treeFontSize = ov.treeFontSize ? `font-size:${ov.treeFontSize}pt;` : '';
       const treeHtml = (ov.tree || []).map(t => {
         const labelStyle = [
-          treeFontSize || (t.labelSize ? `font-size:${t.labelSize}pt;` : ''),
+          t.labelSize ? `font-size:${t.labelSize}pt;` : treeFontSize,
           t.labelColor ? `color:${t.labelColor};` : ''
         ].join('');
         const subStyle = [
-          treeFontSize || (t.subSize ? `font-size:${t.subSize}pt;` : ''),
+          t.subSize ? `font-size:${t.subSize}pt;` : treeFontSize,
           t.subColor ? `color:${t.subColor};` : ''
         ].join('');
         return `
@@ -1479,25 +1479,9 @@ const UI = (() => {
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <div class="d-col-label">🩷 구성 요약 트리</div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <select class="rich-select" title="트리 전체 글자 크기"
-                  onchange="UI._setTreeFontSize('${pageId}',this.value)">
-                  <option value="">글자 크기</option>
-                  <option value="0">기본</option>
-                  <option value="8">8pt</option>
-                  <option value="9">9pt</option>
-                  <option value="10">10pt</option>
-                  <option value="11">11pt</option>
-                  <option value="12">12pt</option>
-                  <option value="13">13pt</option>
-                  <option value="14">14pt</option>
-                  <option value="16">16pt</option>
-                  <option value="18">18pt</option>
-                </select>
-                <button type="button" class="btn btn-sm btn-primary" onclick="UI._addOvTree('${pageId}')">
-                  <i class="ti ti-plus"></i> 항목 추가
-                </button>
-              </div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="UI._addOvTree('${pageId}')">
+                <i class="ti ti-plus"></i> 항목 추가
+              </button>
             </div>
             <div id="ovtree-rows-${pageId}">${treeRows}</div>
           </div>
