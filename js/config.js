@@ -195,7 +195,6 @@ const MK_CONFIG = {
       ovCard: {
         badge:       '프로그램 C',
         noAutoCheck: true,   // 학년 선택 시 자동 체크 안 함
-        priceLabel:  ['6개월 342,000원 (40% 할인)', '1년 570,000원 (50% 할인)'],
         tree: [
           { label: '❶ 탐구 주제 + 설계도', sub: '도서·논문·참고자료 포함 패키지' },
           { label: '❷ 방향성 코칭',        sub: '학생 주도 활동 시 무료 지원' },
@@ -251,7 +250,6 @@ const MK_CONFIG = {
       autoCheck:  true,    // 첫 진입 시 isDefault 항목 자동 체크
       ovCard: {
         badge:      '프로그램 D',
-        priceLabel: ['RPM 60만원', '성적 누적 70만원'],
         fixed:      true,  // 연간관리형 카드에서 고정 체크 표시
         tree: [
           { label: '❶ RPM 컨설팅',   sub: '세특·창체 코칭 / 활동 방향 설계' },
@@ -287,7 +285,6 @@ const MK_CONFIG = {
       autoCheck:  true,
       ovCard: {
         badge:      '프로그램 E',
-        priceLabel: ['특강 20만원', '행정 80만원'],
         fixed:      true,
         tree: [
           { label: '❶ 학종 특강',      sub: '서류 평가·세특 디자인·빌드업 전략' },
