@@ -1444,7 +1444,11 @@ const UI = (() => {
                 ${['ti-pencil','ti-layout-list','ti-bulb','ti-users','ti-settings',
                    'ti-star','ti-heart','ti-bolt','ti-book','ti-school',
                    'ti-target','ti-trophy','ti-chart-bar','ti-trending-up',
-                   'ti-calendar','ti-brain','ti-atom','ti-message','ti-home','ti-shield-check'
+                   'ti-calendar','ti-brain','ti-atom','ti-message','ti-home','ti-shield-check',
+                   'ti-circle','ti-flag','ti-bookmark','ti-edit','ti-writing',
+                   'ti-file-text','ti-clipboard','ti-books','ti-notebook','ti-certificate',
+                   'ti-user','ti-user-check','ti-user-star','ti-medal','ti-crown',
+                   'ti-chart-line','ti-chart-pie','ti-map-pin','ti-compass','ti-clock'
                   ].map(cls => `
                   <button type="button" data-icon="${cls}"
                     style="width:32px;height:32px;border-radius:6px;border:2px solid ${page.iconClass===cls?'var(--accent)':'var(--border)'};background:${page.iconBg};display:flex;align-items:center;justify-content:center;cursor:pointer;"
@@ -1455,11 +1459,15 @@ const UI = (() => {
             </div>
             <div>
               <div class="d-col-label" style="margin-bottom:6px;">배경색</div>
-              <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:160px;">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:220px;">
                 ${[
                   ['#FFE3D4','#C45000'],['#FFD3E1','#8b1c3a'],['#E1D6FF','#5b35c4'],
                   ['#D4ECFF','#0a4a8a'],['#D4F5E3','#1a6b3c'],['#FFF3D4','#8b6200'],
-                  ['#F0F0F0','#333333'],['#1a1d2e','#ffffff']
+                  ['#F0F0F0','#333333'],['#1a1d2e','#ffffff'],['#FDE8FF','#7b1fa2'],
+                  ['#E8F5E9','#2e7d32'],['#E3F2FD','#1565c0'],['#FFF8E1','#f57f17'],
+                  ['#FCE4EC','#880e4f'],['#E8EAF6','#283593'],['#E0F7FA','#00695c'],
+                  ['#FBE9E7','#bf360c'],['#F3E5F5','#6a1b9a'],['#E0F2F1','#004d40'],
+                  ['#ECEFF1','#455a64'],['#FAFAFA','#212121']
                 ].map(([bg, color]) => `
                   <button type="button" data-bg="${bg}"
                     style="width:28px;height:28px;border-radius:50%;background:${bg};border:3px solid ${page.iconBg===bg?'var(--accent)':'transparent'};cursor:pointer;"
