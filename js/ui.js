@@ -1626,9 +1626,10 @@ const UI = (() => {
         <button type="button" class="rich-btn" title="기울임" onclick="UI._richCmd('italic','${targetId}')"><i>I</i></button>
         <button type="button" class="rich-btn" title="밑줄" onclick="UI._richCmd('underline','${targetId}')"><u>U</u></button>
         <span class="rich-sep">|</span>
-        <select class="rich-select" title="글자 크기"
+        <select id="rich-size-${targetId}" class="rich-select" title="글자 크기"
           onmousedown="UI._saveSelection()"
-          onchange="UI._richCmd('fontSize',this.value,'${targetId}');this.value=''">
+          onpointerdown="UI._saveSelection()"
+          onchange="UI._richCmd('fontSize',this.value,'${targetId}')">
           <option value="">크기</option>
           <option value="0">기본</option>
           <option value="8">8pt</option>
@@ -1713,6 +1714,16 @@ const UI = (() => {
     }
   }
 
+  // selectionchange: 커서 이동 시 rich-editor 안이면 select 값 동기화
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const node = sel.getRangeAt(0).startContainer;
+    const editor = (node.nodeType === 3 ? node.parentElement : node)?.closest('.rich-editor');
+    if (!editor || !editor.id) return;
+    _syncFontSizeSelect(editor.id);
+  });
+
   // selection 복원 — _richCmd fontSize 분기에서 호출
   function _restoreSelection() {
     if (!_savedRange) return;
@@ -1723,9 +1734,30 @@ const UI = (() => {
     }
   }
 
+  // 커서 위치 font-size 읽어 select 값 동기화
+  function _syncFontSizeSelect(targetId) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const node = sel.getRangeAt(0).startContainer;
+    const el = node.nodeType === 3 ? node.parentElement : node;
+    const fs = window.getComputedStyle(el).fontSize; // px
+    const pt = fs ? Math.round(parseFloat(fs) * 0.75) : '';
+    const select = document.getElementById('rich-size-' + targetId);
+    if (!select) return;
+    const match = Array.from(select.options).find(o => o.value === String(pt));
+    select.value = match ? String(pt) : '';
+  }
+
   // 선택 범위를 <span style="font-size:Npt">로 래핑
   function _applyFontSize(el, ptVal) {
     const sel = window.getSelection();
+    // selection 없으면 editor 전체 선택 fallback
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
     if (!el.contains(range.commonAncestorContainer)) return;
@@ -2179,7 +2211,7 @@ const UI = (() => {
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
     _richCmd,
-    _saveSelection, _restoreSelection,
+    _saveSelection, _restoreSelection, _syncFontSizeSelect,
     _insertText,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
