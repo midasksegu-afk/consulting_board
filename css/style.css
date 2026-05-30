@@ -547,7 +547,7 @@ html, body {
 .p-desc ul { padding-left:16px; }
 .p-desc li { margin-bottom:3px; list-style:disc; font-size:inherit; color:inherit; }
 .p-item-line { display:flex; align-items:baseline; gap:6px; margin-bottom:3px; }
-.p-item-line::before { content:'•'; flex-shrink:0; color:var(--text-2); font-size:14px; line-height:1.8; }
+.p-item-line::before { content:'\2022'; flex-shrink:0; color:var(--text-2); font-size:14px; line-height:1.8; }
 
 /* 조건 박스 */
 .c-box {
