@@ -1448,6 +1448,8 @@ const UI = (() => {
             <div id="ov-name-${pageId}" class="admin-input rich-editor"
               contenteditable="true"
               style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:42px;padding:8px;"
+              onclick="UI._syncSizeBtn('ov-name-${pageId}')"
+              onkeyup="UI._syncSizeBtn('ov-name-${pageId}')"
               oninput="window.mkEditDraft.pages['${pageId}'].ovCard.name=this.innerHTML"
             >${ov.name || page.sbLabel.replace(/^[A-E]\. /, '')}</div>
           </div>
@@ -1458,6 +1460,8 @@ const UI = (() => {
             <div id="ov-desc-${pageId}" class="admin-input rich-editor"
               contenteditable="true"
               style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:80px;padding:8px;"
+              onclick="UI._syncSizeBtn('ov-desc-${pageId}')"
+              onkeyup="UI._syncSizeBtn('ov-desc-${pageId}')"
               oninput="window.mkEditDraft.pages['${pageId}'].ovCard.desc=this.innerHTML"
             >${ov.desc || ''}</div>
           </div>
@@ -1497,9 +1501,12 @@ const UI = (() => {
         </div>
       </div>`;
     document.body.appendChild(modal);
+    setTimeout(() => {
+      modal.querySelectorAll('.rich-editor').forEach(el => {
+        if (el.id) UI._syncSizeBtn(el.id);
+      });
+    }, 0);
   }
-
-  function _buildOvTreeRows(pageId) {
     const ov = window.mkEditDraft.pages[pageId]?.ovCard || {};
     return (ov.tree || []).map((t, idx) => `
       <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
