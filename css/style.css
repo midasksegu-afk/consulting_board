@@ -1138,3 +1138,10 @@ select[title] { cursor: help; }
 .ov-header .ov-name {
   margin-bottom: 0;
 }
+
+/* 크기 버튼 활성화 표시 */
+.rich-btn.size-btn.size-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
