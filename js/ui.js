@@ -800,6 +800,13 @@ const UI = (() => {
     if (result === 'switched') {
       showToast('프로그램 전환되어 금액이 초기화됩니다', 'warn');
     }
+    // 세특/수행 체크 해제 시 로드맵DC 켜져 있으면 자동 해제 + 합계 리셋
+    if (!cb.checked && (pageId === 'rm-a' || pageId === 'rm-b') && Calc.isDcActive('roadmap')) {
+      Calc.toggleDc('roadmap');
+      _updateDcButtons();
+      _updateTotalBoxes(Calc.getAllTotalsDc());
+      showToast('로드맵 DC가 해제되었습니다. 다시 선택해 주세요', 'warn');
+    }
     const card = document.getElementById('ovcard-' + pageId);
     if (card) card.classList.toggle('card-selected', cb.checked);
   }
