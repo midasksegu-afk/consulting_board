@@ -189,7 +189,7 @@ const UI = (() => {
       return (page.ovCard.priceLabel || []).map(p => p + '<br>').join('');
     }
     // prices[] 기반 해당 학년 항목 전체 출력
-    let priceHtmlStr = gradeItems.map(p => '<strong>' + p.label + ' ' + fmt(p.amt) + '</strong>').join('<br>');
+    let priceHtmlStr = gradeItems.map(p => '<strong>' + p.label + ' ' + fmt(p.amt) + '</strong>' + (p.note ? ' <span style="font-size:11px;color:var(--text-3);">(' + p.note + ')</span>' : '')).join('<br>');
     // 2학기 금액 — 관리자 설정값 (합산 제외, 표시 전용)
     // pageId는 _updateOvCardPrices에서 순회 시 알고 있으므로 pageId 기반으로 직접 접근
     const _semData = ((cfg().discount || {}).semesterAmt || {});
