@@ -306,13 +306,15 @@ const Portfolio = (() => {
       return `
       <div class="dt-page">
         <div class="dt-header">
-          <div>
+          <div class="dt-header-left">
             <div class="dt-brand">마이더스K교육컨설팅</div>
             <div class="dt-doc-title">세부 프로그램 안내서</div>
           </div>
-          <span class="dt-badge-outline">티처스 컨설턴트</span>
+          <div class="dt-header-center">${stuInfo || ''}</div>
+          <div class="dt-header-right">
+            <span class="dt-badge-outline">티처스 컨설턴트</span>
+          </div>
         </div>
-        ${stuInfo ? `<div class="dt-stu-bar">${stuInfo}</div>` : ''}
         <div class="dt-header-line"></div>
 
         <div class="dt-banner">
@@ -431,7 +433,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
   --dt-amber-bg:#FEF9EC;--dt-amber-br:rgba(180,120,0,.18);--dt-amber-tx:#7a5000;
 }
 .dt-page{page-break-before:always;font-family:'Noto Sans KR',sans-serif}
-.dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--dt-deep)}
+.dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;gap:12px}
+.dt-header-left{flex:1}
+.dt-header-center{flex:1;display:flex;justify-content:center;align-items:center}
+.dt-header-right{flex:1;display:flex;justify-content:flex-end;align-items:center}
 .dt-brand{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--dt-ink3)}
 .dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
 .dt-stu-bar{padding:8px 28px;text-align:center;background:#fff}
@@ -533,7 +538,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 @media print{.pf-toolbar{display:none}body{padding-top:0}}
 .dt-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 32px}
 .dt-page:first-child{page-break-before:auto}
-.dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--dt-deep)}
+.dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;gap:12px}
+.dt-header-left{flex:1}
+.dt-header-center{flex:1;display:flex;justify-content:center;align-items:center}
+.dt-header-right{flex:1;display:flex;justify-content:flex-end;align-items:center}
 .dt-brand{font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--dt-ink3)}
 .dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
 .dt-stu-bar{padding:8px 28px;text-align:center;background:#fff}
@@ -739,7 +747,7 @@ ${introHtml}
           <div class="it-copy">수행평가 주제 선정부터 동아리, 진로 활동 방향, 학생부 세특, 자기평가서 제출 관리까지.</div>
           <div class="it-quote">
             <div class="it-quote-pre">CONSULTING PHILOSOPHY</div>
-            <div class="it-quote-text">"아무것도 모르고 오셔도 괜찮습니다."</div>
+            <div class="it-quote-text">복잡한 입시, 아무것도 모르고 오셔도 괜찮습니다. '최선의 대입 전략'은 이미 시작되었습니다.</div>
           </div>
         </div>
         <div class="it-body">
