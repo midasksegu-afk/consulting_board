@@ -216,9 +216,13 @@ const Portfolio = (() => {
   function _buildDetailPages(selectedPageIds) {
     const config = MK_CONFIG.resolve();
 
-    // 인라인 style 속성 전부 제거 — 고정 CSS 규격으로만 출력
-    function _stripAllStyles(html) {
-      return (html || '').replace(/\s*style="[^"]*"/gi, '');
+    // HTML → 순수 텍스트 (모든 인라인 태그·스타일 제거)
+    function _clean(html) {
+      return (html || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim();
     }
 
     return selectedPageIds.map(pageId => {
@@ -233,7 +237,7 @@ const Portfolio = (() => {
 
       // 01 프로그램 구성
       const programsHtml = (page.programs || []).map((p, i) => {
-        const items = (p.items || []).map(t => `<li>${t}</li>`).join('');
+        const items = (p.items || []).map(t => `<li>${_clean(t)}</li>`).join('');
         return `
           <div class="dt-p-item">
             <div class="dt-p-header">
@@ -249,20 +253,13 @@ const Portfolio = (() => {
         let body = '';
         if (c.type === 'tags+text') {
           const tags = (c.tags || []).map(t => `<span class="dt-tag">${t}</span>`).join('');
-          const txt  = c.text ? `<div class="dt-c-line">${c.text.replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim()}</div>` : '';
+          const txt  = c.text ? `<div class="dt-c-line">${_clean(c.text)}</div>` : '';
           body = `<div class="dt-tag-row">${tags}</div>${txt}`;
         } else {
-          // 인라인 태그 전부 제거 → 순수 텍스트만 추출 → 줄 단위로 출력
-          const plain = (c.text || '')
-            .replace(/<br\s*\/?>/gi, '\n')   // <br> → 줄바꿈
-            .replace(/<[^>]+>/g, '')          // 나머지 태그 제거
-            .replace(/&nbsp;/g, ' ');         // &nbsp; 처리
-          body = plain.split('\n')
-            .map(l => l.trim())
-            .filter(l => l)
+          body = _clean(c.text).split('\n')
+            .map(l => l.trim()).filter(l => l)
             .map(l => `<div class="dt-c-line">${l}</div>`).join('');
         }
-        // 우측 뱃지 — 타이틀 영어 약어
         const badge = c.title.length <= 4 ? c.title.toUpperCase()
           : c.type === 'tags+text' ? 'SUBJECT' : 'CONDITION';
         return `
