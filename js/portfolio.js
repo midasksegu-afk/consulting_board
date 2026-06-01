@@ -213,8 +213,9 @@ const Portfolio = (() => {
   /* ============================================================
    * 3. 세부 프로그램 안내 페이지 생성
    * ============================================================ */
-  function _buildDetailPages(selectedPageIds) {
+  function _buildDetailPages(selectedPageIds, studentKey) {
     const config = MK_CONFIG.resolve();
+    const stuInfo = studentKey ? `<div class="dt-stu-info">${studentKey}</div>` : '';
 
     // HTML → 순수 텍스트 (모든 인라인 태그·스타일 제거)
     function _clean(html) {
@@ -308,8 +309,9 @@ const Portfolio = (() => {
           <div>
             <div class="dt-brand">마이더스K교육컨설팅</div>
             <div class="dt-doc-title">세부 프로그램 안내서</div>
+            ${stuInfo}
           </div>
-          <span class="dt-badge-outline">TEACHERS CONSULTANT</span>
+          <span class="dt-badge-outline">티처스 컨설턴트</span>
         </div>
 
         <div class="dt-banner">
@@ -352,7 +354,7 @@ const Portfolio = (() => {
     const items      = _collectItems();
     const studentKey = document.getElementById('tb-title')?.textContent || '';
     const body       = _buildHTML(items, studentKey);
-    const detailHtml = _buildDetailPages(items.selectedPageIds || []);
+    const detailHtml = _buildDetailPages(items.selectedPageIds || [], studentKey);
     const checklistHtml = _buildChecklistPage(items.selectedPageIds || [], studentKey);
     const introHtml     = _buildIntroPage();
     const config     = MK_CONFIG.resolve();
@@ -428,10 +430,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
   --dt-amber-bg:#FEF9EC;--dt-amber-br:rgba(180,120,0,.18);--dt-amber-tx:#7a5000;
 }
 .dt-page{page-break-before:always;font-family:'Noto Sans KR',sans-serif}
-.dt-header{background:var(--dt-deep);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
-.dt-brand{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.45)}
-.dt-doc-title{font-size:14px;font-weight:800;color:#fff;margin-top:2px}
-.dt-badge-outline{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.22);border-radius:3px;padding:4px 10px}
+.dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--dt-deep)}
+.dt-brand{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--dt-ink3)}
+.dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
+.dt-stu-info{font-size:10.5px;color:var(--dt-ink3);margin-top:3px}
+.dt-badge-outline{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
 .dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
@@ -527,10 +530,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 @media print{.pf-toolbar{display:none}body{padding-top:0}}
 .dt-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 32px}
 .dt-page:first-child{page-break-before:auto}
-.dt-header{background:var(--dt-deep);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
-.dt-brand{font-size:9px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.45)}
-.dt-doc-title{font-size:14px;font-weight:800;color:#fff;margin-top:2px}
-.dt-badge-outline{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.22);border-radius:3px;padding:4px 10px}
+.dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--dt-deep)}
+.dt-brand{font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--dt-ink3)}
+.dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
+.dt-stu-info{font-size:10.5px;color:var(--dt-ink3);margin-top:3px}
+.dt-badge-outline{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-size:26px;font-weight:800;color:var(--dt-deep);line-height:1;flex-shrink:0}
 .dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
@@ -651,7 +655,7 @@ ${introHtml}
     const groupsHtml = groups.map((g, gi) => {
       const pages = MK_CONFIG.pageOrder
         .map(id => config.pages[id])
-        .filter(p => p && !p.isOverview && (p.calcGroup || p.group) === g.key);
+        .filter(p => p && !p.isOverview && p.group === g.key);
 
       if (!pages.length) return '';
 
