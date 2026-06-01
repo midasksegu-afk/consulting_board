@@ -278,16 +278,19 @@ html, body {
 .grade-divider { width:1px; height:36px; background:var(--border); margin:0 4px; }
 
 /* 패키지 DC */
-.pkg-btns { display:flex; flex-direction:row; align-items:stretch; gap:6px; }
+.pkg-btns { display:flex; flex-direction:row; align-items:center; gap:6px; }
+.pkg-btns > div { display:flex; flex-direction:column; gap:3px; }
 .pkg-btn {
   display:inline-flex; align-items:center; justify-content:center;
-  gap:4px; padding:0 14px; height:36px; border-radius:var(--radius-md);
+  gap:4px; padding:0 14px; height:24px; border-radius:6px;
   font-size:11px; font-weight:600; font-family:inherit;
   cursor:pointer; white-space:nowrap; transition:all 0.14s;
-  background:var(--surface); color:var(--text-2); border:1.5px solid var(--border);
+  background:#1A1A2E; color:rgba(255,255,255,0.75);
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 2px 8px rgba(0,0,0,0.18);
 }
-.pkg-btn:hover { background:var(--surface2); border-color:var(--accent); color:var(--accent); }
-.pkg-btn-1, .pkg-btn-2, .pkg-btn-select { /* 통일 — 개별 override 없음 */ }
+.pkg-btn:hover { background:#252045; border-color:rgba(183,156,255,0.4); color:#fff; }
+.pkg-btn-1, .pkg-btn-2, .pkg-btn-select { /* 통일 */ }
 
 /* 버튼 공통 */
 .btn {
