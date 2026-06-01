@@ -309,10 +309,11 @@ const Portfolio = (() => {
           <div>
             <div class="dt-brand">마이더스K교육컨설팅</div>
             <div class="dt-doc-title">세부 프로그램 안내서</div>
-            ${stuInfo}
           </div>
           <span class="dt-badge-outline">티처스 컨설턴트</span>
         </div>
+        ${stuInfo ? `<div class="dt-stu-bar">${stuInfo}</div>` : ''}
+        <div class="dt-header-line"></div>
 
         <div class="dt-banner">
           <div class="dt-banner-num">${secLetter}</div>
@@ -433,7 +434,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--dt-deep)}
 .dt-brand{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--dt-ink3)}
 .dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
-.dt-stu-info{font-size:10.5px;color:var(--dt-ink3);margin-top:3px}
+.dt-stu-bar{padding:8px 28px;text-align:center;background:#fff}
+.dt-header-line{height:1px;background:var(--dt-line-md);margin:0 28px}
+.dt-stu-info{font-size:11px;font-weight:600;color:var(--dt-acc);background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:5px;padding:5px 16px;display:inline-block}
 .dt-badge-outline{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
@@ -476,10 +479,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-note-blue .dt-note-text{color:var(--dt-deep)}
 .dt-note-red .dt-note-text{color:var(--dt-red-tx)}
 .dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
-.dt-footer{background:var(--dt-deep);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
-.dt-footer-brand{font-size:11.5px;font-weight:700;color:#fff}
-.dt-footer-contact{font-family:'Noto Sans KR',sans-serif;font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
-.dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;font-family:'Noto Sans KR',sans-serif;letter-spacing:.04em}
+.dt-footer{background:#fff;border-top:1px solid var(--dt-line-md);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
+.dt-footer-brand{font-size:11.5px;font-weight:700;color:var(--dt-ink)}
+.dt-footer-contact{font-size:9.5px;color:var(--dt-ink3);margin-top:2px}
+.dt-footer-badge{padding:5px 11px;border:1px solid var(--dt-line);border-radius:4px;font-size:9px;color:var(--dt-acc);text-align:center;line-height:1.75;font-weight:700;font-family:'Noto Sans KR',sans-serif;letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -533,7 +536,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--dt-deep)}
 .dt-brand{font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--dt-ink3)}
 .dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
-.dt-stu-info{font-size:10.5px;color:var(--dt-ink3);margin-top:3px}
+.dt-stu-bar{padding:8px 28px;text-align:center;background:#fff}
+.dt-header-line{height:1px;background:var(--dt-line-md);margin:0 28px}
+.dt-stu-info{font-size:11px;font-weight:600;color:var(--dt-acc);background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:5px;padding:5px 16px;display:inline-block}
 .dt-badge-outline{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-size:26px;font-weight:800;color:var(--dt-deep);line-height:1;flex-shrink:0}
@@ -576,10 +581,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-note-blue .dt-note-text{color:var(--dt-deep)}
 .dt-note-red .dt-note-text{color:var(--dt-red-tx)}
 .dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
-.dt-footer{background:var(--dt-deep);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
-.dt-footer-brand{font-size:11.5px;font-weight:700;color:#fff}
-.dt-footer-contact{font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
-.dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;letter-spacing:.04em}
+.dt-footer{background:#fff;border-top:1px solid var(--dt-line-md);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
+.dt-footer-brand{font-size:11.5px;font-weight:700;color:var(--dt-ink)}
+.dt-footer-contact{font-size:9.5px;color:var(--dt-ink3);margin-top:2px}
+.dt-footer-badge{padding:5px 11px;border:1px solid var(--dt-line);border-radius:4px;font-size:9px;color:var(--dt-acc);text-align:center;line-height:1.75;font-weight:700;letter-spacing:.04em}
 
 /* ── 선택 현황 페이지 ── */
 .ck-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0;display:flex;flex-direction:column;min-height:267mm}
