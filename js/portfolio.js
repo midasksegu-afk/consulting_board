@@ -72,7 +72,13 @@ const Portfolio = (() => {
   function _buildHTML(items, studentKey) {
     const config   = MK_CONFIG.resolve();
     const totals   = Calc.getAllTotals();
-    const totalsDc = Calc.getAllTotalsDc();
+    const totalsDc = Calc.isSelectDcActive()
+      ? Calc.getAllTotalsDcWithSelect()
+      : Calc.getAllTotalsDc();
+    // 2학기DC 차감액
+    const semDisc  = totalsDc.semDisc || 0;
+    // 개별가DC 차감액
+    const indDiscAmt = totals.individual - totalsDc.individual;
 
     // 학생 정보 파싱 (tb-title: 이름 · 학교 · 학년 · 진로목표)
     const parts     = (studentKey || '').split(' · ');
@@ -108,11 +114,21 @@ const Portfolio = (() => {
         ? `<div class="pf-subtotal">원가: <span style="text-decoration:line-through;opacity:.6;">${fmt(rawTotal)}</span> → 할인 후: ${fmt(dcTotal)}</div>`
         : `<div class="pf-subtotal">소계: ${fmt(dcTotal)}</div>`;
 
+      // 섹션별 추가할인 행
+      let extraDcHtml = '';
+      if (groupKey === 'roadmap' && semDisc > 0) {
+        extraDcHtml = `<div class="pf-extra-dc">추가할인 : 2학기DC &nbsp;-${fmt(semDisc)}</div>`;
+      }
+      if (groupKey === 'individual' && indDiscAmt > 0) {
+        extraDcHtml = `<div class="pf-extra-dc">추가할인 : 개별가DC &nbsp;-${fmt(indDiscAmt)}</div>`;
+      }
+
       return `
         <div class="pf-section">
           <div class="pf-section-header"><div class="pf-section-bar"></div><span class="pf-section-label">${label}</span></div>
           <table><tbody>${rows}</tbody></table>
           ${subtotalHtml}
+          ${extraDcHtml}
         </div>`;
     };
 
@@ -162,6 +178,15 @@ const Portfolio = (() => {
         </div>
 
         ${totalHtml}
+
+        <div class="pf-special-box">
+          <span class="pf-special-label">특약사항 :</span>
+          <div class="pf-special-lines">
+            <div class="pf-special-line"></div>
+            <div class="pf-special-line"></div>
+            <div class="pf-special-line"></div>
+          </div>
+        </div>
 
         <div class="pf-footer">
           <div class="pf-footer-left">
@@ -222,6 +247,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-section tr:last-child td{border-bottom:none}
 .pf-subtotal{text-align:right;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--mk-blue);background:var(--mk-blue-lt);border-top:1px solid var(--mk-line)}
 .pf-subtotal s{opacity:.45;margin-right:4px;color:#888}
+.pf-extra-dc{text-align:right;font-size:12px;color:#5b35c4;font-weight:600;padding:2px 12px 8px;}
+.pf-special-box{border:1.5px solid #d0d0d8;border-radius:8px;padding:14px 16px;margin:12px 0;min-height:80px;display:flex;gap:12px;align-items:flex-start;}
+.pf-special-label{font-size:12px;font-weight:700;color:#43434A;white-space:nowrap;padding-top:2px;}
+.pf-special-lines{flex:1;display:flex;flex-direction:column;gap:18px;padding-top:4px;}
+.pf-special-line{border-bottom:1px solid #d0d0d8;width:100%;}
 .pf-total-box{margin:16px 0;padding:16px 20px;background:#fff;border:2px solid #15151A;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
 .pf-total-label{font-size:15px;font-weight:700;color:#15151A}
 .pf-total-right{text-align:right}
