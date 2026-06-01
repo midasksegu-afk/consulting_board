@@ -306,6 +306,20 @@ const Admin = (() => {
 
       ${(_draft.discount?.semesterAmt && pageId in (_draft.discount?.semesterAmt || {})) ? _buildSemesterRows(pageId) : ''}
 
+      ${page.group === 'individual' ? `
+      <div class="admin-section-title" style="margin-top:20px;">개별가 DC 할인율</div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">이 항목에 적용할 할인율. 0%이면 개별가 DC 버튼에서 제외됩니다.</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <input class="admin-input" style="width:70px;text-align:right;"
+          type="number" min="0" max="100"
+          value="${(_draft.discount?.individual || {})[pageId] ?? 0}"
+          oninput="Admin.updateIndividualDiscount('${pageId}', this.value)">
+        <span style="font-size:13px;color:var(--text-2);">%</span>
+      </div>
+      <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('individual')">
+        <i class="ti ti-device-floppy"></i> DC 할인율 저장
+      </button>` : ''}
+
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
         <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveProgram('${pageId}')">
           <i class="ti ti-device-floppy"></i> 저장
@@ -594,8 +608,9 @@ const Admin = (() => {
   }
 
   function _selectIcon(pageId, iconCls) {
-    // draft 업데이트
+    // draft 업데이트 — sbIcon + iconClass 함께 저장
     updateNameField(pageId, 'sbIcon', iconCls);
+    updateNameField(pageId, 'iconClass', iconCls);
     // 미리보기 갱신
     const preview = document.getElementById(`icon-preview-${pageId}`);
     if (preview) preview.innerHTML = `<i class="ti ${iconCls}" style="font-size:18px;color:var(--accent);"></i>`;
@@ -605,6 +620,9 @@ const Admin = (() => {
     // 에디터 타이틀 갱신
     const titleEl = document.querySelector('.admin-editor-title');
     if (titleEl) titleEl.innerHTML = `<i class="ti ${iconCls}"></i> ${_draft.pages[pageId]?.sbLabel || ''}`;
+    // 전체보기 카드 아이콘 DOM 즉시 갱신
+    const ovIcon = document.querySelector(`#ovcard-${pageId} .ov-icon i`);
+    if (ovIcon) { ovIcon.className = `ti ${iconCls}`; }
   }
 
   function _confirmWithPin(callback) {

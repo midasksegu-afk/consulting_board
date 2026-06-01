@@ -1352,7 +1352,9 @@ const UI = (() => {
       } else {
         btn2.style.display = '';
         const isOn = Calc.isDcActive('individual');
-        btn2.textContent = `개별 DC`;
+        const indRates = typeof indDisc === 'object' ? Object.values(indDisc).filter(v => v > 0) : [];
+        const avgRate  = indRates.length ? Math.round(indRates.reduce((a,b)=>a+b,0) / indRates.length) : 0;
+        btn2.textContent = `개별가 DC (${avgRate}%)`;
         btn2.classList.toggle('pkg-btn-active', isOn);
       }
     }
@@ -2347,7 +2349,6 @@ const UI = (() => {
     _addProgram, _removeProgram,
     _addCond, _removeCond,
     _addNote, _removeNote,
-    _updateDcButtons,
   };
 
 })();
@@ -2363,7 +2364,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (updated) {
       UI.renderSidebar();
       UI.renderPages();
-      UI._updateDcButtons();
       UI.go('rm-overview');
     }
   });
@@ -2375,7 +2375,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // localStorage에 이미 최신값 저장됨 → 직접 읽어 즉시 렌더
       UI.renderSidebar();
       UI.renderPages();
-      UI._updateDcButtons();
       UI.go(UI.getCurrentPageId());
     };
   }
