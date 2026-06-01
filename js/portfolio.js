@@ -353,12 +353,14 @@ const Portfolio = (() => {
     const studentKey = document.getElementById('tb-title')?.textContent || '';
     const body       = _buildHTML(items, studentKey);
     const detailHtml = _buildDetailPages(items.selectedPageIds || []);
+    const checklistHtml = _buildChecklistPage(items.selectedPageIds || [], studentKey);
+    const introHtml     = _buildIntroPage();
     const config     = MK_CONFIG.resolve();
 
     // 세부 안내서 새 창 오픈 스크립트 — JSON.stringify로 안전하게 전달
     const detailsScript = `
       var w=window.open('','mk_detail_window');
-      var h=${JSON.stringify(_detailWindowHTML(detailHtml))};
+      var h=${JSON.stringify(_detailWindowHTML(detailHtml, checklistHtml, introHtml))};
       w.document.write(h);w.document.close();`;
 
     const html = `<!DOCTYPE html>
@@ -499,7 +501,7 @@ function openDetails(){
   /* ============================================================
    * 5. 세부 안내서 전용 새 창 HTML 래퍼
    * ============================================================ */
-  function _detailWindowHTML(detailHtml) {
+  function _detailWindowHTML(detailHtml, checklistHtml, introHtml) {
     return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -574,6 +576,53 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-footer-brand{font-size:11.5px;font-weight:700;color:#fff}
 .dt-footer-contact{font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
 .dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;letter-spacing:.04em}
+
+/* ── 선택 현황 페이지 ── */
+.ck-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0;display:flex;flex-direction:column;min-height:267mm}
+.ck-slogan{background:var(--dt-acc);padding:7px 28px;font-size:11px;color:#fff;font-weight:500;line-height:1.5}
+.ck-slogan strong{font-weight:800}
+.ck-head{padding:10px 28px 8px;border-bottom:1px solid var(--dt-line-md);display:flex;align-items:baseline;justify-content:space-between}
+.ck-title{font-size:14px;font-weight:800;color:var(--dt-ink)}
+.ck-student{font-size:11px;color:var(--dt-ink3)}
+.ck-group{padding:8px 28px 2px}
+.ck-group-label{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ck-gnum{font-size:8px;font-weight:800;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:2px 7px;border-radius:3px}
+.ck-gtext{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-ink2)}
+.ck-group-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
+.ck-item{display:flex;align-items:baseline;gap:7px;padding:4px 6px;border-bottom:1px solid rgba(21,21,26,.04)}
+.ck-box{width:18px;height:14px;border:1.5px solid;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;line-height:1}
+.ck-on .ck-box{border-color:#1a6e3c;color:#1a6e3c;background:#edf7f1}
+.ck-off .ck-box{border-color:#ccc;color:transparent}
+.ck-name{font-size:11.5px;font-weight:700;flex-shrink:0;min-width:86px}
+.ck-on .ck-name{color:#1a6e3c}
+.ck-off .ck-name{color:var(--dt-ink2)}
+.ck-sub{font-size:10px;color:var(--dt-ink3);line-height:1.4}
+.ck-on .ck-sub{color:#4a9068}
+
+/* ── 회사 소개 페이지 ── */
+.it-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0}
+.it-impact{background:var(--dt-deep);padding:20px 28px 18px;border-bottom:3px solid var(--dt-acc)}
+.it-tag{font-size:8px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.35);margin-bottom:8px}
+.it-copy{font-size:12px;font-weight:500;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:14px}
+.it-quote{border-left:3px solid var(--dt-acc);padding:10px 16px;background:rgba(255,255,255,.06);border-radius:0 5px 5px 0}
+.it-quote-pre{font-size:8.5px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.3);margin-bottom:4px}
+.it-quote-text{font-size:14px;font-weight:800;color:#fff;line-height:1.4;letter-spacing:-.01em}
+.it-body{padding:14px 28px 0}
+.it-desc{font-size:12px;color:var(--dt-ink2);line-height:1.85;padding:12px 14px;background:var(--dt-tint);border-radius:7px;border-left:3px solid var(--dt-acc)}
+.it-divider{margin:12px 28px;height:1px;background:var(--dt-line-md)}
+.it-awards{padding:0 28px 10px}
+.it-sec-label{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.it-sec-num{font-size:8px;font-weight:800;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:2px 7px;border-radius:3px}
+.it-sec-text{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-ink2)}
+.it-sec-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
+.it-award{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(21,21,26,.04)}
+.it-dot{width:4px;height:4px;border-radius:50%;background:var(--dt-acc);flex-shrink:0;margin-top:6px}
+.it-atext{font-size:11.5px;color:var(--dt-ink2);line-height:1.5}
+.it-atext strong{font-weight:700;color:var(--dt-ink)}
+.it-partner{margin:10px 28px 12px;padding:10px 14px;background:var(--dt-deep);border-radius:7px;display:flex;align-items:center;gap:10px}
+.it-partner-label{font-size:8px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.35);flex-shrink:0}
+.it-partner-div{width:1px;height:18px;background:rgba(255,255,255,.15);flex-shrink:0}
+.it-partner-text{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.82);line-height:1.5}
 </style>
 </head>
 <body>
@@ -581,8 +630,127 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
   <button class="pf-toolbar-btn pf-toolbar-btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
 </div>
 ${detailHtml}
+${checklistHtml}
+${introHtml}
 </body>
 </html>`;
+  }
+
+
+  /* ============================================================
+   * 6. 선택 현황 페이지
+   * ============================================================ */
+  function _buildChecklistPage(selectedPageIds, studentKey) {
+    const config  = MK_CONFIG.resolve();
+    const groups  = [
+      { key: 'roadmap',    label: '학년 관리 로드맵' },
+      { key: 'individual', label: '개별 관리 컨설팅' },
+      { key: 'strategy',   label: '대입 전략 컨설팅' },
+    ];
+
+    const groupsHtml = groups.map((g, gi) => {
+      const pages = MK_CONFIG.pageOrder
+        .map(id => config.pages[id])
+        .filter(p => p && !p.isOverview && (p.calcGroup || p.group) === g.key);
+
+      if (!pages.length) return '';
+
+      const rows = pages.map(p => {
+        const isSelected = selectedPageIds.includes(
+          Object.keys(config.pages).find(k => config.pages[k] === p)
+        );
+        const titles = (p.programs || []).map(pr => pr.title).join(' · ');
+        return `
+          <div class="ck-item ${isSelected ? 'ck-on' : 'ck-off'}">
+            <span class="ck-box">${isSelected ? '✓' : ''}</span>
+            <span class="ck-name">${p.sbLabel || ''}</span>
+            ${titles ? `<span class="ck-sub">${titles}</span>` : ''}
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="ck-group">
+          <div class="ck-group-label">
+            <span class="ck-gnum">0${gi+1}</span>
+            <span class="ck-gtext">${g.label}</span>
+          </div>
+          ${rows}
+        </div>`;
+    }).join('');
+
+    const stuLine = studentKey ? `<div class="ck-student">${studentKey}</div>` : '';
+
+    return `
+      <div class="ck-page">
+        <div class="dt-header">
+          <div><div class="dt-brand">마이더스K교육컨설팅</div><div class="dt-doc-title">로드맵 프로그램 선택 현황</div></div>
+          <span class="dt-badge-outline">티처스 컨설턴트</span>
+        </div>
+        <div class="ck-slogan">복잡한 입시, 이젠 <strong>"아무것도 모르고 오셔도 괜찮습니다."</strong> 지금부터 최선의 로드맵 전략을 기획하고 실행합니다.</div>
+        <div class="ck-head">
+          <div class="ck-title">프로그램 선택 현황</div>
+          ${stuLine}
+        </div>
+        ${groupsHtml}
+        <div class="dt-footer" style="margin-top:auto">
+          <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
+          <div class="dt-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
+        </div>
+      </div>`;
+  }
+
+  /* ============================================================
+   * 7. 회사 소개 페이지
+   * ============================================================ */
+  function _buildIntroPage() {
+    const awards = [
+      '한국학원총연합회 · 학원 발전 기여부문 표창장',
+      '한국학원총연합회 · 건전한 학원기풍 조성 표창장',
+      '대구광역시 교육감 · 평생교육 진흥부문 표창장 (제60808호)',
+      '채널A \'성적을 부탁해 티처스\' 대구 의대편 출연',
+      '세특구원자 · 네이버 우수콘텐츠 선정',
+      '세특구원자 PRO AI 컨설팅 알고리즘 연구 개발',
+      '세특구원자 특허 출원 (제40-2023-0535289호)',
+      '유웨이 · 진학사 대입컨설턴트 출신',
+      '김영일 교육컨설팅 업무 제휴',
+    ];
+    const awardsHtml = awards.map(a => {
+      const [bold, rest] = a.includes(' · ') ? [a.split(' · ')[0], ' · ' + a.split(' · ').slice(1).join(' · ')] : ['', a];
+      return `<div class="it-award"><div class="it-dot"></div><div class="it-atext">${bold ? `<strong>${bold}</strong>${rest}` : a}</div></div>`;
+    }).join('');
+
+    return `
+      <div class="it-page">
+        <div class="dt-header">
+          <div><div class="dt-brand">마이더스K교육컨설팅</div><div class="dt-doc-title">회사 소개</div></div>
+          <span class="dt-badge-outline">티처스 컨설턴트</span>
+        </div>
+        <div class="it-impact">
+          <div class="it-tag">MIDAS-K EDUCATION CONSULTING</div>
+          <div class="it-copy">수행평가 주제 선정부터 동아리, 진로 활동 방향, 학생부 세특, 자기평가서 제출 관리까지.</div>
+          <div class="it-quote">
+            <div class="it-quote-pre">CONSULTING PHILOSOPHY</div>
+            <div class="it-quote-text">"아무것도 모르고 오셔도 괜찮습니다."</div>
+          </div>
+        </div>
+        <div class="it-body">
+          <div class="it-desc">연간 700~800회 이상의 개인 및 학교 단체 상담을 통해 누적된 컨설팅 노하우와 실전경험을 바탕으로 고교학점제 및 대학 평가의 실체를 연구하고, 그 대안을 확실하게 제시하는 <strong>대입전략 컨설팅 전문 회사</strong>입니다.</div>
+        </div>
+        <div class="it-divider"></div>
+        <div class="it-awards">
+          <div class="it-sec-label"><span class="it-sec-num">수상</span><span class="it-sec-text">주요 수상 및 이력</span></div>
+          ${awardsHtml}
+        </div>
+        <div class="it-partner">
+          <span class="it-partner-label">PARTNER</span>
+          <div class="it-partner-div"></div>
+          <div class="it-partner-text">유웨이 · 진학사 대입컨설턴트 출신 &nbsp;|&nbsp; 김영일 교육컨설팅 업무 제휴</div>
+        </div>
+        <div class="dt-footer">
+          <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
+          <div class="dt-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
+        </div>
+      </div>`;
   }
 
 
