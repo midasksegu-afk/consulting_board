@@ -2347,6 +2347,7 @@ const UI = (() => {
     _addProgram, _removeProgram,
     _addCond, _removeCond,
     _addNote, _removeNote,
+    _updateDcButtons,
   };
 
 })();
@@ -2362,6 +2363,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (updated) {
       UI.renderSidebar();
       UI.renderPages();
+      UI._updateDcButtons();
       UI.go('rm-overview');
     }
   });
@@ -2373,6 +2375,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // localStorage에 이미 최신값 저장됨 → 직접 읽어 즉시 렌더
       UI.renderSidebar();
       UI.renderPages();
+      UI._updateDcButtons();
       UI.go(UI.getCurrentPageId());
     };
   }
