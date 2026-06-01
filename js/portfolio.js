@@ -441,7 +441,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
 .dt-stu-bar{padding:8px 28px;text-align:center;background:#fff}
 .dt-header-line{height:1px;background:var(--dt-line-md);margin:0 28px}
-.dt-stu-info{font-size:11px;font-weight:600;color:var(--dt-acc);background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:5px;padding:5px 16px;display:inline-block}
+.dt-stu-info{font-size:11.5px;font-weight:700;color:var(--dt-deep);background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:5px;padding:6px 24px;display:inline-block;white-space:nowrap}
 .dt-badge-outline{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
@@ -536,8 +536,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-toolbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .pf-toolbar-btn-print{background:#fff;color:#2A3340}
 @media print{.pf-toolbar{display:none}body{padding-top:0}}
-.dt-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 32px}
+.dt-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 32px;border-top:1px solid var(--dt-line-md)}
 .dt-page:first-child{page-break-before:auto}
+.ck-page:first-child{page-break-before:auto}
 .dt-header{background:#fff;padding:12px 28px;display:flex;align-items:center;gap:12px}
 .dt-header-left{flex:1}
 .dt-header-center{flex:1;display:flex;justify-content:center;align-items:center}
@@ -546,7 +547,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-doc-title{font-size:14px;font-weight:800;color:var(--dt-ink);margin-top:2px}
 .dt-stu-bar{padding:8px 28px;text-align:center;background:#fff}
 .dt-header-line{height:1px;background:var(--dt-line-md);margin:0 28px}
-.dt-stu-info{font-size:11px;font-weight:600;color:var(--dt-acc);background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:5px;padding:5px 16px;display:inline-block}
+.dt-stu-info{font-size:11.5px;font-weight:700;color:var(--dt-deep);background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:5px;padding:6px 24px;display:inline-block;white-space:nowrap}
 .dt-badge-outline{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-size:26px;font-weight:800;color:var(--dt-deep);line-height:1;flex-shrink:0}
@@ -595,7 +596,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-footer-badge{padding:5px 11px;border:1px solid var(--dt-line);border-radius:4px;font-size:9px;color:var(--dt-acc);text-align:center;line-height:1.75;font-weight:700;letter-spacing:.04em}
 
 /* ── 선택 현황 페이지 ── */
-.ck-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0;display:flex;flex-direction:column;min-height:267mm}
+.ck-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0;display:flex;flex-direction:column;min-height:267mm;border-top:1px solid var(--dt-line-md)}
 .ck-slogan{background:var(--dt-acc);padding:7px 28px;font-size:11px;color:#fff;font-weight:500;line-height:1.5}
 .ck-slogan strong{font-weight:800}
 .ck-head{padding:10px 28px 8px;border-bottom:1px solid var(--dt-line-md);display:flex;align-items:baseline;justify-content:space-between}
@@ -617,7 +618,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .ck-on .ck-sub{color:#4a9068}
 
 /* ── 회사 소개 페이지 ── */
-.it-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0}
+.it-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0;border-top:1px solid var(--dt-line-md)}
 .it-impact{background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:10px;margin:14px 28px 0;padding:16px 20px}
 .it-tag{font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--dt-acc);margin-bottom:6px}
 .it-copy{font-size:12px;font-weight:500;color:var(--dt-ink2);line-height:1.7;margin-bottom:12px}
@@ -649,8 +650,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 <div class="pf-toolbar">
   <button class="pf-toolbar-btn pf-toolbar-btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
 </div>
-${detailHtml}
 ${checklistHtml}
+${detailHtml}
 ${introHtml}
 </body>
 </html>`;
@@ -698,7 +699,7 @@ ${introHtml}
         </div>`;
     }).join('');
 
-    const stuLine = studentKey ? `<div class="ck-student">${studentKey}</div>` : '';
+    const stuLine = studentKey ? `<div class="dt-stu-info">${studentKey}</div>` : '';
 
     return `
       <div class="ck-page">
@@ -730,9 +731,6 @@ ${introHtml}
    * ============================================================ */
   function _buildIntroPage(studentKey) {
     const stuName  = (studentKey || '').split(' · ')[0]?.trim() || '';
-    const stuGreet = stuName
-      ? `<div class="it-greeting"><span class="it-greeting-name">${stuName}</span> 학생, 학부모에게 마이더스K를 소개합니다.</div>`
-      : '';
 
     const awards = [
       '한국학원총연합회 · 학원 발전 기여부문 표창장',
@@ -755,7 +753,7 @@ ${introHtml}
         <div class="dt-header">
           <div class="dt-header-left">
             <div class="dt-brand">마이더스K교육컨설팅</div>
-            <div class="dt-doc-title">회사 소개</div>
+            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모에게 마이더스K를 소개합니다.` : '회사 소개'}</div>
           </div>
           <div class="dt-header-center"></div>
           <div class="dt-header-right">
@@ -763,7 +761,6 @@ ${introHtml}
           </div>
         </div>
         <div class="dt-header-line"></div>
-        ${stuGreet}
         <div class="it-impact">
           <div class="it-tag">MIDAS-K EDUCATION CONSULTING</div>
           <div class="it-copy">수행평가 주제 선정부터 동아리, 진로 활동, 학생부 세특 제출 관리까지.</div>
