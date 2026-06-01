@@ -249,12 +249,18 @@ const Portfolio = (() => {
         let body = '';
         if (c.type === 'tags+text') {
           const tags = (c.tags || []).map(t => `<span class="dt-tag">${t}</span>`).join('');
-          const txt  = c.text ? `<div class="dt-c-line">${_stripAllStyles(c.text)}</div>` : '';
+          const txt  = c.text ? `<div class="dt-c-line">${c.text.replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim()}</div>` : '';
           body = `<div class="dt-tag-row">${tags}</div>${txt}`;
         } else {
-          body = _stripAllStyles(c.text || '').split(/\n|<br\s*\/?>/i)
-            .filter(l => l.trim())
-            .map(l => `<div class="dt-c-line">${l.trim()}</div>`).join('');
+          // 인라인 태그 전부 제거 → 순수 텍스트만 추출 → 줄 단위로 출력
+          const plain = (c.text || '')
+            .replace(/<br\s*\/?>/gi, '\n')   // <br> → 줄바꿈
+            .replace(/<[^>]+>/g, '')          // 나머지 태그 제거
+            .replace(/&nbsp;/g, ' ');         // &nbsp; 처리
+          body = plain.split('\n')
+            .map(l => l.trim())
+            .filter(l => l)
+            .map(l => `<div class="dt-c-line">${l}</div>`).join('');
         }
         // 우측 뱃지 — 타이틀 영어 약어
         const badge = c.title.length <= 4 ? c.title.toUpperCase()
