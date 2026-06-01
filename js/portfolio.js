@@ -20,6 +20,17 @@ const Portfolio = (() => {
 
 
   /* ============================================================
+   * 학생정보 라벨 결정 — 학생정보 > 학년 기준 > 표시안함
+   * ============================================================ */
+  function _resolveStudentLabel(studentKey) {
+    if (studentKey && studentKey.trim()) return studentKey.trim();
+    const g = Calc.state?.grade || 0;
+    if (g >= 1 && g <= 3) return `고${g} 기준`;
+    return '';
+  }
+
+
+  /* ============================================================
    * 1. 선택 항목 수집
    * ============================================================ */
   function _collectItems() {
@@ -215,7 +226,8 @@ const Portfolio = (() => {
    * ============================================================ */
   function _buildDetailPages(selectedPageIds, studentKey) {
     const config = MK_CONFIG.resolve();
-    const stuInfo = studentKey ? `<div class="dt-stu-info">${studentKey}</div>` : '';
+    const stuLabel = _resolveStudentLabel(studentKey);
+    const stuInfo = stuLabel ? `<div class="dt-stu-info">${stuLabel}</div>` : '';
 
     // HTML → 순수 텍스트 (모든 인라인 태그·스타일 제거)
     function _clean(html) {
@@ -420,8 +432,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-toolbar{position:fixed;top:0;left:0;right:0;height:52px;background:#2B4BAF;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 24px;z-index:999}
 .pf-toolbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.01em}
 .pf-toolbar-btn-print{background:#fff;color:#2B4BAF}
+.pf-toolbar-btn-zoom{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);min-width:36px;padding:6px 10px;font-size:16px}
+.pf-zoom-label{color:#fff;font-size:12px;font-weight:700;min-width:42px;text-align:center}
 .pf-toolbar-btn-detail{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35)}
-@media print{.pf-toolbar{display:none}body{padding-top:0}}
+@media print{.pf-toolbar{display:none}body{padding-top:0}.pf-doc,.dt-page,.ck-page,.it-page{zoom:1 !important}}
 
 /* ── 세부 프로그램 안내 페이지 ── */
 :root{
@@ -492,11 +506,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 </head>
 <body>
 <div class="pf-toolbar">
+  <button class="pf-toolbar-btn pf-toolbar-btn-zoom" onclick="mkZoom(-10)">−</button>
+  <span class="pf-zoom-label" id="mk-zoom-val">100%</span>
+  <button class="pf-toolbar-btn pf-toolbar-btn-zoom" onclick="mkZoom(10)">+</button>
   <button class="pf-toolbar-btn pf-toolbar-btn-detail" onclick="openDetails()">📄 세부 프로그램 안내서</button>
   <button class="pf-toolbar-btn pf-toolbar-btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
 </div>
 ${body}
 <script>
+var mkZoomLevel = 100;
+function mkZoom(d){
+  mkZoomLevel = Math.max(70, Math.min(180, mkZoomLevel + d));
+  document.querySelectorAll('.pf-doc').forEach(function(el){
+    el.style.zoom = mkZoomLevel + '%';
+  });
+  var v = document.getElementById('mk-zoom-val');
+  if (v) v.textContent = mkZoomLevel + '%';
+}
 function openDetails(){
   ${detailsScript}
 }
@@ -535,7 +561,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-toolbar{position:fixed;top:0;left:0;right:0;height:52px;background:#2A3340;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 24px;z-index:999}
 .pf-toolbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .pf-toolbar-btn-print{background:#fff;color:#2A3340}
-@media print{.pf-toolbar{display:none}body{padding-top:0}}
+.pf-toolbar-btn-zoom{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);min-width:36px;padding:6px 10px;font-size:16px}
+.pf-zoom-label{color:#fff;font-size:12px;font-weight:700;min-width:42px;text-align:center}
+@media print{.pf-toolbar{display:none}body{padding-top:0}.pf-doc,.dt-page,.ck-page,.it-page{zoom:1 !important}}
 .dt-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 32px;border-top:1px solid var(--dt-line-md)}
 .dt-page:first-child{page-break-before:auto}
 .ck-page:first-child{page-break-before:auto}
@@ -648,11 +676,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 </head>
 <body>
 <div class="pf-toolbar">
+  <button class="pf-toolbar-btn pf-toolbar-btn-zoom" onclick="mkZoom(-10)">−</button>
+  <span class="pf-zoom-label" id="mk-zoom-val">100%</span>
+  <button class="pf-toolbar-btn pf-toolbar-btn-zoom" onclick="mkZoom(10)">+</button>
   <button class="pf-toolbar-btn pf-toolbar-btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
 </div>
 ${checklistHtml}
 ${detailHtml}
 ${introHtml}
+<script>
+var mkZoomLevel = 100;
+function mkZoom(d){
+  mkZoomLevel = Math.max(70, Math.min(180, mkZoomLevel + d));
+  document.querySelectorAll('.dt-page, .ck-page, .it-page').forEach(function(el){
+    el.style.zoom = mkZoomLevel + '%';
+  });
+  var v = document.getElementById('mk-zoom-val');
+  if (v) v.textContent = mkZoomLevel + '%';
+}
+</script>
 </body>
 </html>`;
   }
@@ -699,7 +741,8 @@ ${introHtml}
         </div>`;
     }).join('');
 
-    const stuLine = studentKey ? `<div class="dt-stu-info">${studentKey}</div>` : '';
+    const stuLabel = _resolveStudentLabel(studentKey);
+    const stuLine = stuLabel ? `<div class="dt-stu-info">${stuLabel}</div>` : '';
 
     return `
       <div class="ck-page">
