@@ -668,15 +668,23 @@ const UI = (() => {
     }).join('');
   }
 
+  // http(s):// URL을 클릭 가능한 <a> 태그로 자동 변환
+  function _autoLink(html) {
+    return (html || '').replace(
+      /(https?:\/\/[^\s<"']+)/g,
+      '<a href="$1" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>'
+    );
+  }
+
   function _renderConditions(conditions) {
     return conditions.map(c => {
       let body = '';
       if (c.type === 'tags+text') {
         const tags = (c.tags || []).map(t => `<span class="c-tag">${t}</span>`).join('');
-        body = `${tags}<div style="margin-top:10px;">${c.text}</div>`;
+        body = `${tags}<div style="margin-top:10px;">${_autoLink(c.text)}</div>`;
       } else {
-        // type: 'text' — innerHTML 직접 출력 (서식·색상 보존)
-        body = c.text || '';
+        // type: 'text' — innerHTML 직접 출력 (서식·색상 보존) + URL 자동 링크
+        body = _autoLink(c.text || '');
       }
       return `
         <div class="c-box">
