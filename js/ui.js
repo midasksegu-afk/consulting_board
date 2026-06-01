@@ -285,7 +285,7 @@ const UI = (() => {
     if (el('total-roadmap'))    el('total-roadmap').textContent    = fmt(totals.roadmap);
     if (el('total-individual')) el('total-individual').textContent = fmt(totals.individual);
     if (el('total-strategy'))   el('total-strategy').textContent   = fmt(totals.strategy);
-    if (el('total-sum'))        el('total-sum').textContent        = fmt((totals.roadmap||0) + (totals.individual||0) + (totals.strategy||0));
+    if (el('total-sum'))        el('total-sum').textContent        = fmt(totals.grand !== undefined ? totals.grand : (totals.roadmap||0) + (totals.individual||0) + (totals.strategy||0));
   }
 
   function _updateLocalTotal(pageId) {
@@ -1273,14 +1273,19 @@ const UI = (() => {
     const config = cfg();
     const rate = (config.discount || {})[group] || 0;
 
-    // 개별 DC — 모든 항목 할인율이 0이면 동작 안함
+    // 개별가 DC — 체크된 항목 중 할인율 있는 것 없으면 토스트
     if (group === 'individual') {
       const indDisc = (config.discount || {}).individual || {};
-      const hasRate = typeof indDisc === 'object'
-        ? Object.values(indDisc).some(v => v > 0)
-        : indDisc > 0;
-      if (!hasRate) {
-        showToast('개별 DC 할인율이 설정되지 않았습니다', 'warn');
+      const hasCheckedRate = MK_CONFIG.pageOrder.some(pid => {
+        const page = config.pages[pid];
+        if (!page || (page.calcGroup || page.group) !== 'individual' || page.isOverview) return false;
+        const rate  = indDisc[pid] || 0;
+        const hasOv = !!Calc.state.ov[pid];
+        const hasPg = Calc.state.pages[pid] && Calc.state.pages[pid].size > 0;
+        return rate > 0 && (hasOv || hasPg);
+      });
+      if (!hasCheckedRate) {
+        showToast('현재 할인율이 0% 입니다', 'warn');
         return;
       }
     }
@@ -1309,6 +1314,10 @@ const UI = (() => {
     }
 
     const isOn = Calc.toggleDc(group);
+    // 로드맵DC 해제 시 2학기DC 자동 해제
+    if (group === 'roadmap' && !isOn && Calc.isSemesterDcActive()) {
+      Calc.toggleSemesterDc();
+    }
     _updateDcButtons();
     _updateTotalBoxes(Calc.getAllTotalsDc());
 
@@ -1345,17 +1354,41 @@ const UI = (() => {
     }
     if (btn2) {
       const indDisc = disc.individual || {};
-      const hasRate = typeof indDisc === 'object'
-        ? Object.values(indDisc).some(v => v > 0)
-        : indDisc > 0;
-      if (!hasRate) {
-        btn2.style.display = 'none';
-      } else {
-        btn2.style.display = '';
-        const isOn = Calc.isDcActive('individual');
-        btn2.textContent = `개별 DC`;
-        btn2.classList.toggle('pkg-btn-active', isOn);
-      }
+      const config2 = cfg();
+      const checkedRates = [];
+      MK_CONFIG.pageOrder.forEach(pid => {
+        const page = config2.pages[pid];
+        if (!page || (page.calcGroup || page.group) !== 'individual' || page.isOverview) return;
+        const rate  = indDisc[pid] || 0;
+        if (rate <= 0) return;
+        const hasOv = !!Calc.state.ov[pid];
+        const hasPg = Calc.state.pages[pid] && Calc.state.pages[pid].size > 0;
+        if (hasOv || hasPg) checkedRates.push(rate);
+      });
+      btn2.style.display = '';
+      const isOn2      = Calc.isDcActive('individual');
+      const rateValues = [...new Set(checkedRates)];
+      const rateLabel  = rateValues.length === 0 ? '0%'
+        : rateValues.length === 1 ? `${rateValues[0]}%`
+        : `${Math.min(...rateValues)}~${Math.max(...rateValues)}%`;
+      btn2.textContent = `개별가 DC (${rateLabel})`;
+      btn2.classList.toggle('pkg-btn-active', isOn2);
+    }
+
+    // 2학기 DC 버튼 — 항상 표시, 미활성 시 0만원
+    const btnSem = document.querySelector('.pkg-btn-semester');
+    if (btnSem) {
+      const semOn     = Calc.isSemesterDcActive();
+      const isRoadmap = Calc.isDcActive('roadmap');
+      const isSelect  = Calc.isSelectDcActive();
+      const semDisc   = cfg().discount;
+      const amt = (!isRoadmap && !isSelect) ? 0
+        : isRoadmap ? (semDisc.semesterDcAmt || 0)
+        : (semDisc.semesterDcAmtSingle || 0);
+      btnSem.style.display = '';
+      btnSem.classList.toggle('pkg-btn-active', semOn);
+      const semAmtEl = btnSem.querySelector('.sem-amt');
+      if (semAmtEl) semAmtEl.textContent = `-${amt}만원`;
     }
   }
 
@@ -1391,6 +1424,10 @@ const UI = (() => {
     }
 
     const isOn = Calc.toggleSelectDc();
+    // 선택가DC 해제 시 2학기DC 자동 해제
+    if (!isOn && Calc.isSemesterDcActive()) {
+      Calc.toggleSemesterDc();
+    }
     _updateDcButtons();
     _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
     if (isOn) {
@@ -1400,6 +1437,28 @@ const UI = (() => {
     }
   }
 
+
+  // 2학기 DC 토글
+  function applySemesterDc() {
+    const isRoadmap = Calc.isDcActive('roadmap');
+    const isSelect  = Calc.isSelectDcActive();
+    if (!isRoadmap && !isSelect) {
+      showToast('학년 로드맵 결정 후 사용가능합니다', 'warn');
+      return;
+    }
+    const isOn = Calc.toggleSemesterDc();
+    const disc = MK_CONFIG.resolve().discount;
+    const amt  = isRoadmap
+      ? (disc.semesterDcAmt       || 0)
+      : (disc.semesterDcAmtSingle || 0);
+    _updateDcButtons();
+    _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
+    if (isOn) {
+      showToast(`2학기 DC (-${amt}만원) 적용되었습니다`, 'success');
+    } else {
+      showToast('2학기 DC가 해제되었습니다', 'warn');
+    }
+  }
 
   /* ============================================================
    * 12. 페이지 인라인 편집
@@ -2328,6 +2387,7 @@ const UI = (() => {
     newSession,
     applyPackage,
     applySelectDc,
+    applySemesterDc,
     showToast,
     toggleAdminMode,
     openPageEdit,
