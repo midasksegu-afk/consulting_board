@@ -317,19 +317,25 @@ const Portfolio = (() => {
     const items      = _collectItems();
     const studentKey = document.getElementById('tb-title')?.textContent || '';
     const body       = _buildHTML(items, studentKey);
-    const details    = _buildDetailPages(items.selectedPageIds || []);
+    const detailHtml = _buildDetailPages(items.selectedPageIds || []);
     const config     = MK_CONFIG.resolve();
+
+    // 세부 안내서 새 창 오픈 스크립트 — JSON.stringify로 안전하게 전달
+    const detailsScript = `
+      var w=window.open('','_blank');
+      var h=${JSON.stringify(_detailWindowHTML(detailHtml))};
+      w.document.write(h);w.document.close();`;
 
     const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <title>마이더스K 컨설팅 포트폴리오</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding:0;padding-top:52px}
 @page{margin:12mm 14mm;size:A4}
 :root{--mk-blue:#2B4BAF;--mk-blue-lt:#F0F4FC;--mk-line:#e2e2e2}
 .pf-doc{max-width:680px;margin:0 auto;padding:24px 32px}
@@ -369,8 +375,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-footer-contact{display:flex;align-items:center;gap:16px;margin-top:2px}
 .pf-footer-ci{font-size:11.5px;color:#555}
 .pf-footer-badge{padding:7px 13px;border:1.5px solid var(--mk-blue);border-radius:8px;font-size:10.5px;color:var(--mk-blue);text-align:center;line-height:1.7;font-weight:600;white-space:nowrap}
-.print-btn{position:fixed;bottom:24px;right:24px;padding:12px 24px;background:var(--mk-blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-@media print{.print-btn{display:none}}
+.pf-toolbar{position:fixed;top:0;left:0;right:0;height:52px;background:#2B4BAF;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 24px;z-index:999}
+.pf-toolbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.01em}
+.pf-toolbar-btn-print{background:#fff;color:#2B4BAF}
+.pf-toolbar-btn-detail{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35)}
+@media print{.pf-toolbar{display:none}body{padding-top:0}}
 
 /* ── 세부 프로그램 안내 페이지 ── */
 :root{
@@ -383,23 +392,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 }
 .dt-page{page-break-before:always;font-family:'Noto Sans KR',sans-serif}
 .dt-header{background:var(--dt-deep);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
-.dt-brand{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.45)}
+.dt-brand{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.45)}
 .dt-doc-title{font-size:14px;font-weight:800;color:#fff;margin-top:2px}
-.dt-badge-outline{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.22);border-radius:3px;padding:4px 10px}
+.dt-badge-outline{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.22);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
-.dt-banner-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
+.dt-banner-num{font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
 .dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
-.dt-banner-label{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.24em;color:var(--dt-acc);margin-bottom:3px}
+.dt-banner-label{font-family:'Noto Sans KR',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.24em;color:var(--dt-acc);margin-bottom:3px}
 .dt-banner-title{font-size:17px;font-weight:800;color:var(--dt-ink);letter-spacing:-.015em}
 .dt-banner-sub{font-size:11px;color:var(--dt-ink3);margin-top:2px}
 .dt-sec-label{display:flex;align-items:center;gap:8px;padding:14px 28px 10px}
-.dt-sec-num{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:3px 8px;border-radius:3px}
-.dt-sec-text{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--dt-ink2)}
+.dt-sec-num{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:3px 8px;border-radius:3px}
+.dt-sec-text{font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--dt-ink2)}
 .dt-sec-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
 .dt-prog-area{padding:0 28px 6px}
 .dt-p-item{background:var(--dt-card);border:1px solid var(--dt-line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
 .dt-p-header{display:inline-flex;align-items:stretch;margin:12px 16px 8px;border:1px solid var(--dt-line);border-radius:6px;overflow:hidden;background:var(--dt-tint)}
-.dt-p-num{display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;color:#fff;background:var(--dt-deep);padding:0 11px;letter-spacing:.06em;white-space:nowrap}
+.dt-p-num{display:inline-flex;align-items:center;font-family:'Noto Sans KR',sans-serif;font-size:9.5px;font-weight:700;color:#fff;background:var(--dt-deep);padding:0 11px;letter-spacing:.06em;white-space:nowrap}
 .dt-p-title{display:inline-flex;align-items:center;font-size:12.5px;font-weight:800;color:var(--dt-deep);padding:7px 13px 7px 11px;letter-spacing:-.005em}
 .dt-p-items{list-style:none;padding:0 16px 13px}
 .dt-p-items li{font-size:12px;color:var(--dt-ink2);line-height:1.7;padding-left:13px;position:relative;margin-bottom:3px}
@@ -407,7 +416,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-cond-area{padding:0 28px 6px}
 .dt-c-box{background:var(--dt-warm);border:1px solid var(--dt-line-soft);border-radius:8px;overflow:hidden;margin-bottom:8px}
 .dt-c-title{display:flex;align-items:center;background:var(--dt-deep);padding:9px 14px;font-size:12px;font-weight:700;color:#fff}
-.dt-c-badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.35)}
+.dt-c-badge{margin-left:auto;font-family:'Noto Sans KR',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.35)}
 .dt-c-txt{padding:12px 14px;font-size:11.5px;color:var(--dt-ink2);line-height:1.8}
 .dt-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .dt-tag{background:var(--dt-tint);color:var(--dt-deep);border:1px solid var(--dt-line);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
@@ -428,14 +437,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
 .dt-footer{background:var(--dt-deep);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
 .dt-footer-brand{font-size:11.5px;font-weight:700;color:#fff}
-.dt-footer-contact{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
-.dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+.dt-footer-contact{font-family:'Noto Sans KR',sans-serif;font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
+.dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;font-family:'Noto Sans KR',sans-serif;letter-spacing:.04em}
 </style>
 </head>
 <body>
+<div class="pf-toolbar">
+  <button class="pf-toolbar-btn pf-toolbar-btn-detail" onclick="openDetails()">📄 세부 프로그램 안내서</button>
+  <button class="pf-toolbar-btn pf-toolbar-btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+</div>
 ${body}
-${details}
-<button class="print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+<script>
+function openDetails(){
+  ${detailsScript}
+}
+</script>
 </body>
 </html>`;
 
@@ -443,6 +459,95 @@ ${details}
     win.document.write(html);
     win.document.close();
   }
+
+  /* ============================================================
+   * 5. 세부 안내서 전용 새 창 HTML 래퍼
+   * ============================================================ */
+  function _detailWindowHTML(detailHtml) {
+    return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>마이더스K 세부 프로그램 안내서</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding-top:52px}
+@page{margin:12mm 14mm;size:A4}
+:root{
+  --dt-deep:#2A3340;--dt-acc:#455367;--dt-tint:#F2F4F8;
+  --dt-line:rgba(69,83,103,.22);--dt-ink:#15151A;--dt-ink2:#43434A;--dt-ink3:#86868B;
+  --dt-card:#fff;--dt-warm:#FBFAF7;
+  --dt-line-soft:rgba(21,21,26,.08);--dt-line-md:rgba(21,21,26,.14);
+  --dt-red-bg:#FBEAEF;--dt-red-br:rgba(139,28,58,.15);--dt-red-tx:#8b1c3a;
+  --dt-amber-bg:#FEF9EC;--dt-amber-br:rgba(180,120,0,.18);--dt-amber-tx:#7a5000;
+}
+.pf-toolbar{position:fixed;top:0;left:0;right:0;height:52px;background:#2A3340;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 24px;z-index:999}
+.pf-toolbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.pf-toolbar-btn-print{background:#fff;color:#2A3340}
+@media print{.pf-toolbar{display:none}body{padding-top:0}}
+.dt-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 32px}
+.dt-page:first-child{page-break-before:auto}
+.dt-header{background:var(--dt-deep);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.dt-brand{font-size:9px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.45)}
+.dt-doc-title{font-size:14px;font-weight:800;color:#fff;margin-top:2px}
+.dt-badge-outline{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.22);border-radius:3px;padding:4px 10px}
+.dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
+.dt-banner-num{font-size:26px;font-weight:800;color:var(--dt-deep);line-height:1;flex-shrink:0}
+.dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
+.dt-banner-label{font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dt-acc);margin-bottom:3px}
+.dt-banner-title{font-size:17px;font-weight:800;color:var(--dt-ink);letter-spacing:-.015em}
+.dt-banner-sub{font-size:11px;color:var(--dt-ink3);margin-top:2px}
+.dt-sec-label{display:flex;align-items:center;gap:8px;padding:14px 28px 10px}
+.dt-sec-num{font-size:9px;font-weight:800;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:3px 9px;border-radius:3px}
+.dt-sec-text{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--dt-ink2)}
+.dt-sec-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
+.dt-prog-area{padding:0 28px 6px}
+.dt-p-item{background:var(--dt-card);border:1px solid var(--dt-line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.dt-p-header{display:inline-flex;align-items:stretch;margin:12px 16px 8px;border:1px solid var(--dt-line);border-radius:6px;overflow:hidden;background:var(--dt-tint)}
+.dt-p-num{display:inline-flex;align-items:center;font-size:10px;font-weight:800;color:#fff;background:var(--dt-deep);padding:0 11px;letter-spacing:.06em;white-space:nowrap}
+.dt-p-title{display:inline-flex;align-items:center;font-size:12.5px;font-weight:800;color:var(--dt-deep);padding:7px 13px 7px 11px}
+.dt-p-items{list-style:none;padding:0 16px 13px}
+.dt-p-items li{font-size:12px;color:var(--dt-ink2);line-height:1.7;padding-left:13px;position:relative;margin-bottom:3px}
+.dt-p-items li::before{content:'';position:absolute;left:2px;top:9px;width:3px;height:3px;border-radius:50%;background:var(--dt-acc);opacity:.7}
+.dt-cond-area{padding:0 28px 6px}
+.dt-c-box{background:var(--dt-warm);border:1px solid var(--dt-line-soft);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.dt-c-title{display:flex;align-items:center;background:var(--dt-deep);padding:9px 14px;font-size:12px;font-weight:700;color:#fff}
+.dt-c-badge{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.16em;color:rgba(255,255,255,.35)}
+.dt-c-txt{padding:12px 14px;font-size:11.5px;color:var(--dt-ink2);line-height:1.8}
+.dt-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.dt-tag{background:var(--dt-tint);color:var(--dt-deep);border:1px solid var(--dt-line);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
+.dt-c-line{position:relative;padding-left:12px;margin-bottom:3px}
+.dt-c-line::before{content:'';position:absolute;left:1px;top:8px;width:3px;height:3px;border-radius:50%;background:var(--dt-acc);opacity:.6}
+.dt-notes-area{padding:0 28px 18px}
+.dt-note{border-radius:7px;padding:10px 13px;margin-bottom:7px;display:flex;gap:9px;align-items:flex-start;border:1px solid transparent}
+.dt-note-blue{background:var(--dt-tint);border-color:var(--dt-line)}
+.dt-note-red{background:var(--dt-red-bg);border-color:var(--dt-red-br)}
+.dt-note-amber{background:var(--dt-amber-bg);border-color:var(--dt-amber-br)}
+.dt-note-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.dt-note-blue .dt-note-dot{background:var(--dt-acc)}
+.dt-note-red .dt-note-dot{background:var(--dt-red-tx)}
+.dt-note-amber .dt-note-dot{background:var(--dt-amber-tx)}
+.dt-note-text{font-size:11px;line-height:1.7}
+.dt-note-blue .dt-note-text{color:var(--dt-deep)}
+.dt-note-red .dt-note-text{color:var(--dt-red-tx)}
+.dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
+.dt-footer{background:var(--dt-deep);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
+.dt-footer-brand{font-size:11.5px;font-weight:700;color:#fff}
+.dt-footer-contact{font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
+.dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="pf-toolbar">
+  <button class="pf-toolbar-btn pf-toolbar-btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+</div>
+${detailHtml}
+</body>
+</html>`;
+  }
+
 
   function print() {
     // 새 창 방식으로 전환 — 하위 호환
