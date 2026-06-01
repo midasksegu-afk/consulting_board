@@ -278,7 +278,7 @@ html, body {
 .grade-divider { width:1px; height:36px; background:var(--border); margin:0 4px; }
 
 /* 패키지 DC */
-.pkg-btns { display:flex; flex-direction:column; gap:3px; }
+.pkg-btns { display:flex; flex-direction:row; align-items:stretch; gap:6px; }
 .pkg-btn {
   display:inline-flex; align-items:center; justify-content:center;
   gap:4px; padding:0 10px; height:26px; border-radius:6px;
