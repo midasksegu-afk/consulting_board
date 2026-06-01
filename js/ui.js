@@ -150,6 +150,7 @@ const UI = (() => {
     // 학년 버튼 disabled 상태 갱신 — go()의 grade-btn 처리 트리거
     go(_currentPageId);
     if (prev !== 0 && newGrade !== prev) {
+      _updateDcButtons();
       showToast('학년이 변경되어 선택이 초기화되었습니다', 'warn');
     }
   }
