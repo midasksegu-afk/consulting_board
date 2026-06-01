@@ -1374,14 +1374,16 @@ const UI = (() => {
       btn2.classList.toggle('pkg-btn-active', isOn2);
     }
 
-    // 2학기 DC 버튼 — 항상 표시
+    // 2학기 DC 버튼 — 항상 표시, 미활성 시 0만원
     const btnSem = document.querySelector('.pkg-btn-semester');
     if (btnSem) {
       const semOn     = Calc.isSemesterDcActive();
       const isRoadmap = Calc.isDcActive('roadmap');
+      const isSelect  = Calc.isSelectDcActive();
       const semDisc   = cfg().discount;
-      const amt = isRoadmap
-        ? (semDisc.semesterDcAmt       || 0)
+      // 로드맵DC/선택가DC 둘 다 꺼진 상태면 0 표시
+      const amt = (!isRoadmap && !isSelect) ? 0
+        : isRoadmap ? (semDisc.semesterDcAmt || 0)
         : (semDisc.semesterDcAmtSingle || 0);
       btnSem.style.display = '';
       btnSem.classList.toggle('pkg-btn-active', semOn);
