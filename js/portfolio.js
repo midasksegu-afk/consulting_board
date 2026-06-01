@@ -62,6 +62,19 @@ const Portfolio = (() => {
       }
     });
 
+    // 선택된 pageId 목록 (순서 유지, 중복 제거)
+    const selectedPageIds = [];
+    MK_CONFIG.pageOrder.forEach(pageId => {
+      const page = config.pages[pageId];
+      if (!page || page.isOverview) return;
+      const hasOv  = !!state.ov[pageId];
+      const hasSel = state.pages[pageId] && state.pages[pageId].size > 0;
+      if ((hasOv || hasSel) && !selectedPageIds.includes(pageId)) {
+        selectedPageIds.push(pageId);
+      }
+    });
+    result.selectedPageIds = selectedPageIds;
+
     return result;
   }
 
@@ -198,12 +211,113 @@ const Portfolio = (() => {
 
 
   /* ============================================================
-   * 3. 새 창으로 열기 + 인쇄
+   * 3. 세부 프로그램 안내 페이지 생성
+   * ============================================================ */
+  function _buildDetailPages(selectedPageIds) {
+    const config = MK_CONFIG.resolve();
+
+    return selectedPageIds.map(pageId => {
+      const page = config.pages[pageId];
+      if (!page) return '';
+
+      // 섹션 라벨 (A. / B. 등) — sbLabel 앞 글자
+      const secLetter = (page.sbLabel || '').substring(0, 2);
+      const secGroup  = page.group === 'roadmap' ? '학년 관리 로드맵'
+                      : page.group === 'individual' ? '개별 관리 컨설팅'
+                      : '대입 전략 컨설팅';
+
+      // 01 프로그램 구성
+      const programsHtml = (page.programs || []).map((p, i) => {
+        const items = (p.items || []).map(t => `<li>${t}</li>`).join('');
+        return `
+          <div class="dt-p-item">
+            <div class="dt-p-header">
+              <span class="dt-p-num">PROGRAM · ${String(i+1).padStart(2,'0')}</span>
+              <span class="dt-p-title">${p.title || ''}</span>
+            </div>
+            <ul class="dt-p-items">${items}</ul>
+          </div>`;
+      }).join('');
+
+      // 02 제공 조건
+      const conditionsHtml = (page.conditions || []).map(c => {
+        let body = '';
+        if (c.type === 'tags+text') {
+          const tags = (c.tags || []).map(t => `<span class="dt-tag">${t}</span>`).join('');
+          const txt  = c.text ? `<div class="dt-c-line">${c.text}</div>` : '';
+          body = `<div class="dt-tag-row">${tags}</div>${txt}`;
+        } else {
+          body = (c.text || '').split(/\n|<br\s*\/?>/i)
+            .filter(l => l.trim())
+            .map(l => `<div class="dt-c-line">${l.trim()}</div>`).join('');
+        }
+        // 우측 뱃지 — 타이틀 영어 약어
+        const badge = c.title.length <= 4 ? c.title.toUpperCase()
+          : c.type === 'tags+text' ? 'SUBJECT' : 'CONDITION';
+        return `
+          <div class="dt-c-box">
+            <div class="dt-c-title">${c.title}<span class="dt-c-badge">${badge}</span></div>
+            <div class="dt-c-txt">${body}</div>
+          </div>`;
+      }).join('');
+
+      // 노트
+      const colorMap = { blue:'dt-note-blue', amber:'dt-note-amber', red:'dt-note-red' };
+      const notesHtml = (page.notes || []).map(n => {
+        const cls = colorMap[n.color] || 'dt-note-blue';
+        return `<div class="dt-note ${cls}"><div class="dt-note-dot"></div><div class="dt-note-text">${n.text}</div></div>`;
+      }).join('');
+
+      return `
+      <div class="dt-page">
+        <div class="dt-header">
+          <div>
+            <div class="dt-brand">마이더스K교육컨설팅</div>
+            <div class="dt-doc-title">세부 프로그램 안내서</div>
+          </div>
+          <span class="dt-badge-outline">TEACHERS CONSULTANT</span>
+        </div>
+
+        <div class="dt-banner">
+          <div class="dt-banner-num">${secLetter}</div>
+          <div class="dt-banner-divider"></div>
+          <div>
+            <div class="dt-banner-label">SECTION ${secLetter.replace('.','').trim()} · ${secGroup}</div>
+            <div class="dt-banner-title">${(page.sbLabel || '').substring(3)}</div>
+            <div class="dt-banner-sub">${page.subtitle || ''}</div>
+          </div>
+        </div>
+
+        ${programsHtml ? `
+        <div class="dt-sec-label"><span class="dt-sec-num">01</span><span class="dt-sec-text">프로그램 구성</span></div>
+        <div class="dt-prog-area">${programsHtml}</div>` : ''}
+
+        ${conditionsHtml ? `
+        <div class="dt-sec-label"><span class="dt-sec-num">02</span><span class="dt-sec-text">제공 조건 및 세부 내용</span></div>
+        <div class="dt-cond-area">${conditionsHtml}</div>` : ''}
+
+        ${notesHtml ? `<div class="dt-notes-area">${notesHtml}</div>` : ''}
+
+        <div class="dt-footer">
+          <div>
+            <div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div>
+            <div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div>
+          </div>
+          <div class="dt-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+
+  /* ============================================================
+   * 4. 새 창으로 열기 + 인쇄
    * ============================================================ */
   function open() {
     const items      = _collectItems();
     const studentKey = document.getElementById('tb-title')?.textContent || '';
     const body       = _buildHTML(items, studentKey);
+    const details    = _buildDetailPages(items.selectedPageIds || []);
     const config     = MK_CONFIG.resolve();
 
     const html = `<!DOCTYPE html>
@@ -211,8 +325,7 @@ const Portfolio = (() => {
 <head>
 <meta charset="UTF-8">
 <title>마이더스K 컨설팅 포트폴리오</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -258,10 +371,70 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .pf-footer-badge{padding:7px 13px;border:1.5px solid var(--mk-blue);border-radius:8px;font-size:10.5px;color:var(--mk-blue);text-align:center;line-height:1.7;font-weight:600;white-space:nowrap}
 .print-btn{position:fixed;bottom:24px;right:24px;padding:12px 24px;background:var(--mk-blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 @media print{.print-btn{display:none}}
+
+/* ── 세부 프로그램 안내 페이지 ── */
+:root{
+  --dt-deep:#2A3340;--dt-acc:#455367;--dt-tint:#F2F4F8;
+  --dt-line:rgba(69,83,103,.22);--dt-ink:#15151A;--dt-ink2:#43434A;--dt-ink3:#86868B;
+  --dt-card:#fff;--dt-warm:#FBFAF7;
+  --dt-line-soft:rgba(21,21,26,.08);--dt-line-md:rgba(21,21,26,.14);
+  --dt-red-bg:#FBEAEF;--dt-red-br:rgba(139,28,58,.15);--dt-red-tx:#8b1c3a;
+  --dt-amber-bg:#FEF9EC;--dt-amber-br:rgba(180,120,0,.18);--dt-amber-tx:#7a5000;
+}
+.dt-page{page-break-before:always;font-family:'Noto Sans KR',sans-serif}
+.dt-header{background:var(--dt-deep);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.dt-brand{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.45)}
+.dt-doc-title{font-size:14px;font-weight:800;color:#fff;margin-top:2px}
+.dt-badge-outline{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.22);border-radius:3px;padding:4px 10px}
+.dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
+.dt-banner-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
+.dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
+.dt-banner-label{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.24em;color:var(--dt-acc);margin-bottom:3px}
+.dt-banner-title{font-size:17px;font-weight:800;color:var(--dt-ink);letter-spacing:-.015em}
+.dt-banner-sub{font-size:11px;color:var(--dt-ink3);margin-top:2px}
+.dt-sec-label{display:flex;align-items:center;gap:8px;padding:14px 28px 10px}
+.dt-sec-num{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:3px 8px;border-radius:3px}
+.dt-sec-text{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--dt-ink2)}
+.dt-sec-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
+.dt-prog-area{padding:0 28px 6px}
+.dt-p-item{background:var(--dt-card);border:1px solid var(--dt-line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.dt-p-header{display:inline-flex;align-items:stretch;margin:12px 16px 8px;border:1px solid var(--dt-line);border-radius:6px;overflow:hidden;background:var(--dt-tint)}
+.dt-p-num{display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;color:#fff;background:var(--dt-deep);padding:0 11px;letter-spacing:.06em;white-space:nowrap}
+.dt-p-title{display:inline-flex;align-items:center;font-size:12.5px;font-weight:800;color:var(--dt-deep);padding:7px 13px 7px 11px;letter-spacing:-.005em}
+.dt-p-items{list-style:none;padding:0 16px 13px}
+.dt-p-items li{font-size:12px;color:var(--dt-ink2);line-height:1.7;padding-left:13px;position:relative;margin-bottom:3px}
+.dt-p-items li::before{content:'';position:absolute;left:2px;top:9px;width:3px;height:3px;border-radius:50%;background:var(--dt-acc);opacity:.7}
+.dt-cond-area{padding:0 28px 6px}
+.dt-c-box{background:var(--dt-warm);border:1px solid var(--dt-line-soft);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.dt-c-title{display:flex;align-items:center;background:var(--dt-deep);padding:9px 14px;font-size:12px;font-weight:700;color:#fff}
+.dt-c-badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.35)}
+.dt-c-txt{padding:12px 14px;font-size:11.5px;color:var(--dt-ink2);line-height:1.8}
+.dt-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.dt-tag{background:var(--dt-tint);color:var(--dt-deep);border:1px solid var(--dt-line);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
+.dt-c-line{position:relative;padding-left:12px;margin-bottom:3px}
+.dt-c-line::before{content:'';position:absolute;left:1px;top:8px;width:3px;height:3px;border-radius:50%;background:var(--dt-acc);opacity:.6}
+.dt-notes-area{padding:0 28px 18px}
+.dt-note{border-radius:7px;padding:10px 13px;margin-bottom:7px;display:flex;gap:9px;align-items:flex-start;border:1px solid transparent}
+.dt-note-blue{background:var(--dt-tint);border-color:var(--dt-line)}
+.dt-note-red{background:var(--dt-red-bg);border-color:var(--dt-red-br)}
+.dt-note-amber{background:var(--dt-amber-bg);border-color:var(--dt-amber-br)}
+.dt-note-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.dt-note-blue .dt-note-dot{background:var(--dt-acc)}
+.dt-note-red .dt-note-dot{background:var(--dt-red-tx)}
+.dt-note-amber .dt-note-dot{background:var(--dt-amber-tx)}
+.dt-note-text{font-size:11px;line-height:1.7}
+.dt-note-blue .dt-note-text{color:var(--dt-deep)}
+.dt-note-red .dt-note-text{color:var(--dt-red-tx)}
+.dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
+.dt-footer{background:var(--dt-deep);padding:12px 28px;display:flex;justify-content:space-between;align-items:center}
+.dt-footer-brand{font-size:11.5px;font-weight:700;color:#fff}
+.dt-footer-contact{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.45);margin-top:2px}
+.dt-footer-badge{padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:4px;font-size:9px;color:rgba(255,255,255,.65);text-align:center;line-height:1.75;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
 </style>
 </head>
 <body>
 ${body}
+${details}
 <button class="print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
 </body>
 </html>`;
