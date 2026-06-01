@@ -306,20 +306,6 @@ const Admin = (() => {
 
       ${(_draft.discount?.semesterAmt && pageId in (_draft.discount?.semesterAmt || {})) ? _buildSemesterRows(pageId) : ''}
 
-      ${page.group === 'individual' ? `
-      <div class="admin-section-title" style="margin-top:20px;">개별가 DC 할인율</div>
-      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">이 항목에 적용할 할인율. 0%이면 개별가 DC 버튼에서 제외됩니다.</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <input class="admin-input" style="width:70px;text-align:right;"
-          type="number" min="0" max="100"
-          value="${(_draft.discount?.individual || {})[pageId] ?? 0}"
-          oninput="Admin.updateIndividualDiscount('${pageId}', this.value)">
-        <span style="font-size:13px;color:var(--text-2);">%</span>
-      </div>
-      <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('individual')">
-        <i class="ti ti-device-floppy"></i> DC 할인율 저장
-      </button>` : ''}
-
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
         <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveProgram('${pageId}')">
           <i class="ti ti-device-floppy"></i> 저장
@@ -1122,6 +1108,10 @@ const Admin = (() => {
       <div class="ct-side-item ${_discountSection === 'selectDc' ? 'ct-side-active' : ''}"
         onclick="Admin.loadDiscountSection('selectDc')">
         <i class="ti ti-adjustments" style="font-size:14px;"></i> 선택가 DC
+      </div>
+      <div class="ct-side-item ${_discountSection === 'semesterDc' ? 'ct-side-active' : ''}"
+        onclick="Admin.loadDiscountSection('semesterDc')">
+        <i class="ti ti-calendar-minus" style="font-size:14px;"></i> 2학기 DC
       </div>`;
 
     el.innerHTML = `
@@ -1235,7 +1225,50 @@ const Admin = (() => {
       </div>`;
     return;
   }
+
+  if (section === 'semesterDc') {
+    const amt       = disc.semesterDcAmt       ?? 100;
+    const amtSingle = disc.semesterDcAmtSingle ?? 50;
+    el.innerHTML = `
+      <div class="admin-editor-title">
+        <i class="ti ti-calendar-minus"></i> 2학기 DC 차감 금액
+      </div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:16px;">
+        로드맵DC/선택가DC 적용 후 추가 차감할 금액입니다. (만원 단위)
+      </div>
+      <div class="admin-field-group">
+        <label class="admin-field-label">로드맵DC 적용 시 (2개 선택)</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0"
+            value="${amt}"
+            oninput="Admin.updateSemesterDcAmt('semesterDcAmt', this.value)">
+          <span style="font-size:13px;color:var(--text-2);">만원</span>
+        </div>
+      </div>
+      <div class="admin-field-group" style="margin-top:12px;">
+        <label class="admin-field-label">선택가DC 적용 시 (1개 선택)</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0"
+            value="${amtSingle}"
+            oninput="Admin.updateSemesterDcAmt('semesterDcAmtSingle', this.value)">
+          <span style="font-size:13px;color:var(--text-2);">만원</span>
+        </div>
+      </div>
+      <div style="margin-top:20px;">
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('semesterDc')">
+          <i class="ti ti-device-floppy"></i> 저장
+        </button>
+      </div>`;
+    return;
+  }
 }
+
+  function updateSemesterDcAmt(key, value) {
+    if (!_draft.discount) _draft.discount = {};
+    _draft.discount[key] = parseInt(value) || 0;
+  }
 
   function updateIndividualDiscount(pageId, value) {
     if (!_draft.discount) _draft.discount = {};
@@ -1300,7 +1333,7 @@ const Admin = (() => {
   }
 
   function saveDiscountSection(section) {
-    const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액' };
+    const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액', semesterDc: '2학기 DC 차감 금액' };
     if (!confirm(`${labelMap[section] || section} 설정을 저장하시겠습니까?`)) return;
     Store.saveConfig(_draft);
     showMsg(`✓ ${labelMap[section] || section} 설정이 저장되었습니다.`, true);
@@ -1392,6 +1425,7 @@ const Admin = (() => {
     renderDiscountTab, loadDiscountSection,
     updateIndividualDiscount, saveDiscountSection,
     updateSelectDcField, updateSemesterAmt, updateSemesterField,
+    updateSemesterDcAmt,
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)

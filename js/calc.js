@@ -30,7 +30,7 @@ const Calc = (() => {
     ov:          {},  // 연간관리형 카드 선택 { 'rm-a': { amt:2300000 }, ... }
     pages:       {},  // 상세 페이지 체크 { 'rm-a': Set([0,1,...]), 'rm-d': Set([0,1]) }
     pageVisited: {},  // 첫 진입 여부 { 'rm-d': true }
-    dc:          { roadmap: false, individual: false, select: false }, // DC 토글 상태
+    dc:          { roadmap: false, individual: false, select: false, semester: false }, // DC 토글 상태
   };
 
 
@@ -394,7 +394,7 @@ const Calc = (() => {
     state.ov          = {};
     state.pages       = {};
     state.pageVisited = {};
-    state.dc          = { roadmap: false, individual: false, select: false };
+    state.dc          = { roadmap: false, individual: false, select: false, semester: false };
     Store.clearSession();
     _notifyChange();
   }
@@ -519,11 +519,12 @@ const Calc = (() => {
     const roadmap    = getDcTotal('roadmap');
     const individual = getDcTotal('individual');
     const strategy   = getGroupTotal('strategy');
+    const semAmt     = (state.dc.semester && state.dc.roadmap)
+      ? ((cfg().discount.semesterDcAmt || 0) * 10000) : 0;
     return {
-      roadmap,
-      individual,
-      strategy,
-      grand: roadmap + individual + strategy,
+      roadmap, individual, strategy,
+      semDisc: semAmt,
+      grand: Math.max(0, roadmap + individual + strategy - semAmt),
     };
   }
 
@@ -583,13 +584,24 @@ const Calc = (() => {
     const roadmap    = getSelectDcTotal();
     const individual = getDcTotal('individual');
     const strategy   = getGroupTotal('strategy');
+    const semAmt     = state.dc.semester
+      ? ((cfg().discount.semesterDcAmtSingle || 0) * 10000) : 0;
     return {
-      roadmap,
-      individual,
-      strategy,
-      grand: roadmap + individual + strategy,
+      roadmap, individual, strategy,
+      semDisc: semAmt,
+      grand: Math.max(0, roadmap + individual + strategy - semAmt),
     };
   }
+
+  /* ============================================================
+   * 2학기 DC
+   * ============================================================ */
+  function toggleSemesterDc() {
+    state.dc.semester = !state.dc.semester;
+    _notifyChange();
+    return state.dc.semester;
+  }
+  function isSemesterDcActive() { return !!state.dc.semester; }
 
   /* ============================================================
    * Public API
@@ -613,6 +625,8 @@ const Calc = (() => {
     toggleDc, isDcActive, getDcTotal, getAllTotalsDc,
     // 선택가 DC
     toggleSelectDc, isSelectDcActive, getSelectDcTotal, getAllTotalsDcWithSelect,
+    // 2학기 DC
+    toggleSemesterDc, isSemesterDcActive,
     // 변경 구독
     onChange,
     // state 직접 참조 (읽기 전용)

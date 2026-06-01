@@ -28,7 +28,9 @@ const MK_CONFIG = {
    * ============================================================ */
   discount: {
     roadmap:    10,  // 로드맵 DC 할인율 (%) — 항상 표시
-    selectDc:   0,   // 선택가 DC 할인율 (%) — 로드맵 1개만 선택 시 적용
+    selectDc:          0,   // 선택가 DC 할인율 (%) — 로드맵 1개만 선택 시 적용
+    semesterDcAmt:      100, // 2학기 DC 차감 금액 (만원) — 로드맵DC(2개) 적용 시
+    semesterDcAmtSingle: 50, // 2학기 DC 차감 금액 (만원) — 선택가DC(1개) 적용 시
     semesterAmt: {   // 2학기 금액 (표시 전용, 합산 제외)
       'rm-a': 0,
       'rm-b': 0,
