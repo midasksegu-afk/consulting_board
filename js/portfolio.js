@@ -216,6 +216,11 @@ const Portfolio = (() => {
   function _buildDetailPages(selectedPageIds) {
     const config = MK_CONFIG.resolve();
 
+    // 인라인 style 속성 전부 제거 — 고정 CSS 규격으로만 출력
+    function _stripAllStyles(html) {
+      return (html || '').replace(/\s*style="[^"]*"/gi, '');
+    }
+
     return selectedPageIds.map(pageId => {
       const page = config.pages[pageId];
       if (!page) return '';
@@ -244,10 +249,10 @@ const Portfolio = (() => {
         let body = '';
         if (c.type === 'tags+text') {
           const tags = (c.tags || []).map(t => `<span class="dt-tag">${t}</span>`).join('');
-          const txt  = c.text ? `<div class="dt-c-line">${c.text}</div>` : '';
+          const txt  = c.text ? `<div class="dt-c-line">${_stripAllStyles(c.text)}</div>` : '';
           body = `<div class="dt-tag-row">${tags}</div>${txt}`;
         } else {
-          body = (c.text || '').split(/\n|<br\s*\/?>/i)
+          body = _stripAllStyles(c.text || '').split(/\n|<br\s*\/?>/i)
             .filter(l => l.trim())
             .map(l => `<div class="dt-c-line">${l.trim()}</div>`).join('');
         }
@@ -322,7 +327,7 @@ const Portfolio = (() => {
 
     // 세부 안내서 새 창 오픈 스크립트 — JSON.stringify로 안전하게 전달
     const detailsScript = `
-      var w=window.open('','_blank');
+      var w=window.open('','mk_detail_window');
       var h=${JSON.stringify(_detailWindowHTML(detailHtml))};
       w.document.write(h);w.document.close();`;
 
@@ -417,7 +422,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-c-box{background:var(--dt-warm);border:1px solid var(--dt-line-soft);border-radius:8px;overflow:hidden;margin-bottom:8px}
 .dt-c-title{display:flex;align-items:center;background:var(--dt-deep);padding:9px 14px;font-size:12px;font-weight:700;color:#fff}
 .dt-c-badge{margin-left:auto;font-family:'Noto Sans KR',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.35)}
-.dt-c-txt{padding:12px 14px;font-size:11.5px;color:var(--dt-ink2);line-height:1.8}
+.dt-c-txt{padding:12px 14px;font-size:12px;color:var(--dt-ink2);line-height:1.8}
 .dt-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .dt-tag{background:var(--dt-tint);color:var(--dt-deep);border:1px solid var(--dt-line);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
 .dt-c-line{position:relative;padding-left:12px;margin-bottom:3px}
@@ -431,7 +436,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-note-blue .dt-note-dot{background:var(--dt-acc)}
 .dt-note-red .dt-note-dot{background:var(--dt-red-tx)}
 .dt-note-amber .dt-note-dot{background:var(--dt-amber-tx)}
-.dt-note-text{font-size:11px;line-height:1.7}
+.dt-note-text{font-size:12px;line-height:1.7}
 .dt-note-blue .dt-note-text{color:var(--dt-deep)}
 .dt-note-red .dt-note-text{color:var(--dt-red-tx)}
 .dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
@@ -515,7 +520,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-c-box{background:var(--dt-warm);border:1px solid var(--dt-line-soft);border-radius:8px;overflow:hidden;margin-bottom:8px}
 .dt-c-title{display:flex;align-items:center;background:var(--dt-deep);padding:9px 14px;font-size:12px;font-weight:700;color:#fff}
 .dt-c-badge{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.16em;color:rgba(255,255,255,.35)}
-.dt-c-txt{padding:12px 14px;font-size:11.5px;color:var(--dt-ink2);line-height:1.8}
+.dt-c-txt{padding:12px 14px;font-size:12px;color:var(--dt-ink2);line-height:1.8}
 .dt-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .dt-tag{background:var(--dt-tint);color:var(--dt-deep);border:1px solid var(--dt-line);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
 .dt-c-line{position:relative;padding-left:12px;margin-bottom:3px}
@@ -529,7 +534,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-note-blue .dt-note-dot{background:var(--dt-acc)}
 .dt-note-red .dt-note-dot{background:var(--dt-red-tx)}
 .dt-note-amber .dt-note-dot{background:var(--dt-amber-tx)}
-.dt-note-text{font-size:11px;line-height:1.7}
+.dt-note-text{font-size:12px;line-height:1.7}
 .dt-note-blue .dt-note-text{color:var(--dt-deep)}
 .dt-note-red .dt-note-text{color:var(--dt-red-tx)}
 .dt-note-amber .dt-note-text{color:var(--dt-amber-tx)}
