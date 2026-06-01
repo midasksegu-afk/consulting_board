@@ -375,9 +375,12 @@ const Portfolio = (() => {
     const config     = MK_CONFIG.resolve();
 
     // 세부 안내서 새 창 오픈 스크립트 — JSON.stringify로 안전하게 전달
+    // </script> 문자열이 외부 script 블록을 조기 종료시키지 않도록 이스케이프
+    const detailJson = JSON.stringify(_detailWindowHTML(detailHtml, checklistHtml, introHtml))
+      .replace(/<\/script>/gi, '<\\/script>');
     const detailsScript = `
       var w=window.open('','mk_detail_window');
-      var h=${JSON.stringify(_detailWindowHTML(detailHtml, checklistHtml, introHtml))};
+      var h=${detailJson};
       w.document.write(h);w.document.close();`;
 
     const html = `<!DOCTYPE html>
