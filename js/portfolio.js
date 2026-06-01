@@ -359,7 +359,7 @@ const Portfolio = (() => {
     const body       = _buildHTML(items, studentKey);
     const detailHtml = _buildDetailPages(items.selectedPageIds || [], studentKey);
     const checklistHtml = _buildChecklistPage(items.selectedPageIds || [], studentKey);
-    const introHtml     = _buildIntroPage();
+    const introHtml     = _buildIntroPage(studentKey);
     const config     = MK_CONFIG.resolve();
 
     // 세부 안내서 새 창 오픈 스크립트 — JSON.stringify로 안전하게 전달
@@ -453,7 +453,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-sec-label{display:flex;align-items:center;gap:8px;padding:14px 28px 10px}
 .dt-sec-num{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:3px 8px;border-radius:3px}
 .dt-sec-text{font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--dt-ink2)}
-.dt-sec-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
+.dt-sec-label::after{content:'';flex:1;height:2px;background:var(--dt-deep)}
 .dt-prog-area{padding:0 28px 6px}
 .dt-p-item{background:var(--dt-card);border:1px solid var(--dt-line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
 .dt-p-header{display:inline-flex;align-items:stretch;margin:12px 16px 8px;border:1px solid var(--dt-line);border-radius:6px;overflow:hidden;background:var(--dt-tint)}
@@ -558,7 +558,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-sec-label{display:flex;align-items:center;gap:8px;padding:14px 28px 10px}
 .dt-sec-num{font-size:9px;font-weight:800;letter-spacing:.14em;color:#fff;background:var(--dt-deep);padding:3px 9px;border-radius:3px}
 .dt-sec-text{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--dt-ink2)}
-.dt-sec-label::after{content:'';flex:1;height:1px;background:var(--dt-line-md)}
+.dt-sec-label::after{content:'';flex:1;height:2px;background:var(--dt-deep)}
 .dt-prog-area{padding:0 28px 6px}
 .dt-p-item{background:var(--dt-card);border:1px solid var(--dt-line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
 .dt-p-header{display:inline-flex;align-items:stretch;margin:12px 16px 8px;border:1px solid var(--dt-line);border-radius:6px;overflow:hidden;background:var(--dt-tint)}
@@ -618,12 +618,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
 /* ── 회사 소개 페이지 ── */
 .it-page{page-break-before:always;max-width:680px;margin:0 auto;padding:0 0 0}
-.it-impact{background:var(--dt-deep);padding:20px 28px 18px;border-bottom:3px solid var(--dt-acc)}
-.it-tag{font-size:8px;font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.35);margin-bottom:8px}
-.it-copy{font-size:12px;font-weight:500;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:14px}
-.it-quote{border-left:3px solid var(--dt-acc);padding:10px 16px;background:rgba(255,255,255,.06);border-radius:0 5px 5px 0}
-.it-quote-pre{font-size:8.5px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.3);margin-bottom:4px}
-.it-quote-text{font-size:14px;font-weight:800;color:#fff;line-height:1.4;letter-spacing:-.01em}
+.it-impact{background:var(--dt-tint);border:1px solid var(--dt-line);border-radius:10px;margin:14px 28px 0;padding:16px 20px}
+.it-tag{font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--dt-acc);margin-bottom:6px}
+.it-copy{font-size:12px;font-weight:500;color:var(--dt-ink2);line-height:1.7;margin-bottom:12px}
+.it-quote{border-left:3px solid var(--dt-deep);padding:10px 16px;background:#fff;border-radius:0 6px 6px 0}
+.it-quote-pre{font-size:8.5px;font-weight:400;letter-spacing:.18em;color:var(--dt-ink3);margin-bottom:5px}
+.it-quote-text{font-size:13.5px;font-weight:800;color:var(--dt-deep);line-height:1.5;letter-spacing:-.01em}
+.it-quote-text em{font-style:normal;font-weight:400;color:var(--dt-acc)}
+.it-greeting{padding:10px 28px 6px;font-size:13px;font-weight:500;color:var(--dt-ink2);line-height:1.6}
+.it-greeting-name{font-weight:800;color:var(--dt-deep)}
 .it-body{padding:14px 28px 0}
 .it-desc{font-size:12px;color:var(--dt-ink2);line-height:1.85;padding:12px 14px;background:var(--dt-tint);border-radius:7px;border-left:3px solid var(--dt-acc)}
 .it-divider{margin:12px 28px;height:1px;background:var(--dt-line-md)}
@@ -700,13 +703,19 @@ ${introHtml}
     return `
       <div class="ck-page">
         <div class="dt-header">
-          <div><div class="dt-brand">마이더스K교육컨설팅</div><div class="dt-doc-title">로드맵 프로그램 선택 현황</div></div>
-          <span class="dt-badge-outline">티처스 컨설턴트</span>
+          <div class="dt-header-left">
+            <div class="dt-brand">마이더스K교육컨설팅</div>
+            <div class="dt-doc-title">로드맵 프로그램 선택 현황</div>
+          </div>
+          <div class="dt-header-center">${stuLine}</div>
+          <div class="dt-header-right">
+            <span class="dt-badge-outline">티처스 컨설턴트</span>
+          </div>
         </div>
+        <div class="dt-header-line"></div>
         <div class="ck-slogan">복잡한 입시, 이젠 <strong>"아무것도 모르고 오셔도 괜찮습니다."</strong> 지금부터 최선의 로드맵 전략을 기획하고 실행합니다.</div>
         <div class="ck-head">
           <div class="ck-title">프로그램 선택 현황</div>
-          ${stuLine}
         </div>
         ${groupsHtml}
         <div class="dt-footer" style="margin-top:auto">
@@ -719,7 +728,12 @@ ${introHtml}
   /* ============================================================
    * 7. 회사 소개 페이지
    * ============================================================ */
-  function _buildIntroPage() {
+  function _buildIntroPage(studentKey) {
+    const stuName  = (studentKey || '').split(' · ')[0]?.trim() || '';
+    const stuGreet = stuName
+      ? `<div class="it-greeting"><span class="it-greeting-name">${stuName}</span> 학생, 학부모에게 마이더스K를 소개합니다.</div>`
+      : '';
+
     const awards = [
       '한국학원총연합회 · 학원 발전 기여부문 표창장',
       '한국학원총연합회 · 건전한 학원기풍 조성 표창장',
@@ -739,15 +753,23 @@ ${introHtml}
     return `
       <div class="it-page">
         <div class="dt-header">
-          <div><div class="dt-brand">마이더스K교육컨설팅</div><div class="dt-doc-title">회사 소개</div></div>
-          <span class="dt-badge-outline">티처스 컨설턴트</span>
+          <div class="dt-header-left">
+            <div class="dt-brand">마이더스K교육컨설팅</div>
+            <div class="dt-doc-title">회사 소개</div>
+          </div>
+          <div class="dt-header-center"></div>
+          <div class="dt-header-right">
+            <span class="dt-badge-outline">티처스 컨설턴트</span>
+          </div>
         </div>
+        <div class="dt-header-line"></div>
+        ${stuGreet}
         <div class="it-impact">
           <div class="it-tag">MIDAS-K EDUCATION CONSULTING</div>
-          <div class="it-copy">수행평가 주제 선정부터 동아리, 진로 활동 방향, 학생부 세특, 자기평가서 제출 관리까지.</div>
+          <div class="it-copy">수행평가 주제 선정부터 동아리, 진로 활동, 학생부 세특 제출 관리까지.</div>
           <div class="it-quote">
             <div class="it-quote-pre">CONSULTING PHILOSOPHY</div>
-            <div class="it-quote-text">복잡한 입시, 아무것도 모르고 오셔도 괜찮습니다. '최선의 대입 전략'은 이미 시작되었습니다.</div>
+            <div class="it-quote-text">복잡한 입시, 아무것도 모르고 오셔도 괜찮습니다. <em>'최선의 대입 전략'</em>은 이미 시작되었습니다.</div>
           </div>
         </div>
         <div class="it-body">
