@@ -126,7 +126,7 @@ html, body {
   opacity: 0;
 }
 .sb-item {
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; gap:10px; justify-content:space-between;
   padding:4px 22px; cursor:pointer;
   border-left:3px solid transparent;
   color:rgba(255,255,255,0.6); font-size:14px; font-weight:400;
@@ -139,8 +139,8 @@ html, body {
 }
 .sb-item i { font-size:17px; flex-shrink:0; }
 .sb-drag-handle {
-  font-size:14px !important; color:rgba(255,255,255,0.25);
-  cursor:grab; margin-left:auto; flex-shrink:0;
+  font-size:13px !important; color:rgba(255,255,255,0.25);
+  cursor:grab; flex-shrink:0;
 }
 .sb-drag-handle:active { cursor:grabbing; }
 
