@@ -797,8 +797,7 @@ mkApplyZoom();
       '세특구원자 PRO AI 컨설팅 알고리즘 연구 개발',
       '세특구원자 특허 출원 (제40-2023-0535289호)',
       '유웨이 · 진학사 대입컨설턴트 출신',
-      '채널A \'성적을 부탁해 티처스\' 대구 의대편 컨설턴트',
-    ];
+     ];
     const awardsHtml = awards.map(a => {
       const [bold, rest] = a.includes(' · ') ? [a.split(' · ')[0], ' · ' + a.split(' · ').slice(1).join(' · ')] : ['', a];
       return `<div class="it-award"><div class="it-dot"></div><div class="it-atext">${bold ? `<strong>${bold}</strong>${rest}` : a}</div></div>`;
@@ -809,7 +808,7 @@ mkApplyZoom();
         <div class="dt-header">
           <div class="dt-header-left">
             <div class="dt-brand">마이더스K교육컨설팅</div>
-            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모에게<br>마이더스K교육컨설팅을 소개합니다.` : '회사 소개'}</div>
+            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모에게<br>마이더스K교육컨설팅을<br>소개합니다.` : '회사 소개'}</div>
           </div>
           <div class="dt-header-center"></div>
           <div class="dt-header-right">
@@ -836,7 +835,7 @@ mkApplyZoom();
         <div class="it-partner">
           <span class="it-partner-label">PARTNER</span>
           <div class="it-partner-div"></div>
-          <div class="it-partner-text">유웨이 · 진학사 대입컨설턴트 출신 &nbsp;|&nbsp; 김영일 교육컨설팅 업무 제휴</div>
+          <div class="it-partner-text">유웨이 · 진학사 대입컨설턴트 출신 &nbsp;|&nbsp; 채널A \'성적을 부탁해 티처스\' 대구 의대편 컨설턴트</div>
         </div>
         <div class="dt-footer">
           <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
