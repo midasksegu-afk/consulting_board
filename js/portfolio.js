@@ -809,7 +809,7 @@ mkApplyZoom();
             <div class="dt-brand">마이더스K교육컨설팅</div>
             <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모님<br>마이더스K교육컨설팅을 소개합니다.` : '회사 소개'}</div>
           </div>
-          <div class="dt-header-center" style="flex:2"></div>
+          <div class="dt-header-center" style="display:none"></div>
           <div class="dt-header-right">
             <span class="dt-badge-outline">티처스 컨설턴트</span>
           </div>
