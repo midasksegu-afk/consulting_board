@@ -2137,7 +2137,7 @@ const UI = (() => {
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
           onclick="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
           onkeyup="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
-          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
+          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerHTML"
         >${(c.text || '').replace(/\n/g,'<br>')}</div>
       </div>`;
     }).join('');
