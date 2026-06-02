@@ -1039,7 +1039,9 @@ const UI = (() => {
 
     const gradeNum = gradeVal === 'mid' ? 0 : parseInt(gradeVal) || 0;
     const isUpdate = !!_currentStudentKey;
-    const newKey   = Store.buildStudentKey(name, school, goal);
+    const newKey   = isUpdate
+      ? `${name}_${school}_${goal}`
+      : Store.buildStudentKey(name, school, goal);
     const snap     = Calc.toSnapshot();
     const meta     = { name, school, goal, grade: gradeNum };
 
