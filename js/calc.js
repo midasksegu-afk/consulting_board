@@ -379,6 +379,7 @@ const Calc = (() => {
         roadmap:    !!snapshot.dc.roadmap,
         individual: !!snapshot.dc.individual,
         select:     !!snapshot.dc.select,
+        semester:   !!snapshot.dc.semester,
       };
     }
 
