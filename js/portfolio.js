@@ -661,7 +661,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .it-quote{border-left:3px solid var(--dt-deep);padding:10px 16px;background:#fff;border-radius:0 6px 6px 0}
 .it-quote-pre{font-size:8.5px;font-weight:400;letter-spacing:.18em;color:var(--dt-ink3);margin-bottom:5px}
 .it-quote-text{font-size:13.5px;font-weight:800;color:var(--dt-deep);line-height:1.5;letter-spacing:-.01em}
-.it-quote-text em{font-style:normal;font-weight:400;color:var(--dt-acc)}
+.it-quote-text em{font-style:normal;font-weight:800;color:#1a6e3c}
 .it-greeting{padding:10px 28px 6px;font-size:13px;font-weight:500;color:var(--dt-ink2);line-height:1.6}
 .it-greeting-name{font-weight:800;color:var(--dt-deep)}
 .it-body{padding:14px 28px 0}
@@ -809,7 +809,7 @@ mkApplyZoom();
             <div class="dt-brand">마이더스K교육컨설팅</div>
             <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모님<br>마이더스K교육컨설팅을 소개합니다.` : '회사 소개'}</div>
           </div>
-          <div class="dt-header-center"></div>
+          <div class="dt-header-center" style="flex:2"></div>
           <div class="dt-header-right">
             <span class="dt-badge-outline">티처스 컨설턴트</span>
           </div>
