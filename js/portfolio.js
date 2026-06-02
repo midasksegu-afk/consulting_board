@@ -517,15 +517,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 </div>
 ${body}
 <script>
-var mkZoomLevel = 100;
-function mkZoom(d){
-  mkZoomLevel = Math.max(70, Math.min(180, mkZoomLevel + d));
+var mkZoomLevel = Number(localStorage.getItem('mk_zoom')) || 100;
+function mkApplyZoom(){
   document.querySelectorAll('.pf-doc').forEach(function(el){
     el.style.zoom = mkZoomLevel + '%';
   });
   var v = document.getElementById('mk-zoom-val');
   if (v) v.textContent = mkZoomLevel + '%';
 }
+function mkZoom(d){
+  mkZoomLevel = Math.max(70, Math.min(180, mkZoomLevel + d));
+  try { localStorage.setItem('mk_zoom', mkZoomLevel); } catch(e){}
+  mkApplyZoom();
+}
+mkApplyZoom();
 function openDetails(){
   ${detailsScript}
 }
@@ -688,15 +693,20 @@ ${checklistHtml}
 ${detailHtml}
 ${introHtml}
 <script>
-var mkZoomLevel = 100;
-function mkZoom(d){
-  mkZoomLevel = Math.max(70, Math.min(180, mkZoomLevel + d));
+var mkZoomLevel = Number(localStorage.getItem('mk_zoom')) || 100;
+function mkApplyZoom(){
   document.querySelectorAll('.dt-page, .ck-page, .it-page').forEach(function(el){
     el.style.zoom = mkZoomLevel + '%';
   });
   var v = document.getElementById('mk-zoom-val');
   if (v) v.textContent = mkZoomLevel + '%';
 }
+function mkZoom(d){
+  mkZoomLevel = Math.max(70, Math.min(180, mkZoomLevel + d));
+  try { localStorage.setItem('mk_zoom', mkZoomLevel); } catch(e){}
+  mkApplyZoom();
+}
+mkApplyZoom();
 </script>
 </body>
 </html>`;
@@ -782,12 +792,12 @@ function mkZoom(d){
       '한국학원총연합회 · 학원 발전 기여부문 표창장',
       '한국학원총연합회 · 건전한 학원기풍 조성 표창장',
       '대구광역시 교육감 · 평생교육 진흥부문 표창장 (제60808호)',
-      '채널A \'성적을 부탁해 티처스\' 대구 의대편 출연',
+      '김영일 교육컨설팅 업무 제휴',
       '세특구원자 · 네이버 우수콘텐츠 선정',
       '세특구원자 PRO AI 컨설팅 알고리즘 연구 개발',
       '세특구원자 특허 출원 (제40-2023-0535289호)',
       '유웨이 · 진학사 대입컨설턴트 출신',
-      '김영일 교육컨설팅 업무 제휴',
+      '채널A \'성적을 부탁해 티처스\' 대구 의대편 컨설턴트',
     ];
     const awardsHtml = awards.map(a => {
       const [bold, rest] = a.includes(' · ') ? [a.split(' · ')[0], ' · ' + a.split(' · ').slice(1).join(' · ')] : ['', a];
@@ -799,7 +809,7 @@ function mkZoom(d){
         <div class="dt-header">
           <div class="dt-header-left">
             <div class="dt-brand">마이더스K교육컨설팅</div>
-            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모에게 마이더스K를 소개합니다.` : '회사 소개'}</div>
+            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모에게<br>마이더스K교육컨설팅을 소개합니다.` : '회사 소개'}</div>
           </div>
           <div class="dt-header-center"></div>
           <div class="dt-header-right">
