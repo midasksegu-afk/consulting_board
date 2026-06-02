@@ -134,11 +134,9 @@ const Store = (() => {
    *  loadConfig           : localStorage 캐시 반환 (동기 — 기존 호출부 무변경)
    *  syncConfigFromServer : Supabase → localStorage 동기화 (초기화 시 1회 호출)
    * ============================================================ */
-  function saveConfig(data) {
+  function saveConfig(data, onSaved) {
     _write(KEYS.CONFIG, data);
-    // 로컬 저장 시각 즉시 기록 — BroadcastChannel 수신 전 CONFIG_SAVED_AT 보장
-    localStorage.setItem(KEYS.CONFIG_SAVED_AT, new Date().toISOString());
-    // Supabase 백그라운드 저장 — 완료 후 postMessage 전송 (수신 탭 최신값 보장)
+    // Supabase 백그라운드 저장 — 완료 후 CONFIG_SAVED_AT 기록 + 콜백 실행
     fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
       method: 'GET',
       headers: _headers({ 'Accept': 'application/json' }),
@@ -156,13 +154,19 @@ const Store = (() => {
         body: JSON.stringify({ key: 'settings', data, updated_at: savedAt }),
       }).then(res => {
         if (res.ok) {
-          // Supabase 완료 후 시각 갱신 + 다른 탭 알림
+          // Supabase 완료 후에만 시각 기록 (타이밍 버그 수정)
           localStorage.setItem(KEYS.CONFIG_SAVED_AT, savedAt);
           _configChannel?.postMessage({ type: 'config_updated' });
+          if (typeof onSaved === 'function') onSaved(true);
+        } else {
+          if (typeof onSaved === 'function') onSaved(false);
         }
       });
     })
-    .catch(e => console.warn('[Store] saveConfig → Supabase 실패:', e));
+    .catch(e => {
+      console.warn('[Store] saveConfig → Supabase 실패:', e);
+      if (typeof onSaved === 'function') onSaved(false);
+    });
     return true;
   }
 

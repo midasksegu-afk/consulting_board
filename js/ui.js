@@ -499,6 +499,8 @@ const UI = (() => {
 
       if (page.isOverview) {
         html += _renderOverviewPage(config);
+      } else if (page.isNavigator) {
+        html += Navigator.renderPage(pageId, page);
       } else {
         html += _renderDetailPage(pageId, page);
       }
@@ -2377,13 +2379,15 @@ const UI = (() => {
   function _savePageEdit(pageId) {
     if (!confirm('수정사항을 반영하시겠습니까?')) return;
     _editDraft = window.mkEditDraft;
-    Store.saveConfig(_editDraft);
+    showToast('저장 중...', 'success');
+    Store.saveConfig(_editDraft, (ok) => {
+      showToast(ok ? '✓ DB에 저장되었습니다' : '저장 실패 — 네트워크 확인', ok ? 'success' : 'error');
+    });
     document.getElementById('page-edit-modal')?.remove();
     setTimeout(() => {
       renderPages();
       go(pageId);
     }, 0);
-    showToast('✓ 수정사항이 반영되었습니다', 'success');
   }
 
   /* ============================================================
@@ -2462,6 +2466,7 @@ const UI = (() => {
     _saveNoticeEdit,
     _deleteNotice,
     getCurrentPageId: () => _currentPageId,
+    getCurrentStudentKey: () => _currentStudentKey,
     _richCmd,
     _syncSizeBtn, _syncColorBtn, _syncOvIconBtns,
     _insertText,
