@@ -391,11 +391,20 @@ const UI = (() => {
         </div>
         <div class="${itemsCls}" data-group-items="${gk}">`;
 
+      const adminMode = _isAdminMode();
       grouped[gk].forEach(pageId => {
         const page = pages[pageId];
+        const dragAttrs = adminMode
+          ? `draggable="true"
+             ondragstart="UI._sbDragStart(event,'${pageId}')"
+             ondragover="UI._sbDragOver(event,'${pageId}')"
+             ondrop="UI._sbDragDrop(event,'${pageId}')"
+             ondragend="UI._sbDragEnd()"` : '';
+        const handle = adminMode
+          ? `<i class="ti ti-grip-vertical sb-drag-handle"></i>` : '';
         html += `
-          <div class="sb-item" id="nav-${pageId}" onclick="UI.go('${pageId}')">
-            <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}
+          <div class="sb-item" id="nav-${pageId}" onclick="UI.go('${pageId}')" ${dragAttrs}>
+            <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}${handle}
           </div>`;
       });
 
@@ -403,6 +412,58 @@ const UI = (() => {
     });
 
     nav.innerHTML = html;
+  }
+
+  // 사이드바 드래그 — 같은 그룹 내 순서 변경 (관리자 모드 전용)
+  let _sbDragSrcId = null;
+
+  function _sbDragStart(e, id) {
+    _sbDragSrcId = id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.4';
+  }
+
+  function _sbDragOver(e, id) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.sb-item').forEach(el => el.style.outline = '');
+    if (_sbDragSrcId && _sbDragSrcId !== id) {
+      e.currentTarget.style.outline = '2px solid var(--accent)';
+    }
+  }
+
+  function _sbDragDrop(e, targetId) {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(el => el.style.outline = '');
+    if (!_sbDragSrcId || _sbDragSrcId === targetId) return;
+
+    const config = cfg();
+    const order  = MK_CONFIG.pageOrder;
+    const srcIdx = order.indexOf(_sbDragSrcId);
+    const tgtIdx = order.indexOf(targetId);
+    if (srcIdx < 0 || tgtIdx < 0) return;
+
+    // 같은 그룹 내에서만 이동
+    if (config.pages[_sbDragSrcId]?.group !== config.pages[targetId]?.group) return;
+
+    order.splice(srcIdx, 1);
+    order.splice(tgtIdx, 0, _sbDragSrcId);
+
+    // pageOrder 저장
+    const saved = Store.loadConfig() || {};
+    saved._pageOrder = [...order];
+    Store.saveConfig(saved);
+
+    renderSidebar();
+    go(_currentPageId);
+  }
+
+  function _sbDragEnd() {
+    _sbDragSrcId = null;
+    document.querySelectorAll('.sb-item').forEach(el => {
+      el.style.opacity = '';
+      el.style.outline = '';
+    });
   }
 
   function toggleSbGroup(gk) {
@@ -668,23 +729,15 @@ const UI = (() => {
     }).join('');
   }
 
-  // http(s):// URL을 클릭 가능한 <a> 태그로 자동 변환
-  function _autoLink(html) {
-    return (html || '').replace(
-      /(https?:\/\/[^\s<"']+)/g,
-      '<a href="$1" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>'
-    );
-  }
-
   function _renderConditions(conditions) {
     return conditions.map(c => {
       let body = '';
       if (c.type === 'tags+text') {
         const tags = (c.tags || []).map(t => `<span class="c-tag">${t}</span>`).join('');
-        body = `${tags}<div style="margin-top:10px;">${_autoLink(c.text)}</div>`;
+        body = `${tags}<div style="margin-top:10px;">${c.text}</div>`;
       } else {
-        // type: 'text' — innerHTML 직접 출력 (서식·색상 보존) + URL 자동 링크
-        body = _autoLink(c.text || '');
+        // type: 'text' — 줄바꿈을 •로 표시
+        body = c.text.split('\n').map(line => `• ${line}`).join('<br>');
       }
       return `
         <div class="c-box">
@@ -2130,15 +2183,6 @@ const UI = (() => {
   function _buildCondRows(pageId) {
     return (window.mkEditDraft.pages[pageId].conditions || []).map((c, idx) => {
       const tid = `cond-text-${pageId}-${idx}`;
-      const isTagsType = c.type === 'tags+text';
-      const tagsRow = isTagsType ? `
-        <div style="margin-bottom:6px;">
-          <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;font-weight:600;">태그 (콤마로 구분)</div>
-          <input class="admin-input" style="width:100%;"
-            value="${(c.tags || []).join(', ')}"
-            oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].tags=this.value.split(',').map(s=>s.trim()).filter(Boolean)"
-            placeholder="국어, 수학, 영어 ...">
-        </div>` : '';
       return `
       <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;">
         <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
@@ -2148,15 +2192,14 @@ const UI = (() => {
           <button type="button" class="btn btn-sm" style="color:var(--red-tx);flex-shrink:0;"
             onclick="UI._removeCond('${pageId}',${idx})"><i class="ti ti-trash"></i></button>
         </div>
-        ${tagsRow}
         ${_richToolbar(tid)}
         <div id="${tid}" class="admin-input rich-editor"
           contenteditable="true"
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:50px;padding:8px;"
           onclick="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
           onkeyup="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
-          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerHTML"
-        >${c.text || ''}</div>
+          oninput="window.mkEditDraft.pages['${pageId}'].conditions[${idx}].text=this.innerText"
+        >${(c.text || '').replace(/\n/g,'<br>')}</div>
       </div>`;
     }).join('');
   }
@@ -2427,6 +2470,7 @@ const UI = (() => {
     _addProgram, _removeProgram,
     _addCond, _removeCond,
     _addNote, _removeNote,
+    _sbDragStart, _sbDragOver, _sbDragDrop, _sbDragEnd,
   };
 
 })();
