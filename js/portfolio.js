@@ -676,10 +676,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .it-dot{width:4px;height:4px;border-radius:50%;background:var(--dt-acc);flex-shrink:0;margin-top:6px}
 .it-atext{font-size:11.5px;color:var(--dt-ink2);line-height:1.5}
 .it-atext strong{font-weight:700;color:var(--dt-ink)}
-.it-partner{margin:10px 28px 12px;padding:10px 14px;background:var(--dt-deep);border-radius:7px;display:flex;align-items:center;gap:10px}
-.it-partner-label{font-size:8px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.35);flex-shrink:0}
-.it-partner-div{width:1px;height:18px;background:rgba(255,255,255,.15);flex-shrink:0}
-.it-partner-text{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.82);line-height:1.5}
+.it-EXPERT{margin:10px 28px 12px;padding:10px 14px;background:var(--dt-deep);border-radius:7px;display:flex;align-items:center;gap:10px}
+.it-EXPERT-label{font-size:8px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.35);flex-shrink:0}
+.it-EXPERT-div{width:1px;height:18px;background:rgba(255,255,255,.15);flex-shrink:0}
+.it-EXPERT-text{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.82);line-height:1.5}
 </style>
 </head>
 <body>
@@ -807,7 +807,7 @@ mkApplyZoom();
         <div class="dt-header">
           <div class="dt-header-left">
             <div class="dt-brand">마이더스K교육컨설팅</div>
-            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모님께<br>마이더스K교육컨설팅을<br>소개합니다.` : '회사 소개'}</div>
+            <div class="dt-doc-title">${stuName ? `<span class="it-greeting-name">${stuName}</span> 학생, 학부모님<br>마이더스K교육컨설팅을<br>소개합니다.` : '회사 소개'}</div>
           </div>
           <div class="dt-header-center"></div>
           <div class="dt-header-right">
@@ -831,10 +831,10 @@ mkApplyZoom();
           <div class="it-sec-label"><span class="it-sec-num">수상</span><span class="it-sec-text">주요 수상 및 이력</span></div>
           ${awardsHtml}
         </div>
-        <div class="it-partner">
-          <span class="it-partner-label">PARTNER</span>
-          <div class="it-partner-div"></div>
-          <div class="it-partner-text">유웨이 · 진학사 대입컨설턴트 출신 &nbsp;|&nbsp; 채널A \'성적을 부탁해 티처스\' 대구 의대편 컨설턴트</div>
+        <div class="it-EXPERT">
+          <span class="it-EXPERT-label">EXPERT</span>
+          <div class="it-EXPERT-div"></div>
+          <div class="it-EXPERT-text">유웨이 · 진학사 대입컨설턴트 출신 &nbsp;|&nbsp; 채널A \'성적을 부탁해 티처스\' 대구 의대편 컨설턴트</div>
         </div>
         <div class="dt-footer">
           <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
