@@ -735,8 +735,8 @@ const UI = (() => {
         const tags = (c.tags || []).map(t => `<span class="c-tag">${t}</span>`).join('');
         body = `${tags}<div style="margin-top:10px;">${c.text}</div>`;
       } else {
-        // type: 'text' — 줄바꿈을 •로 표시
-        body = c.text.split('\n').map(line => `• ${line}`).join('<br>');
+        // type: 'text' — 그대로 출력 (plain text면 \n→<br> 변환)
+        body = c.text.includes('<') ? c.text : c.text.replace(/\n/g, '<br>');
       }
       return `
         <div class="c-box">
