@@ -138,6 +138,11 @@ html, body {
   border-left-color:#B79CFF; font-weight:500;
 }
 .sb-item i { font-size:17px; flex-shrink:0; }
+.sb-drag-handle {
+  font-size:14px !important; color:rgba(255,255,255,0.25);
+  cursor:grab; margin-left:auto; flex-shrink:0;
+}
+.sb-drag-handle:active { cursor:grabbing; }
 
 .sb-foot {
   padding:16px 22px;
