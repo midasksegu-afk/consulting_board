@@ -401,7 +401,7 @@ const UI = (() => {
              ondrop="UI._sbDragDrop(event,'${pageId}')"
              ondragend="UI._sbDragEnd()"` : '';
         const handle = adminMode
-          ? `<i class="ti ti-grip-vertical sb-drag-handle"></i>` : '';
+          ? `<i class="ti ti-menu-2 sb-drag-handle"></i>` : '';
         html += `
           <div class="sb-item" id="nav-${pageId}" onclick="UI.go('${pageId}')" ${dragAttrs}>
             <i class="ti ${page.sbIcon}"></i> ${page.sbLabel}${handle}
