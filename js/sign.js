@@ -288,6 +288,8 @@ const Sign = (() => {
     _bindEvents();
     _switchTab('terms');
     _startPolling();
+    // 보드에서 전달된 파라미터 자동 채움
+    _applyUrlParams();
   }
 
   function _bindEvents() {
@@ -441,30 +443,44 @@ const Sign = (() => {
     if (data.docType === 'terms') {
       el.innerHTML = `
         <div class="sg-form-title">가입 정보 입력</div>
+        <div class="sg-form-note">🔒 자동입력 항목은 컨설팅 보드에서 가져옵니다</div>
         <div class="sg-form-grid">
           <div class="sg-form-row">
-            <label>회원명</label>
-            <input class="sg-input" id="f-name" placeholder="학생 이름">
+            <label>회원명 <span class="sg-auto-badge">자동</span></label>
+            <input class="sg-input sg-input-auto" id="f-name" placeholder="학생 이름" readonly>
           </div>
           <div class="sg-form-row">
-            <label>학교 / 학년 / 계열</label>
-            <input class="sg-input" id="f-school" placeholder="예) ○○고 / 고2 / 이과">
+            <label>학교 / 학년 / 진로목표 <span class="sg-auto-badge">자동</span></label>
+            <input class="sg-input sg-input-auto" id="f-school" placeholder="예) ○○고 / 고2 / 의대" readonly>
           </div>
           <div class="sg-form-row">
-            <label>상품명</label>
-            <input class="sg-input" id="f-product" placeholder="예) 고2 학생부 관리 컨설팅">
+            <label>상품명 <span class="sg-auto-badge">자동</span></label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <select class="sg-input sg-input-auto" id="f-grade" style="width:80px;flex-shrink:0;">
+                <option value="">학년</option>
+                <option value="고1">고1</option>
+                <option value="고2">고2</option>
+                <option value="고3">고3</option>
+              </select>
+              <input class="sg-input sg-input-auto" id="f-product" value="학생부 관리 컨설팅" readonly style="flex:1;">
+            </div>
           </div>
           <div class="sg-form-row">
-            <label>가입기간</label>
-            <input class="sg-input" id="f-period" placeholder="예) 2025.03.01 ~ 2026.02.15">
+            <label>가입금액 <span class="sg-auto-badge">자동</span></label>
+            <input class="sg-input sg-input-auto" id="f-amount" placeholder="보드에서 자동 입력" readonly>
           </div>
           <div class="sg-form-row">
-            <label>가입금액</label>
-            <input class="sg-input" id="f-amount" placeholder="예) 2,300,000원">
+            <label>특약 <span class="sg-auto-badge">자동</span></label>
+            <input class="sg-input sg-input-auto" id="f-special" placeholder="DC 적용 내역 자동 입력" readonly>
+          </div>
+          <div class="sg-form-divider">✏️ 직접 입력</div>
+          <div class="sg-form-row">
+            <label>가입 시작일</label>
+            <input class="sg-input" id="f-start" type="date" oninput="Sign._calcExpiry()">
           </div>
           <div class="sg-form-row">
-            <label>특약</label>
-            <input class="sg-input" id="f-special" placeholder="특약 사항 (없으면 공란)">
+            <label>관리유예기간 <span class="sg-auto-badge">자동계산</span></label>
+            <input class="sg-input sg-input-auto" id="f-expiry" placeholder="시작일 입력 시 자동계산" readonly>
           </div>
           <div class="sg-form-row">
             <label>학생 연락처</label>
@@ -474,14 +490,15 @@ const Sign = (() => {
     } else {
       el.innerHTML = `
         <div class="sg-form-title">서명자 정보</div>
+        <div class="sg-form-note">🔒 자동입력 항목은 컨설팅 보드에서 가져옵니다</div>
         <div class="sg-form-grid">
           <div class="sg-form-row">
-            <label>학생명</label>
-            <input class="sg-input" id="f-name" placeholder="학생 이름">
+            <label>학생명 <span class="sg-auto-badge">자동</span></label>
+            <input class="sg-input sg-input-auto" id="f-name" placeholder="학생 이름" readonly>
           </div>
           <div class="sg-form-row">
             <label>학교 / 학년</label>
-            <input class="sg-input" id="f-school" placeholder="예) ○○고 / 고2">
+            <input class="sg-input sg-input-auto" id="f-school" placeholder="예) ○○고 / 고2" readonly>
           </div>
         </div>`;
     }
@@ -745,11 +762,18 @@ const Sign = (() => {
   function _collectFormData() {
     const get = (id) => document.getElementById(id)?.value?.trim() || '';
     if (_currentTab === 'terms') {
+      // 가입기간 합성: 시작일 ~ 유예기간
+      const start  = get('f-start');
+      const expiry = get('f-expiry');
+      const period = start ? (expiry ? `${start} ~ ${expiry}` : start) : '';
+      // 상품명 합성: 학년 + 고정 텍스트
+      const grade   = get('f-grade');
+      const product = grade ? `${grade} 학생부 관리 컨설팅` : '학생부 관리 컨설팅';
       return {
         name:    get('f-name'),
         school:  get('f-school'),
-        product: get('f-product'),
-        period:  get('f-period'),
+        product,
+        period,
         amount:  get('f-amount'),
         special: get('f-special'),
         contact: get('f-contact'),
@@ -1138,6 +1162,92 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
 
   /* ============================================================
+   * 17-A. URL 파라미터 자동채움
+   *       index.html 서명 버튼이 Calc 값을 URL로 전달
+   * ============================================================ */
+  function _applyUrlParams() {
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('name') && !p.has('grade') && !p.has('grand')) return;
+
+    // 학생 정보
+    const name   = p.get('name')   || '';
+    const school = p.get('school') || '';
+    const goal   = p.get('goal')   || '';
+    const grade  = p.get('grade')  || '';
+
+    // 금액
+    const roadmap  = Number(p.get('roadmap')  || 0);
+    const strategy = Number(p.get('strategy') || 0);
+    const grand    = Number(p.get('grand')    || 0);
+
+    // DC 내역
+    const dcRoadmap   = p.get('dcRoadmap')   || '';
+    const dcSelect    = p.get('dcSelect')    || '';
+    const dcSemester  = p.get('dcSemester')  || '';
+
+    // 금액 포맷 헬퍼
+    const fmtMan = (n) => {
+      if (!n) return '';
+      const man = Math.round(n / 10000);
+      return man.toLocaleString('ko-KR') + '만원';
+    };
+
+    // 가입금액 문자열 조합
+    const parts = [];
+    if (roadmap)  parts.push('로드맵 ' + fmtMan(roadmap));
+    if (strategy) parts.push('대입전략 ' + fmtMan(strategy));
+    const amountStr = grand
+      ? fmtMan(grand) + (parts.length ? ' (' + parts.join(' / ') + ')' : '')
+      : '';
+
+    // 특약 DC 내역 조합
+    const dcParts = [];
+    if (dcRoadmap)  dcParts.push(dcRoadmap);
+    if (dcSelect)   dcParts.push(dcSelect);
+    if (dcSemester) dcParts.push(dcSemester);
+    const specialStr = dcParts.join(' / ');
+
+    // 학교/학년/진로목표 합성
+    const schoolStr = [school, grade ? grade + '학년' : '', goal].filter(Boolean).join(' / ');
+
+    // 폼 채움 — 렌더 후 DOM에 값 삽입
+    setTimeout(() => {
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val) el.value = val;
+      };
+      setVal('f-name',    name);
+      setVal('f-school',  schoolStr);
+      setVal('f-amount',  amountStr);
+      setVal('f-special', specialStr);
+
+      // 학년 드롭다운 선택
+      const gradeEl = document.getElementById('f-grade');
+      if (gradeEl && grade) {
+        const opt = gradeEl.querySelector(`option[value="고${grade}"]`);
+        if (opt) opt.selected = true;
+      }
+    }, 50);
+  }
+
+
+  /* ============================================================
+   * 17-B. 가입 시작일 → 관리유예기간 자동계산
+   *       유예기간 = 가입 시작연도 + 1년 2월 15일
+   * ============================================================ */
+  function _calcExpiry() {
+    const startEl  = document.getElementById('f-start');
+    const expiryEl = document.getElementById('f-expiry');
+    if (!startEl || !expiryEl) return;
+    const val = startEl.value;
+    if (!val) { expiryEl.value = ''; return; }
+    const startYear = new Date(val).getFullYear();
+    const expiryYear = startYear + 1;
+    expiryEl.value = `${expiryYear}.02.15`;
+  }
+
+
+  /* ============================================================
    * Public API
    * ============================================================ */
   return {
@@ -1150,6 +1260,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     // 태블릿 내부 호출용
     _clearCanvas:       clearSignature,
     _submitFromTablet:  submitSignatureFromTablet,
+    // 가입기간 유예기간 자동계산 (HTML oninput에서 호출)
+    _calcExpiry,
   };
 
 })();
