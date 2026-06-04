@@ -301,13 +301,6 @@ const Sign = (() => {
       html += `<div class="sg-intro">${data.intro}</div>`;
     }
 
-    // 현재 선택된 학년 파악 (드롭다운)
-    const _currentGrade = (() => {
-      const el = document.getElementById('f-grade');
-      if (!el || !el.value) return 0;
-      return parseInt(el.value.replace(/[^0-9]/g, '')) || 0;
-    })();
-
     // 섹션 렌더
     data.sections.forEach(sec => {
       html += `<div class="sg-section">`;
@@ -321,10 +314,10 @@ const Sign = (() => {
       html += `<div class="sg-section-title">${sec.title}</div>`;
 
       if (sec.type === 'consulting-items') {
-        // config에서 prices 읽어서 학년별 동적 생성
-        const gradeNum = _currentGrade;
+        // 초기 렌더: gradeNum=0 (학년 미선택 상태)
+        // 학년 선택 시 _onGradeChange()가 실시간 갱신
         html += `<div class="sg-table-wrap" id="sg-consulting-table">` +
-          _buildConsultingTable(gradeNum) + `</div>`;
+          _buildConsultingTable(0) + `</div>`;
         html += `</div>`;
         return;
       }
@@ -876,10 +869,9 @@ const Sign = (() => {
       bodyHtml += `<div class="sg-pr-section-title">${sec.title}</div>`;
 
       if (sec.type === 'consulting-items') {
-        // 출력물도 동적 생성 — 선택된 학년 기준
-        const form      = _collectFormData();
-        const gradeStr  = form.product || '';
-        const gradeNum  = parseInt(gradeStr.replace(/[^0-9]/g, '')) || 0;
+        // 출력물 — 드롭다운 선택값 직접 참조 (가장 정확)
+        const gradeEl  = document.getElementById('f-grade');
+        const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
         bodyHtml += _buildConsultingTable(gradeNum);
         bodyHtml += `</div>`;
         return;
@@ -1328,13 +1320,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
       // 해당 학년 필터 — grade 없는 항목(학년 무관)도 포함
       const matched = prices.filter(p => {
-        if (!p.grade) return true; // 학년 무관 항목은 항상 포함
+        if (!p.grade) return true;
         const grades = String(p.grade).split(',').map(g => Number(g.trim()));
         return grades.includes(gradeNum);
       });
       if (!matched.length) return '-';
-      // 학년 라벨 없이 금액만 표시
-      return matched.map(p => fmtAmt(p.amt)).join('<br>');
+
+      // note 없는 대표 항목 우선 — note 있는 항목(학기별 단독)은 비고 표시
+      const main = matched.filter(p => !p.note);
+      const sub  = matched.filter(p =>  p.note);
+
+      const mainStr = main.length
+        ? main.map(p => fmtAmt(p.amt)).join('<br>')
+        : matched.map(p => fmtAmt(p.amt)).join('<br>');
+
+      const subStr = sub.length
+        ? sub.map(p => `<span style="font-size:10px;color:#86868B;">${p.note}: ${fmtAmt(p.amt)}</span>`).join('<br>')
+        : '';
+
+      return subStr ? `${mainStr}<br>${subStr}` : mainStr;
     };
 
     // ── rm-c 특수 처리 (학년 무관 고정 금액)
