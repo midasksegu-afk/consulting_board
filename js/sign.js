@@ -33,6 +33,39 @@ const Sign = (() => {
    *    아이패드 홈화면 바로가기 방식. 인터넷만 되면 어디서든 동작.
    * ============================================================ */
   const _sessionId = 'mk_active_session';
+  const CONFIG_TABLE = 'app_config';
+
+  // 런타임에 Supabase에서 로드된 pages 데이터
+  // { 'rm-a': { prices: [...] }, 'rm-b': ... }
+  let _remotePages = null;
+
+  /* ============================================================
+   * 2-A. Supabase app_config 로드
+   *      페이지 열릴 때 1회 호출 — prices 데이터 캐시
+   * ============================================================ */
+  async function _loadRemoteConfig() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings&select=data&limit=1`,
+        { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (rows && rows.length > 0 && rows[0].data && rows[0].data.pages) {
+        _remotePages = rows[0].data.pages;
+      }
+    } catch (e) {
+      console.warn('[Sign] config 로드 실패 — 기본값 사용:', e);
+    }
+  }
+
+  // pageId의 prices 반환 — remote 우선, 없으면 null
+  function _getPrices(pageId) {
+    if (_remotePages && _remotePages[pageId] && _remotePages[pageId].prices) {
+      return _remotePages[pageId].prices;
+    }
+    return null;
+  }
 
 
   /* ============================================================
@@ -49,89 +82,8 @@ const Sign = (() => {
       sections: [
         {
           title: '❒ 컨설팅 항목',
-          type:  'table',
-          content: `
-<table class="sg-table">
-  <thead>
-    <tr><th>구분</th><th>프로그램 구성</th><th>제공횟수</th><th>금액</th></tr>
-  </thead>
-  <tbody>
-    <tr class="sg-group-row"><td colspan="4">학년관리 로드맵</td></tr>
-    <tr>
-      <td rowspan="2"><strong>A. 세특 관리</strong></td>
-      <td>
-        <strong>1. 세특 강화 솔루션</strong><br>
-        ❶ 각종 활동 결과물을 학교 제출용 자기평가서 혹은 세특으로 기재 요약<br>
-        ❷ 단순 요약이 아닌 비인지적 역량, 교과회귀, 고찰점 강화하여 재구성<br>
-        국/수/영/사/과 교과, 자율/동아리/진로/행특 / BEST 실적 영역별 최대 2~3건
-      </td>
-      <td>연관리</td>
-      <td>고1 2,300,000<br>고2 2,500,000</td>
-    </tr>
-    <tr>
-      <td>
-        <strong>2. 심화 확장 스토리 구축</strong><br>
-        ❶ N차 심화 탐구 연결 (기재관리 시 선별)<br>
-        ❷ 이전 활동을 심화 확장하는 수행 및 창체 활동 주제 + 보고서 설계도 제공<br>
-        ❸ 학생부 분석 및 심화 확장 주제 추천
-      </td>
-      <td>상시제공 (학생부 분석 연1회)</td>
-      <td>1학기 고3 2,200,000</td>
-    </tr>
-    <tr>
-      <td rowspan="3"><strong>B. 수행 관리</strong></td>
-      <td>
-        <strong>1. 수행 조건 분석</strong><br>
-        ❶ 수행 과제의 조건, 제출 형식, 활용 자료를 먼저 파악<br>
-        ❷ 학생이 놓치기 쉬운 핵심 기준 정리<br>
-        ❸ 수행 조건에 따라 A / B / A+B 혼합형 제공<br>
-        국/수/영/사/과 교과, 기타 진로 연관 교과 / 영역별 최대 2건
-      </td>
-      <td>연관리</td>
-      <td>고1 2,200,000<br>고2 2,400,000</td>
-    </tr>
-    <tr>
-      <td><strong>2. [옵션 A] 방향성 코칭</strong><br>❶ 탐구 주제 선정, 자료 활용 방향, 보고서 전개 방식 등 학생 맞춤 수행 방향 제시</td>
-      <td>-</td>
-      <td>1학기 고3 2,100,000</td>
-    </tr>
-    <tr>
-      <td><strong>3. [옵션 B] 보고서 설계도 / 초안 제시</strong><br>❶ 탐구 주제, 보고서 흐름, 실제 작성 가능 초안 틀 제공</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td><strong>C. 주제 추천</strong></td>
-      <td>
-        세특구원자 플랫폼 활용 — 24시간 키워드 검색, 탐구 주제 직접 선정<br>
-        로드맵 컨설팅 회원 구독 할인 적용 (6개월 40% / 연 50%)
-      </td>
-      <td>상시제공</td>
-      <td>세특구원자 플랫폼 결제 방식</td>
-    </tr>
-    <tr class="sg-group-row"><td colspan="4">대입전략 컨설팅</td></tr>
-    <tr>
-      <td colspan="2">고3 수시 원서전략 컨설팅</td>
-      <td>1회</td>
-      <td>450,000</td>
-    </tr>
-    <tr>
-      <td colspan="2">고3 정시 원서전략 컨설팅 (가채점 포함)</td>
-      <td>1회</td>
-      <td>350,000</td>
-    </tr>
-    <tr>
-      <td colspan="2">고3 면접 컨설팅 — 일반학과</td>
-      <td>1회</td>
-      <td>350,000</td>
-    </tr>
-    <tr>
-      <td colspan="2">고3 면접 컨설팅 — 의치한약수·SKY</td>
-      <td>1회</td>
-      <td>400,000</td>
-    </tr>
-  </tbody>
-</table>`,
+          type:  'consulting-items',
+          // 하드코딩 제거 — _buildConsultingTable(gradeNum) 동적 생성
         },
         {
           title: '❒ 가입 유의사항',
@@ -283,7 +235,9 @@ const Sign = (() => {
   /* ============================================================
    * 5. 초기화
    * ============================================================ */
-  function init() {
+  async function init() {
+    // Supabase config 먼저 로드 (prices 데이터)
+    await _loadRemoteConfig();
     _renderTabs();
     _bindEvents();
     _switchTab('terms');
@@ -347,6 +301,13 @@ const Sign = (() => {
       html += `<div class="sg-intro">${data.intro}</div>`;
     }
 
+    // 현재 선택된 학년 파악 (드롭다운)
+    const _currentGrade = (() => {
+      const el = document.getElementById('f-grade');
+      if (!el || !el.value) return 0;
+      return parseInt(el.value.replace(/[^0-9]/g, '')) || 0;
+    })();
+
     // 섹션 렌더
     data.sections.forEach(sec => {
       html += `<div class="sg-section">`;
@@ -358,6 +319,15 @@ const Sign = (() => {
       }
 
       html += `<div class="sg-section-title">${sec.title}</div>`;
+
+      if (sec.type === 'consulting-items') {
+        // config에서 prices 읽어서 학년별 동적 생성
+        const gradeNum = _currentGrade;
+        html += `<div class="sg-table-wrap" id="sg-consulting-table">` +
+          _buildConsultingTable(gradeNum) + `</div>`;
+        html += `</div>`;
+        return;
+      }
 
       if (sec.type === 'table') {
         html += `<div class="sg-table-wrap">${sec.content}</div>`;
@@ -456,7 +426,8 @@ const Sign = (() => {
           <div class="sg-form-row">
             <label>상품명 <span class="sg-auto-badge">자동</span></label>
             <div style="display:flex;gap:6px;align-items:center;">
-              <select class="sg-input sg-input-auto" id="f-grade" style="width:80px;flex-shrink:0;">
+              <select class="sg-input" id="f-grade" style="width:80px;flex-shrink:0;"
+                onchange="Sign._onGradeChange()">
                 <option value="">학년</option>
                 <option value="고1">고1</option>
                 <option value="고2">고2</option>
@@ -475,8 +446,13 @@ const Sign = (() => {
           </div>
           <div class="sg-form-divider">✏️ 직접 입력</div>
           <div class="sg-form-row">
-            <label>가입 시작일</label>
-            <input class="sg-input" id="f-start" type="date" oninput="Sign._calcExpiry()">
+            <label>가입기간</label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input class="sg-input" id="f-start" type="date" style="flex:1;"
+                oninput="Sign._calcExpiry()">
+              <span style="color:var(--dt-ink3);font-size:13px;flex-shrink:0;">~</span>
+              <input class="sg-input" id="f-end" type="date" style="flex:1;">
+            </div>
           </div>
           <div class="sg-form-row">
             <label>관리유예기간 <span class="sg-auto-badge">자동계산</span></label>
@@ -762,11 +738,14 @@ const Sign = (() => {
   function _collectFormData() {
     const get = (id) => document.getElementById(id)?.value?.trim() || '';
     if (_currentTab === 'terms') {
-      // 가입기간 합성: 시작일 ~ 유예기간
+      // 가입기간 합성: 시작일 ~ 종료일
       const start  = get('f-start');
+      const end    = get('f-end');
       const expiry = get('f-expiry');
-      const period = start ? (expiry ? `${start} ~ ${expiry}` : start) : '';
-      // 상품명 합성: 학년 + 고정 텍스트
+      const period = start
+        ? (end ? `${start} ~ ${end}` : start)
+        : '';
+      // 상품명 합성: 학년 + 고정 텍스트 ('고' 없이 드롭다운 값 그대로)
       const grade   = get('f-grade');
       const product = grade ? `${grade} 학생부 관리 컨설팅` : '학생부 관리 컨설팅';
       return {
@@ -774,6 +753,7 @@ const Sign = (() => {
         school:  get('f-school'),
         product,
         period,
+        expiry,
         amount:  get('f-amount'),
         special: get('f-special'),
         contact: get('f-contact'),
@@ -791,6 +771,15 @@ const Sign = (() => {
    * 17. PDF 출력
    * ============================================================ */
   function printDocument() {
+    // 가입약관 탭에서 학년 미선택 차단
+    if (_currentTab === 'terms') {
+      const grade = document.getElementById('f-grade')?.value || '';
+      if (!grade) {
+        alert('학년을 선택해 주세요.\n상품명의 학년(고1/고2/고3)을 먼저 선택해야 출력할 수 있습니다.');
+        document.getElementById('f-grade')?.focus();
+        return;
+      }
+    }
     if (!_signatureData) {
       alert('서명이 없습니다.\n아이패드로 서명하거나 서명란에 직접 서명 후 [서명 적용] 버튼을 눌러주세요.');
       return;
@@ -840,11 +829,14 @@ const Sign = (() => {
           </tr>
           <tr>
             <th>상품명</th>
-            <td colspan="3">고&nbsp;&nbsp;&nbsp;&nbsp;${form.product || '학생부 관리 컨설팅'}</td>
+            <td colspan="3">${form.product || '학생부 관리 컨설팅'}</td>
           </tr>
           <tr>
             <th>가입기간</th>
-            <td colspan="3">${form.period || '　　년 　월 　일 ~ 　　년 　월 　일'}&nbsp;&nbsp;(관리유예기간 : 　　년 2월 15일 까지)</td>
+            <td colspan="3">
+              ${form.period || '　　년 　월 　일 ~ 　　년 　월 　일'}
+              ${form.expiry ? `&nbsp;&nbsp;(관리유예기간 : ${form.expiry} 까지)` : '&nbsp;&nbsp;(관리유예기간 : 　　년 2월 15일 까지)'}
+            </td>
           </tr>
           <tr>
             <th>가입금액</th>
@@ -884,6 +876,15 @@ const Sign = (() => {
       bodyHtml += `<div class="sg-pr-section">`;
       bodyHtml += `<div class="sg-pr-section-title">${sec.title}</div>`;
 
+      if (sec.type === 'consulting-items') {
+        // 출력물도 동적 생성 — 선택된 학년 기준
+        const form      = _collectFormData();
+        const gradeStr  = form.product || '';
+        const gradeNum  = parseInt(gradeStr.replace(/[^0-9]/g, '')) || 0;
+        bodyHtml += _buildConsultingTable(gradeNum);
+        bodyHtml += `</div>`;
+        return;
+      }
       if (sec.type === 'table') {
         bodyHtml += sec.content;
       }
@@ -1207,8 +1208,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     if (dcSemester) dcParts.push(dcSemester);
     const specialStr = dcParts.join(' / ');
 
-    // 학교/학년/진로목표 합성
-    const schoolStr = [school, grade ? grade + '학년' : '', goal].filter(Boolean).join(' / ');
+    // 학교/학년/진로목표 합성 (학년은 '고2' 형태 그대로)
+    const gradeLabel = grade ? '고' + grade : '';
+    const schoolStr = [school, gradeLabel, goal].filter(Boolean).join(' / ');
 
     // 폼 채움 — 렌더 후 DOM에 값 삽입
     setTimeout(() => {
@@ -1221,10 +1223,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       setVal('f-amount',  amountStr);
       setVal('f-special', specialStr);
 
-      // 학년 드롭다운 선택
+      // 학년 드롭다운 선택 (보드에서 숫자 '2'로 오므로 '고2' 매칭)
       const gradeEl = document.getElementById('f-grade');
       if (gradeEl && grade) {
-        const opt = gradeEl.querySelector(`option[value="고${grade}"]`);
+        const gradeVal = grade.startsWith('고') ? grade : '고' + grade;
+        const opt = gradeEl.querySelector(`option[value="${gradeVal}"]`);
         if (opt) opt.selected = true;
       }
     }, 50);
@@ -1232,7 +1235,166 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
 
   /* ============================================================
-   * 17-B. 가입 시작일 → 관리유예기간 자동계산
+   * 17-B. 컨설팅 항목표 동적 생성
+   *        gradeNum: 1|2|3|0(미선택)
+   *        config prices 기반 — 학년별 금액 분기
+   *        대입전략: 고3만 표시, 선택항목 녹색/나머지 회색
+   * ============================================================ */
+  function _buildConsultingTable(gradeNum) {
+    const fmtAmt = (n) => Number(n).toLocaleString('ko-KR');
+
+    // ── 로드맵 pages 정의 (순서 고정)
+    const roadmapPages = [
+      { id: 'rm-a', label: 'A. 세특 관리',
+        programs: [
+          { title: '1. 세특 강화 솔루션',
+            desc: '❶ 각종 활동 결과물을 학교 제출용 자기평가서 혹은 세특으로 기재 요약<br>❷ 단순 요약이 아닌 비인지적 역량, 교과회귀, 고찰점 강화하여 재구성<br>국/수/영/사/과 교과, 자율/동아리/진로/행특 / BEST 실적 영역별 최대 2~3건',
+            freq: '연관리' },
+          { title: '2. 심화 확장 스토리 구축',
+            desc: '❶ N차 심화 탐구 연결 (기재관리 시 선별)<br>❷ 이전 활동을 심화 확장하는 수행 및 창체 활동 주제 + 보고서 설계도 제공<br>❸ 학생부 분석 및 심화 확장 주제 추천',
+            freq: '상시제공 (학생부 분석 연1회)' },
+        ],
+      },
+      { id: 'rm-b', label: 'B. 수행 관리',
+        programs: [
+          { title: '1. 수행 조건 분석',
+            desc: '❶ 수행 과제의 조건, 제출 형식, 활용 자료를 먼저 파악<br>❷ 학생이 놓치기 쉬운 핵심 기준 정리<br>❸ 수행 조건에 따라 A / B / A+B 혼합형 제공<br>국/수/영/사/과 교과, 기타 진로 연관 교과 / 영역별 최대 2건',
+            freq: '연관리' },
+          { title: '2. [옵션 A] 방향성 코칭',
+            desc: '❶ 탐구 주제 선정, 자료 활용 방향, 보고서 전개 방식 등 학생 맞춤 수행 방향 제시',
+            freq: '-' },
+          { title: '3. [옵션 B] 보고서 설계도 / 초안 제시',
+            desc: '❶ 탐구 주제, 보고서 흐름, 실제 작성 가능 초안 틀 제공',
+            freq: '-' },
+        ],
+      },
+      { id: 'rm-c', label: 'C. 주제 추천',
+        programs: [
+          { title: '세특구원자 플랫폼 활용',
+            desc: '24시간 키워드 검색, 탐구 주제 직접 선정<br>로드맵 컨설팅 회원 구독 할인 적용 (6개월 40% / 연 50%)',
+            freq: '상시제공' },
+        ],
+      },
+    ];
+
+    // ── 대입전략 pages (고3만 표시)
+    const strategyPages = [
+      { id: 'sc-suisi',     label: '수시 원서전략 컨설팅', freq: '1회', grade: 3 },
+      { id: 'sc-jeongsi',   label: '정시 원서전략 컨설팅 (가채점 포함)', freq: '1회', grade: 3 },
+      { id: 'sc-interview', label: '면접 컨설팅 — 일반학과', freq: '1회', grade: 3 },
+      { id: 'sc-interview', label: '면접 컨설팅 — 의치한약수·SKY', freq: '1회', grade: 3, subIdx: 1 },
+    ];
+
+    // URL 파라미터에서 선택된 대입전략 금액 파악 (녹색 강조용)
+    const urlParams   = new URLSearchParams(window.location.search);
+    const strategyAmt = Number(urlParams.get('strategy') || 0);
+
+    // ── 금액 포맷 헬퍼
+    const getAmt = (pageId, gradeNum) => {
+      const prices = _getPrices(pageId);
+      if (!prices) return '-';
+      if (gradeNum === 0) {
+        // 학년 미선택 — 전체 학년 나열
+        return prices
+          .filter(p => p.grade || !p.grade)
+          .map(p => {
+            const gLabel = p.grade ? `고${p.grade} ` : '';
+            return `${gLabel}${fmtAmt(p.amt)}`;
+          }).join('<br>');
+      }
+      // 해당 학년만
+      const matched = prices.filter(p => {
+        if (!p.grade) return true;
+        const grades = String(p.grade).split(',').map(g => Number(g.trim()));
+        return grades.includes(gradeNum);
+      });
+      if (!matched.length) return '-';
+      return matched.map(p => fmtAmt(p.amt)).join('<br>');
+    };
+
+    // ── rm-c 특수 처리 (학년 무관 고정 금액)
+    const getRmcAmt = () => {
+      const prices = _getPrices('rm-c');
+      if (!prices || !prices.length) return '세특구원자 플랫폼 결제 방식';
+      return prices.map(p => `${p.label} ${fmtAmt(p.amt)}`).join('<br>');
+    };
+
+    // ── 테이블 생성
+    let rows = '';
+
+    // 학년관리 로드맵
+    rows += `<tr class="sg-group-row"><td colspan="4">학년관리 로드맵</td></tr>`;
+
+    roadmapPages.forEach(page => {
+      const progCount = page.programs.length;
+      page.programs.forEach((prog, pi) => {
+        const amtCell = pi === 0
+          ? (page.id === 'rm-c'
+              ? `<td rowspan="${progCount}">${getRmcAmt()}</td>`
+              : `<td rowspan="${progCount}">${getAmt(page.id, gradeNum)}</td>`)
+          : '';
+        const labelCell = pi === 0
+          ? `<td rowspan="${progCount}"><strong>${page.label}</strong></td>`
+          : '';
+        rows += `<tr>
+          ${labelCell}
+          <td><strong>${prog.title}</strong><br>${prog.desc}</td>
+          <td>${prog.freq}</td>
+          ${amtCell}
+        </tr>`;
+      });
+    });
+
+    // 대입전략 — 고3만 표시
+    rows += `<tr class="sg-group-row"><td colspan="4">대입전략 컨설팅 (고3)</td></tr>`;
+    strategyPages.forEach(sp => {
+      const prices  = _getPrices(sp.id);
+      let amt = '-';
+      if (prices) {
+        const idx  = sp.subIdx || 0;
+        const g3   = prices.filter(p => p.grade === 3 || String(p.grade) === '3');
+        if (g3[idx]) amt = fmtAmt(g3[idx].amt);
+      }
+      // 선택된 항목 강조: strategy 금액이 0보다 크면 선택됨 표시
+      // 세부 항목 매칭은 금액 기준
+      const isSelected = strategyAmt > 0 && amt !== '-' &&
+        String(strategyAmt).includes(amt.replace(/,/g, ''));
+      const rowStyle = isSelected
+        ? 'background:#edf7f1;color:#1a6e3c;font-weight:700;'
+        : 'color:#aaa;';
+      rows += `<tr style="${rowStyle}">
+        <td colspan="2">${sp.label}</td>
+        <td>${sp.freq}</td>
+        <td>${amt}</td>
+      </tr>`;
+    });
+
+    return `<table class="sg-table">
+  <thead>
+    <tr><th>구분</th><th>프로그램 구성</th><th>제공횟수</th><th>금액</th></tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>`;
+  }
+
+
+  /* ============================================================
+   * 17-C. 학년 드롭다운 변경 시 처리 (기존 함수 교체)
+   *        컨설팅 항목표 학년별 갱신
+   * ============================================================ */
+  function _onGradeChange() {
+    const gradeEl = document.getElementById('f-grade');
+    const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
+    // 컨설팅 항목표 실시간 갱신
+    const tableEl = document.getElementById('sg-consulting-table');
+    if (tableEl) {
+      tableEl.innerHTML = _buildConsultingTable(gradeNum);
+    }
+  }
+
+
+  /* ============================================================
+   * 17-D. 가입 시작일 → 관리유예기간 자동계산
    *       유예기간 = 가입 시작연도 + 1년 2월 15일
    * ============================================================ */
   function _calcExpiry() {
@@ -1260,8 +1422,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     // 태블릿 내부 호출용
     _clearCanvas:       clearSignature,
     _submitFromTablet:  submitSignatureFromTablet,
-    // 가입기간 유예기간 자동계산 (HTML oninput에서 호출)
+    // HTML 이벤트 핸들러
     _calcExpiry,
+    _onGradeChange,
   };
 
 })();
