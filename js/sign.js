@@ -454,8 +454,8 @@ const Sign = (() => {
               placeholder="시작일 입력 시 자동계산" readonly>
           </div>
           <div class="sg-form-row">
-            <label>학생 연락처</label>
-            <input class="sg-input" id="f-contact" placeholder="010-0000-0000">
+            <label>학부모 성명</label>
+            <input class="sg-input" id="f-parent" placeholder="학부모 성함을 입력하세요">
           </div>
         </div>`;
     } else {
@@ -748,7 +748,7 @@ const Sign = (() => {
         expiry,
         amount:  get('f-amount'),
         special: get('f-special'),
-        contact: get('f-contact'),
+        parent: get('f-parent'),
       };
     } else {
       return {
@@ -842,7 +842,7 @@ const Sign = (() => {
               * 12월부터 1월 말일까지 갱신을 희망하는 회원은 우선으로 가입 대상이 될 수 있으며, 이후로는 관리 인원 제한 정책에 따라 갱신이 불가할 수 있습니다.
             </td>
           </tr>
-          ${form.contact ? `<tr><td colspan="4"><strong>학생 연락처 :</strong> ${form.contact}</td></tr>` : ''}
+
         </table>
       </div>` : `
       <div class="sg-info-card" style="margin-bottom:16px;">
@@ -932,16 +932,21 @@ const Sign = (() => {
     }
 
     // 서명란
+    const parentName = (data.docType === 'terms') ? (form.parent || '') : '';
     const sigHtml = `
       <div class="sg-pr-sign-area">
         <div class="sg-pr-sign-text">${data.finalNote}</div>
-        <div class="sg-pr-sign-row">
-          <span class="sg-pr-date">${today}</span>
-          <span class="sg-pr-signer">${data.signerLabel}</span>
+        <div class="sg-pr-sign-date">${today}</div>
+        ${data.docType === 'terms' ? `
+        <div class="sg-pr-sign-row-name">
+          <span class="sg-pr-signer-label">가입자(학부모성명)</span>
+          <span class="sg-pr-signer-line">${parentName}</span>
+        </div>` : ''}
+        <div class="sg-pr-sign-row-sig">
+          <span class="sg-pr-signer-label">서명</span>
           <span class="sg-pr-sign-img-wrap">
             <img src="${signatureImg}" class="sg-pr-sign-img" alt="서명">
           </span>
-          <span class="sg-pr-in">(인)</span>
         </div>
       </div>`;
 
@@ -1034,13 +1039,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
 /* ── 서명란 ── */
 .sg-pr-sign-area{margin:16px 28px 0;padding:16px 20px;border:1.5px solid var(--dt-deep);border-radius:8px;background:#fff}
-.sg-pr-sign-text{font-size:12px;color:var(--dt-ink2);line-height:1.7;margin-bottom:14px;text-align:center}
-.sg-pr-sign-row{display:flex;align-items:center;justify-content:center;gap:18px;padding-top:12px;border-top:1px solid var(--dt-line-md)}
-.sg-pr-date{font-size:13px;font-weight:600;color:var(--dt-ink)}
-.sg-pr-signer{font-size:13px;font-weight:700;color:var(--dt-deep)}
-.sg-pr-sign-img-wrap{width:120px;height:52px;border-bottom:1px solid var(--dt-ink);display:flex;align-items:center;justify-content:center}
-.sg-pr-sign-img{max-width:116px;max-height:48px;object-fit:contain}
-.sg-pr-in{font-size:13px;font-weight:700;color:var(--dt-ink)}
+.sg-pr-sign-text{font-size:12px;color:var(--dt-ink2);line-height:1.7;margin-bottom:12px;text-align:center}
+.sg-pr-sign-date{font-size:13px;font-weight:700;color:var(--dt-ink);text-align:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--dt-line-md)}
+.sg-pr-sign-row-name{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--dt-line-md)}
+.sg-pr-sign-row-sig{display:flex;align-items:center;gap:12px}
+.sg-pr-signer-label{font-size:12px;font-weight:700;color:var(--dt-deep);white-space:nowrap;min-width:120px}
+.sg-pr-signer-line{flex:1;border-bottom:1px solid var(--dt-ink);min-height:28px;font-size:13px;font-weight:600;color:var(--dt-ink);display:flex;align-items:flex-end;padding-bottom:2px}
+.sg-pr-sign-img-wrap{flex:1;height:52px;border-bottom:1px solid var(--dt-ink);display:flex;align-items:center;justify-content:center}
+.sg-pr-sign-img{max-width:100%;max-height:48px;object-fit:contain}
 
 /* ── 푸터 ── */
 .sg-pr-footer{border-top:1px solid var(--dt-line-md);padding:12px 28px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
