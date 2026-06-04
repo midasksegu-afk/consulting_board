@@ -1049,8 +1049,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .sg-pr-sign-row-sig{display:flex;align-items:center;gap:12px}
 .sg-pr-signer-label{font-size:12px;font-weight:700;color:var(--dt-deep);white-space:nowrap;min-width:120px}
 .sg-pr-signer-line{flex:1;border-bottom:1px solid var(--dt-ink);min-height:28px;font-size:13px;font-weight:600;color:var(--dt-ink);display:flex;align-items:flex-end;padding-bottom:2px}
-.sg-pr-sign-img-wrap{flex:1;height:52px;border-bottom:1px solid var(--dt-ink);display:flex;align-items:center;justify-content:center}
-.sg-pr-sign-img{max-width:100%;max-height:48px;object-fit:contain}
+.sg-pr-sign-img-wrap{flex:1;height:80px;border-bottom:1px solid var(--dt-ink);display:flex;align-items:center;justify-content:center}
+.sg-pr-sign-img{max-width:100%;max-height:76px;object-fit:contain;filter:contrast(1.8) brightness(0.6)}
 
 /* ── 푸터 ── */
 .sg-pr-footer{border-top:1px solid var(--dt-line-md);padding:12px 28px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
@@ -1123,11 +1123,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           <div class="sg-canvas-placeholder" id="sg-canvas-placeholder">
             <span>✍ 여기에 서명하세요</span>
           </div>
-          <canvas id="sg-canvas" width="1400" height="560"></canvas>
+          <canvas id="sg-canvas" width="1400" height="1120"></canvas>
         </div>
         <div class="sg-tablet-btns">
-          <button class="sg-tablet-btn sg-tablet-btn-clear" onclick="Sign._clearCanvas()">지우기</button>
-          <button class="sg-tablet-btn sg-tablet-btn-submit" onclick="Sign._submitFromTablet()">서명 완료</button>
+          <button class="sg-tablet-btn sg-tablet-btn-clear"   onclick="Sign._clearCanvas()">지우기</button>
+          <button class="sg-tablet-btn sg-tablet-btn-submit"  onclick="Sign._submitFromTablet()">서명 완료</button>
+          <button class="sg-tablet-btn sg-tablet-btn-refresh" onclick="location.reload()">새로고침</button>
         </div>
         <div class="sg-tablet-confirm" id="sg-tablet-confirm">
           <div class="sg-confirm-icon">✓</div>
@@ -1151,6 +1152,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       .sg-tablet-btn{flex:1;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
       .sg-tablet-btn-clear{background:#F2F4F8;color:#2A3340;border:1.5px solid #ccc}
       .sg-tablet-btn-submit{background:#2A3340;color:#fff}
+      .sg-tablet-btn-refresh{background:#455367;color:#fff}
       .sg-tablet-confirm{display:none;text-align:center;margin-top:24px;padding:20px;background:#edf7f1;border-radius:10px}
       .sg-tablet-confirm.visible{display:block}
       .sg-confirm-icon{font-size:40px;color:#1a6e3c;margin-bottom:8px}
