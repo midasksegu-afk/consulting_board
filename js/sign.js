@@ -446,17 +446,19 @@ const Sign = (() => {
           </div>
           <div class="sg-form-divider">✏️ 직접 입력</div>
           <div class="sg-form-row">
-            <label>가입기간</label>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <input class="sg-input" id="f-start" type="date" style="flex:1;"
-                oninput="Sign._calcExpiry()">
-              <span style="color:var(--dt-ink3);font-size:13px;flex-shrink:0;">~</span>
-              <input class="sg-input" id="f-end" type="date" style="flex:1;">
-            </div>
+            <label>가입 시작일</label>
+            <input class="sg-input" id="f-start" type="date"
+              oninput="Sign._calcExpiry()">
+          </div>
+          <div class="sg-form-row">
+            <label>가입기간 <span class="sg-auto-badge">자동계산</span></label>
+            <input class="sg-input sg-input-auto" id="f-period-display"
+              placeholder="시작일 입력 시 자동계산" readonly>
           </div>
           <div class="sg-form-row">
             <label>관리유예기간 <span class="sg-auto-badge">자동계산</span></label>
-            <input class="sg-input sg-input-auto" id="f-expiry" placeholder="시작일 입력 시 자동계산" readonly>
+            <input class="sg-input sg-input-auto" id="f-expiry"
+              placeholder="시작일 입력 시 자동계산" readonly>
           </div>
           <div class="sg-form-row">
             <label>학생 연락처</label>
@@ -738,13 +740,10 @@ const Sign = (() => {
   function _collectFormData() {
     const get = (id) => document.getElementById(id)?.value?.trim() || '';
     if (_currentTab === 'terms') {
-      // 가입기간 합성: 시작일 ~ 종료일
+      // 가입기간: 자동계산된 표시값 사용
       const start  = get('f-start');
-      const end    = get('f-end');
       const expiry = get('f-expiry');
-      const period = start
-        ? (end ? `${start} ~ ${end}` : start)
-        : '';
+      const period = get('f-period-display') || (start ? start : '');
       // 상품명 합성: 학년 + 고정 텍스트 ('고' 없이 드롭다운 값 그대로)
       const grade   = get('f-grade');
       const product = grade ? `${grade} 학생부 관리 컨설팅` : '학생부 관리 컨설팅';
@@ -1275,6 +1274,31 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
             freq: '상시제공' },
         ],
       },
+      // D. 대면관리 — 모든 학년 공통 (필수)
+      { id: 'rm-d', label: 'D. 대면관리 (필수)',
+        programs: [
+          { title: '1. RPM 컨설팅 (Roadmap·Planning·Mentoring)',
+            desc: '❶ 교과 & 창체 세특 코칭 + 활동 방향 설계<br>❷ 동아리·진로 등 창체 주제 선정이 막힐 경우 구체적 실행 방안 제시',
+            freq: '연 관리' },
+          { title: '2. 성적 누적 분석',
+            desc: '❶ 내신/모의성적 누적 및 전형별 가중치 관리<br>❷ 부족 과목 학습 운영 전략<br>❸ 목표 대학 포트폴리오 누적 관리',
+            freq: '상시제공' },
+          { title: '3. 맞춤 상담',
+            desc: '❶ 학생 맞춤 진로·진학 컨설팅<br>❷ 학부모 질의응답 — 1:1 대면 시 상시 제공',
+            freq: '기본포함' },
+        ],
+      },
+      // E. 기본관리 — 모든 학년 공통 (필수)
+      { id: 'rm-e', label: 'E. 기본관리 (필수)',
+        programs: [
+          { title: '1. 학종특강',
+            desc: '❶ 서류 평가 메커니즘 교육<br>❷ 세특 디자인 수업 / 심화 탐구 빌드업 전략<br>❸ 컨설팅 활용법',
+            freq: '상시제공 (오프라인/온라인/자료대체 가능)' },
+          { title: '2. 행정관리',
+            desc: '❶ 상담 스케줄 관리<br>❷ 컨설팅 밴드 운영 관리 (학종 대비 전략 코칭 및 교육 — 온라인)<br>❸ 성적 입력 및 기재 베이스 관리',
+            freq: '상시제공' },
+        ],
+      },
     ];
 
     // ── 대입전략 pages (고3만 표시)
@@ -1293,22 +1317,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     const getAmt = (pageId, gradeNum) => {
       const prices = _getPrices(pageId);
       if (!prices) return '-';
+
       if (gradeNum === 0) {
-        // 학년 미선택 — 전체 학년 나열
-        return prices
-          .filter(p => p.grade || !p.grade)
-          .map(p => {
-            const gLabel = p.grade ? `고${p.grade} ` : '';
-            return `${gLabel}${fmtAmt(p.amt)}`;
-          }).join('<br>');
+        // 학년 미선택 — 전체 나열 (학년 라벨 포함)
+        return prices.map(p => {
+          const gLabel = p.grade ? `고${p.grade} ` : '';
+          return `${gLabel}${fmtAmt(p.amt)}`;
+        }).join('<br>');
       }
-      // 해당 학년만
+
+      // 해당 학년 필터 — grade 없는 항목(학년 무관)도 포함
       const matched = prices.filter(p => {
-        if (!p.grade) return true;
+        if (!p.grade) return true; // 학년 무관 항목은 항상 포함
         const grades = String(p.grade).split(',').map(g => Number(g.trim()));
         return grades.includes(gradeNum);
       });
       if (!matched.length) return '-';
+      // 학년 라벨 없이 금액만 표시
       return matched.map(p => fmtAmt(p.amt)).join('<br>');
     };
 
@@ -1398,14 +1423,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
    *       유예기간 = 가입 시작연도 + 1년 2월 15일
    * ============================================================ */
   function _calcExpiry() {
-    const startEl  = document.getElementById('f-start');
-    const expiryEl = document.getElementById('f-expiry');
-    if (!startEl || !expiryEl) return;
+    const startEl       = document.getElementById('f-start');
+    const periodEl      = document.getElementById('f-period-display');
+    const expiryEl      = document.getElementById('f-expiry');
+    if (!startEl) return;
     const val = startEl.value;
-    if (!val) { expiryEl.value = ''; return; }
-    const startYear = new Date(val).getFullYear();
-    const expiryYear = startYear + 1;
-    expiryEl.value = `${expiryYear}.02.15`;
+    if (!val) {
+      if (periodEl)  periodEl.value  = '';
+      if (expiryEl)  expiryEl.value  = '';
+      return;
+    }
+    const d         = new Date(val);
+    const startYear = d.getFullYear();
+    // 종료일: 시작연도 12월 31일
+    const endStr    = `${startYear}.12.31`;
+    // 유예기간: 시작연도 +1년 2월 15일
+    const expiryStr = `${startYear + 1}.02.15`;
+
+    if (periodEl) periodEl.value  = `${val.replace(/-/g,'.')} ~ ${endStr}`;
+    if (expiryEl) expiryEl.value  = expiryStr;
   }
 
 
