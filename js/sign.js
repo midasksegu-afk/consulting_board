@@ -261,6 +261,17 @@ const Sign = (() => {
    * 6. 탭 전환
    * ============================================================ */
   function _switchTab(tab) {
+    // 탭 전환 전 현재 입력값 수집 → _formData에 저장
+    const getVal = (id) => document.getElementById(id)?.value || '';
+    if (_currentTab === 'terms') {
+      _formData.start    = getVal('f-start');
+      _formData.parent   = getVal('f-parent');
+      _formData.termsSig = _signatureData;
+    } else {
+      _formData.phone     = getVal('f-phone');
+      _formData.policySig = _signatureData;
+    }
+
     _currentTab = tab;
     _signatureData = null;
 
@@ -1267,6 +1278,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     setVal('f-school',  _formData.schoolStr);
     setVal('f-amount',  _formData.amountStr);
     setVal('f-special', _formData.specialStr);
+    setVal('f-start',   _formData.start);
+    setVal('f-parent',  _formData.parent);
+    setVal('f-phone',   _formData.phone);
+    // 가입시작일 있으면 만료일 자동계산 재실행
+    if (_formData.start) Sign._calcExpiry();
+    // 탭별 서명 복원
+    const sig = _currentTab === 'terms' ? _formData.termsSig : _formData.policySig;
+    if (sig) { _signatureData = sig; _updateSignPreview(sig); }
     // 학년 드롭다운
     const grade = new URLSearchParams(window.location.search).get('grade') || '';
     const gradeEl = document.getElementById('f-grade');
