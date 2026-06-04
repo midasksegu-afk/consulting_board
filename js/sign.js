@@ -513,7 +513,7 @@ const Sign = (() => {
     _ctx.lineWidth   = 6;
     _ctx.lineCap     = 'round';
     _ctx.lineJoin    = 'round';
-    _ctx.globalAlpha = 0.92;
+    _ctx.globalAlpha = 1;
 
     const placeholder = document.getElementById('sg-canvas-placeholder');
 
@@ -1124,7 +1124,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           <div class="sg-canvas-placeholder" id="sg-canvas-placeholder">
             <span>✍ 여기에 서명하세요</span>
           </div>
-          <canvas id="sg-canvas" width="1400" height="1120"></canvas>
+          <canvas id="sg-canvas" width="700" height="200"></canvas>
         </div>
         <div class="sg-tablet-btns">
           <button class="sg-tablet-btn sg-tablet-btn-clear"   onclick="Sign._clearCanvas()">지우기</button>
