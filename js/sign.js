@@ -230,6 +230,7 @@ const Sign = (() => {
   let _currentTab  = 'terms';   // 'terms' | 'policy'
   let _pollTimer   = null;
   let _signatureData = null;    // 수신된 서명 base64
+  let _selectedPages = [];      // 선택된 pageId 목록 (index.html → URL 파라미터)
 
 
   /* ============================================================
@@ -872,7 +873,7 @@ const Sign = (() => {
         // 출력물 — 드롭다운 선택값 직접 참조 (가장 정확)
         const gradeEl  = document.getElementById('f-grade');
         const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
-        bodyHtml += _buildConsultingTable(gradeNum);
+        bodyHtml += _buildConsultingTable(gradeNum, _selectedPages);
         bodyHtml += `</div>`;
         return;
       }
@@ -1225,9 +1226,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       if (gradeEl && grade) {
         const gradeVal = grade.startsWith('고') ? grade : '고' + grade;
         const opt = gradeEl.querySelector(`option[value="${gradeVal}"]`);
-        if (opt) opt.selected = true;
+        if (opt) {
+          opt.selected = true;
+          // 드롭다운 값 세팅 후 즉시 테이블 갱신
+          _onGradeChange();
+        }
       }
     }, 50);
+
+    // selectedPages 파라미터 파싱 → 모듈 변수에 저장
+    const spRaw = p.get('selectedPages') || '';
+    _selectedPages = spRaw ? spRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
   }
 
 
@@ -1237,7 +1246,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
    *        config prices 기반 — 학년별 금액 분기
    *        대입전략: 고3만 표시, 선택항목 녹색/나머지 회색
    * ============================================================ */
-  function _buildConsultingTable(gradeNum) {
+  function _buildConsultingTable(gradeNum, selectedPages) {
+    // selectedPages 미전달 시 빈 배열 (전체 미선택으로 간주하지 않고, undefined이면 선택 필터 적용 안 함)
+    const hasSelection = Array.isArray(selectedPages) && selectedPages.length > 0;
     const fmtAmt = (n) => Number(n).toLocaleString('ko-KR');
 
     // ── 로드맵 pages 정의 (순서 고정)
@@ -1362,16 +1373,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
     roadmapPages.forEach(page => {
       const progCount = page.programs.length;
+      const isSelected = !hasSelection || selectedPages.includes(page.id);
+      const rowStyle   = isSelected ? '' : 'color:#aaa;';
+      const amtContent = isSelected
+        ? (page.id === 'rm-c' ? getRmcAmt() : getAmt(page.id, gradeNum))
+        : '<span style="color:#bbb;font-style:italic;">-미선택-</span>';
+
       page.programs.forEach((prog, pi) => {
         const amtCell = pi === 0
-          ? (page.id === 'rm-c'
-              ? `<td rowspan="${progCount}">${getRmcAmt()}</td>`
-              : `<td rowspan="${progCount}">${getAmt(page.id, gradeNum)}</td>`)
+          ? `<td rowspan="${progCount}">${amtContent}</td>`
           : '';
         const labelCell = pi === 0
           ? `<td rowspan="${progCount}"><strong>${page.label}</strong></td>`
           : '';
-        rows += `<tr>
+        rows += `<tr style="${rowStyle}">
           ${labelCell}
           <td><strong>${prog.title}</strong><br>${prog.desc}</td>
           <td>${prog.freq}</td>
@@ -1423,7 +1438,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     // 컨설팅 항목표 실시간 갱신
     const tableEl = document.getElementById('sg-consulting-table');
     if (tableEl) {
-      tableEl.innerHTML = _buildConsultingTable(gradeNum);
+      tableEl.innerHTML = _buildConsultingTable(gradeNum, _selectedPages);
     }
   }
 
