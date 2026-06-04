@@ -230,7 +230,8 @@ const Sign = (() => {
   let _currentTab  = 'terms';   // 'terms' | 'policy'
   let _pollTimer   = null;
   let _signatureData = null;    // 수신된 서명 base64
-  let _selectedPages = [];      // 선택된 pageId 목록 (index.html → URL 파라미터)
+  let _selectedPages  = [];      // 선택된 pageId 목록 (index.html → URL 파라미터)
+  let _isSemesterDc   = false;  // 2학기 DC 활성 여부 (index.html → URL 파라미터)
 
 
   /* ============================================================
@@ -873,7 +874,7 @@ const Sign = (() => {
         // 출력물 — 드롭다운 선택값 직접 참조 (가장 정확)
         const gradeEl  = document.getElementById('f-grade');
         const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
-        bodyHtml += _buildConsultingTable(gradeNum, _selectedPages);
+        bodyHtml += _buildConsultingTable(gradeNum, _selectedPages, _isSemesterDc);
         bodyHtml += `</div>`;
         return;
       }
@@ -1236,7 +1237,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
     // selectedPages 파라미터 파싱 → 모듈 변수에 저장
     const spRaw = p.get('selectedPages') || '';
-    _selectedPages = spRaw ? spRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    _selectedPages  = spRaw ? spRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    // 2학기 DC 활성 여부 — dcSemester 값이 있으면 활성
+    _isSemesterDc   = !!p.get('dcSemester');
   }
 
 
@@ -1246,7 +1249,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
    *        config prices 기반 — 학년별 금액 분기
    *        대입전략: 고3만 표시, 선택항목 녹색/나머지 회색
    * ============================================================ */
-  function _buildConsultingTable(gradeNum, selectedPages) {
+  function _buildConsultingTable(gradeNum, selectedPages, isSemesterDc) {
     // selectedPages 미전달 시 빈 배열 (전체 미선택으로 간주하지 않고, undefined이면 선택 필터 적용 안 함)
     const hasSelection = Array.isArray(selectedPages) && selectedPages.length > 0;
     const fmtAmt = (n) => Number(n).toLocaleString('ko-KR');
@@ -1351,11 +1354,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         ? main.map(p => fmtAmt(p.amt)).join('<br>')
         : matched.map(p => fmtAmt(p.amt)).join('<br>');
 
-      const subStr = sub.length
-        ? sub.map(p => `<span style="font-size:10px;color:#86868B;">${p.note}: ${fmtAmt(p.amt)}</span>`).join('<br>')
+      const subStr = (sub.length && isSemesterDc)
+        ? sub.map(p => `<span style="font-size:10px;color:#86868B;">고${gradeNum} ${p.note}: ${fmtAmt(p.amt)}</span>`).join('<br>')
         : '';
 
-      return subStr ? `${mainStr}<br>${subStr}` : mainStr;
+      return (isSemesterDc && subStr) ? subStr : mainStr;
     };
 
     // ── rm-c 특수 처리 (학년 무관 고정 금액)
@@ -1438,7 +1441,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     // 컨설팅 항목표 실시간 갱신
     const tableEl = document.getElementById('sg-consulting-table');
     if (tableEl) {
-      tableEl.innerHTML = _buildConsultingTable(gradeNum, _selectedPages);
+      tableEl.innerHTML = _buildConsultingTable(gradeNum, _selectedPages, _isSemesterDc);
     }
   }
 
