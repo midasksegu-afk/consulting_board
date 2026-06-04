@@ -286,6 +286,8 @@ const Sign = (() => {
     _updateSignPreview(null);
     // 탭 전환 후 폼 재채움
     setTimeout(_refillForm, 0);
+    // 폴링 재시작 (탭별 서명 수신 대기)
+    _startPolling();
   }
 
 
