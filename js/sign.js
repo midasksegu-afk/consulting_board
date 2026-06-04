@@ -232,6 +232,7 @@ const Sign = (() => {
   let _signatureData = null;    // 수신된 서명 base64
   let _selectedPages  = [];      // 선택된 pageId 목록 (index.html → URL 파라미터)
   let _isSemesterDc   = false;  // 2학기 DC 활성 여부 (index.html → URL 파라미터)
+  let _formData       = {};     // URL 파라미터 파싱값 저장 (탭 전환 후 재채움용)
 
 
   /* ============================================================
@@ -272,6 +273,8 @@ const Sign = (() => {
     _renderInputForm(data);
     _initCanvas();
     _updateSignPreview(null);
+    // 탭 전환 후 폼 재채움
+    setTimeout(_refillForm, 0);
   }
 
 
@@ -472,8 +475,12 @@ const Sign = (() => {
             <input class="sg-input sg-input-auto" id="f-name" placeholder="학생 이름" readonly>
           </div>
           <div class="sg-form-row">
-            <label>학교 / 학년</label>
-            <input class="sg-input sg-input-auto" id="f-school" placeholder="예) ○○고 / 고2" readonly>
+            <label>학교 / 학년 / 진로목표 <span class="sg-auto-badge">자동</span></label>
+            <input class="sg-input sg-input-auto" id="f-school" placeholder="예) ○○고 / 고2 / 의대" readonly>
+          </div>
+          <div class="sg-form-row">
+            <label>학생 전화번호</label>
+            <input class="sg-input" id="f-phone" placeholder="학생 연락처를 입력하세요" type="tel">
           </div>
         </div>`;
     }
@@ -1244,6 +1251,30 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     _selectedPages  = spRaw ? spRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
     // 2학기 DC 활성 여부 — dcSemester 값이 있으면 활성
     _isSemesterDc   = !!p.get('dcSemester');
+
+    // 폼 데이터 모듈 변수에 저장 (탭 전환 후 재채움용)
+    _formData = { name, schoolStr, amountStr, specialStr };
+  }
+
+  // 폼 재채움 — 탭 전환 후 호출
+  function _refillForm() {
+    if (!_formData.name && !_formData.schoolStr) return;
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val) el.value = val;
+    };
+    setVal('f-name',    _formData.name);
+    setVal('f-school',  _formData.schoolStr);
+    setVal('f-amount',  _formData.amountStr);
+    setVal('f-special', _formData.specialStr);
+    // 학년 드롭다운
+    const grade = new URLSearchParams(window.location.search).get('grade') || '';
+    const gradeEl = document.getElementById('f-grade');
+    if (gradeEl && grade) {
+      const gradeVal = grade.startsWith('고') ? grade : '고' + grade;
+      const opt = gradeEl.querySelector(`option[value="${gradeVal}"]`);
+      if (opt) { opt.selected = true; _onGradeChange(); }
+    }
   }
 
 
