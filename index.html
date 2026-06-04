@@ -249,6 +249,8 @@ function openSignPage() {
     : Calc.getAllTotalsDc();
 
   // DC 내역 — 각각 고정 변수로 분리 (배열 인덱스 방식 제거)
+  const cfg      = MK_CONFIG.resolve();
+  const discount = cfg.discount || {};
   const dcRoadmapStr  = Calc.isSelectDcActive()
     ? (discount.selectDc ? '선택가DC ' + discount.selectDc + '%' : '')
     : (Calc.isDcActive('roadmap') && discount.roadmap ? '로드맵DC ' + discount.roadmap + '%' : '');
