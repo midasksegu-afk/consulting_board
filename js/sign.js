@@ -238,6 +238,8 @@ const Sign = (() => {
    * 5. 초기화
    * ============================================================ */
   async function init() {
+    // 이전 세션 서명 즉시 삭제 (새 상담 시작)
+    await _deleteSignature();
     // Supabase config 먼저 로드 (prices 데이터)
     await _loadRemoteConfig();
     _renderTabs();
@@ -1121,7 +1123,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           <div class="sg-canvas-placeholder" id="sg-canvas-placeholder">
             <span>✍ 여기에 서명하세요</span>
           </div>
-          <canvas id="sg-canvas" width="700" height="280"></canvas>
+          <canvas id="sg-canvas" width="700" height="560"></canvas>
         </div>
         <div class="sg-tablet-btns">
           <button class="sg-tablet-btn sg-tablet-btn-clear" onclick="Sign._clearCanvas()">지우기</button>
