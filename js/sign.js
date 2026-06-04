@@ -1123,7 +1123,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           <div class="sg-canvas-placeholder" id="sg-canvas-placeholder">
             <span>✍ 여기에 서명하세요</span>
           </div>
-          <canvas id="sg-canvas" width="700" height="560"></canvas>
+          <canvas id="sg-canvas" width="1400" height="560"></canvas>
         </div>
         <div class="sg-tablet-btns">
           <button class="sg-tablet-btn sg-tablet-btn-clear" onclick="Sign._clearCanvas()">지우기</button>
