@@ -681,7 +681,7 @@ const Sign = (() => {
     if (!_sessionId) return;
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/${SIG_TABLE}?session_id=eq.${_sessionId}&limit=1`,
+        `${SUPABASE_URL}/rest/v1/${SIG_TABLE}?session_id=eq.${_sessionId}&doc_type=eq.${_currentTab}&limit=1`,
         { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
       );
       if (!res.ok) return;
