@@ -779,6 +779,7 @@ const Sign = (() => {
       return {
         name:   get('f-name'),
         school: get('f-school'),
+        phone:  get('f-phone'),
       };
     }
   }
@@ -873,7 +874,7 @@ const Sign = (() => {
       <div class="sg-info-card" style="margin-bottom:16px;">
         <table class="sg-info-table">
           <tr>
-            <th>학생명</th><td>${form.name || '　　　　　'}</td>
+            <th>학생명</th><td>${form.name || '　　　　　'}${form.phone ? ` (${form.phone})` : ''}</td>
             <th>학교/학년</th><td>${form.school || '　　　　　'}</td>
           </tr>
         </table>
