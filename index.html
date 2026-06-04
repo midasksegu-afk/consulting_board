@@ -270,18 +270,28 @@ function openSignPage() {
     if (amt) dcParts.push('2학기DC -' + amt + '만원');
   }
 
+  // 선택된 pageId 수집 (연간관리형 카드 + 상세 체크박스)
+  const selectedPageIds = new Set([
+    ...Object.keys(Calc.state.ov),
+    ...Object.keys(Calc.state.pages).filter(id =>
+      Calc.state.pages[id] && Calc.state.pages[id].size > 0
+    ),
+  ]);
+  const selectedPages = [...selectedPageIds].join(',');
+
   // URL 파라미터 조합
   const params = new URLSearchParams({
     name,
     school,
     goal,
-    grade:      gradeNum,
-    roadmap:    totals.roadmap    || 0,
-    strategy:   totals.strategy   || 0,
-    grand:      totals.grand      || 0,
-    dcRoadmap:  dcParts[0] || '',
-    dcSelect:   dcParts[1] || '',
-    dcSemester: dcParts[2] || '',
+    grade:         gradeNum,
+    roadmap:       totals.roadmap    || 0,
+    strategy:      totals.strategy   || 0,
+    grand:         totals.grand      || 0,
+    dcRoadmap:     dcParts[0] || '',
+    dcSelect:      dcParts[1] || '',
+    dcSemester:    dcParts[2] || '',
+    selectedPages: selectedPages,
   });
 
   window.open('sign.html?' + params.toString(), '_blank');
