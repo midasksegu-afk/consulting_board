@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>마이더스K — 가입약관 · 운영방침 서명</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    /* ================================================================
+       sign.html 전용 스타일
+       portfolio.js dt- / pf- 컨셉 통일
+    ================================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --dt-deep:    #2A3340;
+      --dt-acc:     #455367;
+      --dt-tint:    #F2F4F8;
+      --dt-line:    rgba(69,83,103,.22);
+      --dt-ink:     #15151A;
+      --dt-ink2:    #43434A;
+      --dt-ink3:    #86868B;
+      --dt-line-md: rgba(21,21,26,.14);
+      --mk-blue:    #2B4BAF;
+      --mk-blue-lt: #F0F4FC;
+
+      --bg:      #F0F2F5;
+      --surface: #ffffff;
+      --border:  rgba(0,0,0,0.09);
+      --radius:  10px;
+      --shadow:  0 2px 12px rgba(21,21,26,.08);
+    }
+
+    html, body {
+      min-height: 100vh;
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--dt-ink);
+      font-size: 14px;
+    }
+
+    /* ── 전체 레이아웃 ── */
+    .sg-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── 상단 헤더 ── */
+    .sg-topbar {
+      background: var(--dt-deep);
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .sg-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .sg-topbar-brand {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      color: rgba(255,255,255,0.4);
+    }
+    .sg-topbar-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .sg-topbar-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255,255,255,0.15);
+    }
+    .sg-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sg-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sg-back-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── 탭 바 ── */
+    .sg-tab-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex;
+      gap: 0;
+    }
+    #sg-tabs {
+      display: flex;
+      gap: 0;
+    }
+    .sg-tab-btn {
+      padding: 14px 28px;
+      border: none;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--dt-ink3);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.15s;
+    }
+    .sg-tab-btn:hover { color: var(--dt-deep); }
+    .sg-tab-btn.active {
+      color: var(--dt-deep);
+      border-bottom-color: var(--dt-deep);
+    }
+    .sg-tab-sub {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--dt-ink3);
+      letter-spacing: .04em;
+    }
+    .sg-tab-btn.active .sg-tab-sub {
+      color: var(--dt-acc);
+    }
+
+    /* ── 본문 영역 ── */
+    .sg-body {
+      flex: 1;
+      display: flex;
+      gap: 24px;
+      padding: 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── 좌측: 약관 본문 ── */
+    .sg-doc-panel {
+      flex: 1.4;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .sg-doc-panel-header {
+      background: var(--dt-deep);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sg-doc-panel-header-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: .06em;
+    }
+    .sg-doc-panel-header-badge {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 3px;
+      padding: 3px 8px;
+    }
+    .sg-doc-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.15) transparent;
+    }
+
+    /* ── 약관 본문 요소 ── */
+    .sg-intro {
+      background: var(--dt-tint);
+      border-left: 3px solid var(--dt-deep);
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      font-size: 12.5px;
+      color: var(--dt-ink2);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .sg-section {
+      margin-bottom: 16px;
+    }
+    .sg-sub-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dt-deep);
+      padding: 8px 0 4px;
+      border-bottom: 2px solid var(--dt-deep);
+      margin-bottom: 10px;
+    }
+    .sg-section-title {
+      display: flex;
+      align-items: center;
+      background: var(--dt-deep);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 14px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .sg-table-wrap { overflow-x: auto; margin-bottom: 4px; }
+    .sg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    .sg-table th {
+      background: var(--dt-acc);
+      color: #fff;
+      padding: 7px 10px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .sg-table td {
+      padding: 7px 10px;
+      border: 1px solid var(--dt-line);
+      color: var(--dt-ink2);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+    .sg-group-row td {
+      background: var(--dt-tint);
+      font-weight: 700;
+      color: var(--dt-deep);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+    .sg-ol {
+      list-style: none;
+      padding: 0;
+    }
+    .sg-ol li {
+      display: flex;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--dt-line);
+      font-size: 12px;
+      color: var(--dt-ink2);
+      line-height: 1.7;
+    }
+    .sg-li-num {
+      width: 20px;
+      height: 20px;
+      background: var(--dt-deep);
+      color: #fff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .sg-notice-list { display: flex; flex-direction: column; gap: 6px; }
+    .sg-notice-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 8px;
+      background: var(--dt-tint);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--dt-ink2);
+    }
+    .sg-notice-num {
+      width: 22px;
+      height: 22px;
+      background: var(--dt-deep);
+      color: #fff;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .sg-notice-desc { color: var(--dt-ink3); margin-left: 4px; }
+    .sg-alert {
+      background: #FBEAEF;
+      border: 1px solid rgba(139,28,58,.2);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #8b1c3a;
+      font-weight: 600;
+    }
+    .sg-numbered-list { display: flex; flex-direction: column; gap: 0; }
+    .sg-num-row {
+      display: flex;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--dt-line);
+      font-size: 12px;
+      color: var(--dt-ink2);
+      line-height: 1.7;
+    }
+    .sg-num-badge {
+      width: 20px;
+      height: 20px;
+      background: var(--dt-acc);
+      color: #fff;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .sg-refund-note {
+      font-size: 11px;
+      color: var(--dt-ink3);
+      line-height: 1.7;
+      padding: 8px 0;
+      margin-top: 4px;
+    }
+    .sg-final-notes {
+      margin-top: 12px;
+      padding: 14px 16px;
+      background: #F0F4FC;
+      border: 1.5px solid rgba(42,51,64,.18);
+      border-radius: 8px;
+    }
+    .sg-final-note-item {
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--dt-ink2);
+      line-height: 1.75;
+      margin-bottom: 8px;
+    }
+    .sg-final-note-item:last-child { margin-bottom: 0; }
+    .sg-final-note-num {
+      font-weight: 800;
+      color: var(--dt-deep);
+      flex-shrink: 0;
+      width: 16px;
+    }
+
+    /* ── 우측: 서명 패널 ── */
+    .sg-sign-panel {
+      width: 380px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 입력폼 카드 */
+    .sg-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .sg-card-header {
+      background: var(--dt-tint);
+      border-bottom: 1px solid var(--dt-line);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sg-card-header-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dt-deep);
+      letter-spacing: .04em;
+    }
+    .sg-card-body { padding: 16px; }
+    .sg-form-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: var(--dt-ink3);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .sg-form-grid { display: flex; flex-direction: column; gap: 8px; }
+    .sg-form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .sg-form-row label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dt-ink3);
+    }
+    .sg-input {
+      padding: 8px 12px;
+      border: 1.5px solid var(--dt-line);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--dt-ink);
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+    .sg-input:focus { border-color: var(--dt-deep); }
+
+    /* 서명 카드 */
+    .sg-sign-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .sg-sign-card-header {
+      background: var(--dt-deep);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sg-sign-card-title { font-size: 12px; font-weight: 700; color: #fff; }
+    .sg-sign-card-badge {
+      margin-left: auto;
+      font-size: 9px;
+      color: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 3px;
+      padding: 2px 8px;
+      letter-spacing: .1em;
+    }
+    .sg-sign-card-body { padding: 16px; }
+
+    /* 서명 미리보기 */
+    .sg-sign-preview-box {
+      border: 1.5px dashed var(--dt-line);
+      border-radius: 8px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dt-tint);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    #sg-sign-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: var(--dt-ink3);
+      font-size: 12px;
+      gap: 6px;
+    }
+    #sg-sign-preview {
+      display: none;
+      max-width: 100%;
+      max-height: 76px;
+      object-fit: contain;
+    }
+
+    /* 서명 방법 섹션 */
+    .sg-sign-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .sg-sign-method-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--dt-ink3);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    /* 방법1: 아이패드 서명 */
+    .sg-ipad-section {
+      padding: 12px;
+      background: var(--dt-tint);
+      border: 1px solid var(--dt-line);
+      border-radius: 8px;
+    }
+    .sg-ipad-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--dt-deep);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .sg-ipad-btn:hover { opacity: 0.88; }
+    .sg-ipad-desc {
+      font-size: 11px;
+      color: var(--dt-ink3);
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* 방법2: 직접 서명 */
+    .sg-local-section {
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--dt-line);
+      border-radius: 8px;
+    }
+    .sg-canvas-wrap {
+      position: relative;
+      border: 1.5px solid var(--dt-deep);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 8px;
+    }
+    .sg-canvas-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-size: 13px;
+      pointer-events: none;
+      gap: 6px;
+      z-index: 1;
+    }
+    #sg-canvas {
+      display: block;
+      width: 100%;
+      height: 100px;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .sg-canvas-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .sg-btn-sm {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+    }
+    .sg-btn-sm:hover { opacity: 0.85; }
+    .sg-btn-clear  { background: var(--dt-tint); color: var(--dt-deep); border: 1px solid var(--dt-line); }
+    .sg-btn-apply  { background: var(--dt-acc);  color: #fff; }
+
+    /* 출력 버튼 */
+    .sg-print-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--mk-blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+      box-shadow: 0 3px 10px rgba(43,75,175,0.3);
+    }
+    .sg-print-btn:hover { opacity: 0.9; }
+
+    /* 모달 */
+    .sg-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(21,21,26,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+    .sg-modal-box {
+      background: #fff;
+      border-radius: 14px;
+      width: 380px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+    }
+    .sg-modal-header {
+      background: var(--dt-deep);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .sg-modal-header button {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .sg-modal-body { padding: 24px; text-align: center; }
+    .sg-qr-wrap {
+      background: #fff;
+      border: 1px solid var(--dt-line);
+      border-radius: 10px;
+      padding: 12px;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    .sg-qr-desc {
+      font-size: 13px;
+      color: var(--dt-ink2);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .sg-qr-url {
+      font-size: 10px;
+      color: var(--dt-ink3);
+      word-break: break-all;
+      background: var(--dt-tint);
+      border-radius: 4px;
+      padding: 6px 10px;
+      margin-bottom: 14px;
+    }
+    .sg-poll-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dt-ink2);
+    }
+    .sg-poll-dot {
+      width: 8px; height: 8px;
+      background: var(--mk-blue);
+      border-radius: 50%;
+      animation: sgPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes sgPulse {
+      0%,100%{ opacity:.3; transform:scale(.8); }
+      50%    { opacity:1;  transform:scale(1.2); }
+    }
+
+    /* 반응형 */
+    @media (max-width: 900px) {
+      .sg-body { flex-direction: column; padding: 16px; }
+      .sg-sign-panel { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sg-layout">
+
+  <!-- 상단 헤더 -->
+  <div class="sg-topbar">
+    <div class="sg-topbar-left">
+      <span class="sg-topbar-brand">MIDAS-K EDUCATION CONSULTING</span>
+      <div class="sg-topbar-divider"></div>
+      <span class="sg-topbar-title">가입약관 · 운영방침 동의서</span>
+    </div>
+    <div class="sg-topbar-right">
+      <a href="index.html" class="sg-back-btn">
+        <i class="ti ti-arrow-left"></i> 컨설팅 보드로
+      </a>
+    </div>
+  </div>
+
+  <!-- 탭 바 -->
+  <div class="sg-tab-bar">
+    <div id="sg-tabs"></div>
+  </div>
+
+  <!-- 본문 -->
+  <div class="sg-body">
+
+    <!-- 좌측: 약관 본문 -->
+    <div class="sg-doc-panel">
+      <div class="sg-doc-panel-header">
+        <i class="ti ti-file-text" style="color:rgba(255,255,255,0.7);font-size:16px;"></i>
+        <span class="sg-doc-panel-header-title">약관 전문</span>
+        <span class="sg-doc-panel-header-badge">티처스 컨설턴트</span>
+      </div>
+      <div class="sg-doc-scroll">
+        <div id="sg-doc-body"></div>
+      </div>
+    </div>
+
+    <!-- 우측: 서명 패널 -->
+    <div class="sg-sign-panel">
+
+      <!-- 가입정보 입력폼 -->
+      <div class="sg-card">
+        <div class="sg-card-header">
+          <i class="ti ti-forms" style="font-size:15px;color:var(--dt-acc);"></i>
+          <span class="sg-card-header-title">정보 입력</span>
+        </div>
+        <div class="sg-card-body">
+          <div id="sg-input-form"></div>
+        </div>
+      </div>
+
+      <!-- 서명 카드 -->
+      <div class="sg-sign-card">
+        <div class="sg-sign-card-header">
+          <i class="ti ti-writing" style="font-size:15px;color:rgba(255,255,255,0.8);"></i>
+          <span class="sg-sign-card-title">서명</span>
+          <span class="sg-sign-card-badge">SIGNATURE</span>
+        </div>
+        <div class="sg-sign-card-body">
+
+          <!-- 서명 미리보기 -->
+          <div class="sg-sign-preview-box">
+            <div id="sg-sign-empty">
+              <i class="ti ti-pencil" style="font-size:16px;"></i>
+              서명 대기 중
+            </div>
+            <img id="sg-sign-preview" src="" alt="서명">
+          </div>
+
+          <div class="sg-sign-methods">
+
+            <!-- 방법1: 아이패드 서명 -->
+            <div class="sg-ipad-section">
+              <div class="sg-sign-method-label">📱 아이패드로 서명받기</div>
+              <button class="sg-ipad-btn" onclick="Sign.requestSignature()">
+                <i class="ti ti-qrcode"></i> QR 코드 표시
+              </button>
+              <div class="sg-ipad-desc">
+                아이패드 카메라로 QR 스캔 후<br>
+                고객이 직접 서명합니다
+              </div>
+            </div>
+
+            <!-- 방법2: 직접 서명 -->
+            <div class="sg-local-section">
+              <div class="sg-sign-method-label">✍ 직접 서명 (이 화면에서)</div>
+              <div class="sg-canvas-wrap">
+                <div class="sg-canvas-placeholder" id="sg-canvas-placeholder">
+                  <i class="ti ti-pencil"></i> 여기에 서명하세요
+                </div>
+                <canvas id="sg-canvas" width="700" height="200"></canvas>
+              </div>
+              <div class="sg-canvas-btns">
+                <button class="sg-btn-sm sg-btn-clear"  onclick="Sign.clearSignature()">지우기</button>
+                <button class="sg-btn-sm sg-btn-apply"  onclick="Sign.useLocalSignature()">서명 적용</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 출력 버튼 -->
+      <button class="sg-print-btn" onclick="Sign.printDocument()">
+        <i class="ti ti-printer" style="font-size:18px;"></i>
+        PDF 출력 / 인쇄
+      </button>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ── JS 로드 ── -->
+<script src="js/sign.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 아이패드 전용 서명 모드 확인
+    const isTablet = Sign.checkTabletMode();
+    // 아이패드 모드가 아니면 일반 UI 초기화
+    if (!isTablet) {
+      Sign.init();
+    }
+  });
+</script>
+
+</body>
+</html>
