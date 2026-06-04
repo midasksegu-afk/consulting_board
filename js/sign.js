@@ -979,7 +979,7 @@ const Sign = (() => {
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>마이더스K — ${data.tabLabel}</title>
+<title>${[form.name, form.school, data.tabLabel].filter(Boolean).join('_')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
