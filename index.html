@@ -248,27 +248,22 @@ function openSignPage() {
     ? Calc.getAllTotalsDcWithSelect()
     : Calc.getAllTotalsDc();
 
-  // DC 내역 문자열 생성
-  const cfg       = MK_CONFIG.resolve();
-  const discount  = cfg.discount || {};
-  const dcParts   = [];
-  if (Calc.isSelectDcActive()) {
-    const r = discount.selectDc || 0;
-    if (r) dcParts.push('선택가DC ' + r + '%');
-  } else if (Calc.isDcActive('roadmap')) {
-    const r = discount.roadmap || 0;
-    if (r) dcParts.push('로드맵DC ' + r + '%');
-  }
-  if (Calc.isDcActive('individual')) {
-    const r = discount.individual || 0;
-    if (r) dcParts.push('개별DC ' + r + '%');
-  }
-  if (Calc.isSemesterDcActive()) {
-    const amt = Calc.isSelectDcActive()
-      ? (discount.semesterDcAmtSingle || 0)
-      : (discount.semesterDcAmt || 0);
-    if (amt) dcParts.push('2학기DC -' + amt + '만원');
-  }
+  // DC 내역 — 각각 고정 변수로 분리 (배열 인덱스 방식 제거)
+  const dcRoadmapStr  = Calc.isSelectDcActive()
+    ? (discount.selectDc ? '선택가DC ' + discount.selectDc + '%' : '')
+    : (Calc.isDcActive('roadmap') && discount.roadmap ? '로드맵DC ' + discount.roadmap + '%' : '');
+  const dcIndividualStr = Calc.isDcActive('individual') && discount.individual
+    ? '개별DC ' + discount.individual + '%' : '';
+  const dcSemesterStr = Calc.isSemesterDcActive()
+    ? (() => {
+        const amt = Calc.isSelectDcActive()
+          ? (discount.semesterDcAmtSingle || 0)
+          : (discount.semesterDcAmt || 0);
+        return amt ? '2학기DC -' + amt + '만원' : '';
+      })() : '';
+
+  // 특약 표시용 문자열 (서명 폼 특약란)
+  const specialStr = [dcRoadmapStr, dcIndividualStr, dcSemesterStr].filter(Boolean).join(' / ');
 
   // 선택된 pageId 수집 (연간관리형 카드 + 상세 체크박스)
   const selectedPageIds = new Set([
@@ -288,9 +283,9 @@ function openSignPage() {
     roadmap:       totals.roadmap    || 0,
     strategy:      totals.strategy   || 0,
     grand:         totals.grand      || 0,
-    dcRoadmap:     dcParts[0] || '',
-    dcSelect:      dcParts[1] || '',
-    dcSemester:    dcParts[2] || '',
+    dcRoadmap:     dcRoadmapStr,
+    dcSelect:      dcIndividualStr,
+    dcSemester:    dcSemesterStr,
     selectedPages: selectedPages,
   });
 
