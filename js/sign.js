@@ -1103,7 +1103,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     const docType = params.get('doc');
     if (!sessId) return false;
 
-    _sessionId  = sessId;
     _currentTab = docType || 'terms';
     _renderTabletUI();
     return true;
