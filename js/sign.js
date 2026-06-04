@@ -510,9 +510,10 @@ const Sign = (() => {
     _ctx    = _canvas.getContext('2d');
 
     _ctx.strokeStyle = '#15151A';
-    _ctx.lineWidth   = 2.5;
+    _ctx.lineWidth   = 6;
     _ctx.lineCap     = 'round';
     _ctx.lineJoin    = 'round';
+    _ctx.globalAlpha = 0.92;
 
     const placeholder = document.getElementById('sg-canvas-placeholder');
 
