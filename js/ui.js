@@ -1086,7 +1086,7 @@ const UI = (() => {
     modal.id = 'student-select-modal';
     modal.className = 'modal-overlay open';
     modal.innerHTML = `
-      <div class="modal-box" style="width:420px;">
+      <div class="modal-box" style="width:780px;">
         <div class="modal-header">
           <span><i class="ti ti-users"></i> 학생 불러오기</span>
           <button class="modal-close" onclick="document.getElementById('student-select-modal').remove()">
@@ -1097,8 +1097,8 @@ const UI = (() => {
           <input class="admin-input" id="student-search" placeholder="이름 검색..."
             oninput="UI._filterStudentList(this.value)" style="width:100%;">
         </div>
-        <div class="modal-body" style="padding:12px 20px 20px;max-height:360px;overflow-y:auto;">
-          <div id="student-modal-list" style="display:flex;flex-direction:column;gap:8px;">
+        <div class="modal-body" style="padding:12px 20px 20px;max-height:480px;overflow-y:auto;">
+          <div id="student-modal-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <div style="color:var(--text-3);font-size:13px;">불러오는 중...</div>
           </div>
         </div>
@@ -1131,25 +1131,33 @@ const UI = (() => {
     const listEl = document.getElementById('student-modal-list');
     if (!listEl) return;
     if (!list || list.length === 0) {
-      listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;">검색 결과가 없습니다.</div>';
+      listEl.innerHTML = '<div style="color:var(--text-3);font-size:13px;grid-column:1/-1;">검색 결과가 없습니다.</div>';
       return;
     }
     listEl.innerHTML = list.map((s, i) => {
-      const date      = Store.formatDate(s.savedAt).split(' ')[0];
-      const gradeNum  = s.meta?.grade;
-      const gradeStr  = gradeNum === 0 ? '중학생' : gradeNum ? `고${gradeNum}` : '';
+      const date     = Store.formatDate(s.savedAt).split(' ')[0];
+      const gradeNum = s.meta?.grade;
+      const gradeStr = gradeNum === 0 ? '중학생' : gradeNum ? `고${gradeNum}` : '';
+      const name     = s.meta?.name   || s.key.split('_')[0];
+      const school   = s.meta?.school || s.key.split('_')[1] || '';
+      const goal     = s.meta?.goal   || s.key.split('_').slice(2).join('_') || '';
       return `<div onclick="UI.loadStudentByKey('${s.key}')"
         style="display:flex;align-items:center;gap:10px;
-        padding:8px 14px;border-bottom:1px solid var(--border);cursor:pointer;"
+        padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;"
         onmouseover="this.style.background='var(--surface2)'"
         onmouseout="this.style.background=''">
         <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;
           background:var(--surface2);border:1px solid var(--border);
           display:flex;align-items:center;justify-content:center;
           font-size:11px;font-weight:700;color:var(--text-3);">${i + 1}</span>
-        <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.key}</span>
-        ${gradeStr ? `<span style="font-size:11px;font-weight:600;color:var(--blue-tx);background:var(--blue-bg);border-radius:4px;padding:1px 7px;flex-shrink:0;">${gradeStr}</span>` : ''}
-        <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">${date}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-1);">${name}</span>
+            ${gradeStr ? `<span style="font-size:11px;font-weight:600;color:var(--blue-tx);background:var(--blue-bg);border-radius:4px;padding:1px 7px;">${gradeStr}</span>` : ''}
+          </div>
+          <div style="font-size:11px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${school}${goal ? ' · ' + goal : ''}</div>
+        </div>
+        <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">${date}</span>
         <button onclick="event.stopPropagation();UI._editStudentFromModal('${s.key}')"
           style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-3);"
           title="수정" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-3)'">
@@ -1166,7 +1174,7 @@ const UI = (() => {
 
   function _filterStudentList(query) {
     const q = query.trim().toLowerCase();
-    const filtered = q ? _studentListCache.filter(s => s.key.toLowerCase().includes(q)) : _studentListCache;
+    const filtered = q ? _studentListCache.filter(s => s.meta?.name?.toLowerCase().includes(q)) : _studentListCache;
     _renderStudentItems(filtered);
   }
 
