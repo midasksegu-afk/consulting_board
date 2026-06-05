@@ -166,8 +166,10 @@
         </button>
         <a href="#" onclick="openSignPage();return false;" class="btn"
           style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;"
-          title="가입약관 · 운영방침 서명">
-          <i class="ti ti-writing-sign"></i> 서명
+          title="가입약관 · 운영방침 서명"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--blue-bg)'"
+          onmouseout="this.style.borderColor='';this.style.color='';this.style.background=''">
+          약관서명
         </a>
         <button class="btn" id="admin-lock-btn" onclick="UI.toggleAdminMode()" title="관리자 모드">
           <i class="ti ti-lock" id="admin-lock-icon"></i>
