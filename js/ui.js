@@ -31,7 +31,8 @@ const UI = (() => {
 
   let _currentPageId = 'rm-overview';
   let _editDraft = null;
-  let _currentStudentKey = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
+  let _currentStudentKey  = null;  // 현재 불러온 학생 키 (덮어쓰기 저장용)
+  let _currentStudentMeta = null;  // 현재 불러온 학생 meta (학년 prefill용)
 
   // 관리자 인증 후 편집 버튼 + 자물쇠 아이콘 갱신
   function _refreshEditButtons() {
@@ -951,7 +952,9 @@ const UI = (() => {
       prefillName   = p[0] || '';
       prefillSchool = p[1] || '';
       prefillGoal   = p.slice(2).join('_') || '';
-      prefillGrade  = String(Calc.getGrade() || '');
+      prefillGrade  = _currentStudentMeta?.grade === 0 ? 'mid'
+                    : _currentStudentMeta?.grade ? String(_currentStudentMeta.grade)
+                    : '';
     }
 
     const gradeOptions = ['', '1', '2', '3', 'mid'].map(v => {
@@ -1052,13 +1055,15 @@ const UI = (() => {
       const ok = await Store.saveStudent(newKey, snap, meta);
       if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
       await Store.deleteStudent(_currentStudentKey);
-      _currentStudentKey = newKey;
+      _currentStudentKey  = newKey;
+      _currentStudentMeta = meta;
     } else {
       // 신규 저장 또는 키 동일 업데이트
       const key = isUpdate ? _currentStudentKey : newKey;
       const ok  = await Store.saveStudent(key, snap, meta);
       if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
-      if (!isUpdate) _currentStudentKey = null;
+      if (isUpdate) _currentStudentMeta = meta;
+      else          _currentStudentKey  = null;
     }
 
     document.getElementById('student-modal')?.remove();
@@ -1251,11 +1256,15 @@ const UI = (() => {
       const ok = await Store.saveStudent(newKey, data.selections, meta);
       if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
       await Store.deleteStudent(oldKey);
-      if (_currentStudentKey === oldKey) _currentStudentKey = newKey;
+      if (_currentStudentKey === oldKey) {
+        _currentStudentKey  = newKey;
+        _currentStudentMeta = meta;
+      }
     } else {
       // 키 동일 (학년만 변경 등): 덮어쓰기
       const ok = await Store.saveStudent(oldKey, data.selections, meta);
       if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
+      if (_currentStudentKey === oldKey) _currentStudentMeta = meta;
     }
 
     document.getElementById('student-edit-modal')?.remove();
@@ -1298,7 +1307,8 @@ const UI = (() => {
     _updateDcButtons();
     _updateTotalBoxes(Calc.getAllTotalsDc());
     go(_currentPageId);
-    _currentStudentKey = key;
+    _currentStudentKey  = key;
+    _currentStudentMeta = data.meta || null;
     const labelEl = document.getElementById('student-select-label');
     if (labelEl) labelEl.textContent = data.meta?.name || key;
     const tbTitle = document.getElementById('tb-title');
