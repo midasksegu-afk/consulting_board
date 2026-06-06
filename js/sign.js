@@ -1209,6 +1209,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     const dcRoadmap   = p.get('dcRoadmap')   || '';
     const dcSelect    = p.get('dcSelect')    || '';
     const dcSemester  = p.get('dcSemester')  || '';
+    const dcSpecial   = p.get('dcSpecial')   || '';
 
     // 금액 포맷 헬퍼
     const fmtMan = (n) => {
@@ -1230,6 +1231,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     if (dcRoadmap)  dcParts.push(dcRoadmap);
     if (dcSelect)   dcParts.push(dcSelect);
     if (dcSemester) dcParts.push(dcSemester);
+    if (dcSpecial)  dcParts.push(dcSpecial);
     const specialStr = dcParts.join(' / ');
 
     // 학교/학년/진로목표 합성 (학년은 '고2' 형태 그대로)
