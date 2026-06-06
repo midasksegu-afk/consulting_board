@@ -294,6 +294,9 @@ const Sign = (() => {
     _renderInputForm(data);
     _initCanvas();
     _updateSignPreview(null);
+    // 체크박스 — terms 탭에서만 표시
+    const copyWrap = document.getElementById('sg-copy-sign-wrap');
+    if (copyWrap) copyWrap.style.display = (tab === 'terms') ? '' : 'none';
     // 탭 전환 후 폼 재채움
     setTimeout(_refillForm, 0);
     // 폴링 재시작 (탭별 서명 수신 대기)
@@ -710,6 +713,11 @@ const Sign = (() => {
         _stopPolling();
         _signatureData = rows[0].image_data;
         _updateSignPreview(_signatureData);
+        // 체크박스 ON이면 운영방침 동의서에도 동일 서명 저장
+        const chk = document.getElementById('sg-copy-sign-chk');
+        if (chk && chk.checked) {
+          _formData.policySig = _signatureData;
+        }
 
         // 수신 완료 UI
         const statusEl = document.getElementById('sg-poll-status');
@@ -763,6 +771,11 @@ const Sign = (() => {
     }
     _signatureData = _canvas.toDataURL('image/png');
     _updateSignPreview(_signatureData);
+    // 체크박스 ON이면 운영방침 동의서에도 동일 서명 저장
+    const chk = document.getElementById('sg-copy-sign-chk');
+    if (chk && chk.checked) {
+      _formData.policySig = _signatureData;
+    }
   }
 
   function clearSignature() {
