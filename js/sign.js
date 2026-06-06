@@ -64,7 +64,11 @@ const Sign = (() => {
     if (_remotePages && _remotePages[pageId] && _remotePages[pageId].prices) {
       return _remotePages[pageId].prices;
     }
-    return null;
+    // fallback — localStorage 캐시에서 읽기 (Supabase 미저장 페이지 대응)
+    try {
+      const cached = JSON.parse(localStorage.getItem('mk_config') || '{}');
+      return cached.pages?.[pageId]?.prices || null;
+    } catch (e) { return null; }
   }
 
 
@@ -1467,17 +1471,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         const g3   = prices.filter(p => p.grade === 3 || String(p.grade) === '3');
         if (g3[idx]) amt = fmtAmt(g3[idx].amt);
       }
-      // 선택된 항목 강조: strategy 금액이 0보다 크면 선택됨 표시
-      // 세부 항목 매칭은 금액 기준
-      const isSelected = strategyAmt > 0 && amt !== '-' &&
-        String(strategyAmt).includes(amt.replace(/,/g, ''));
+      // 선택된 항목 강조 — selectedPages 포함 여부 기준
+      const isSelected = hasSelection && selectedPages.includes(sp.id);
       const rowStyle = isSelected
         ? 'background:#edf7f1;color:#1a6e3c;font-weight:700;'
         : 'color:#aaa;';
+      const amtDisplay = isSelected && amt !== '-'
+        ? `<strong>${amt}</strong>`
+        : amt;
       rows += `<tr style="${rowStyle}">
         <td colspan="2">${sp.label}</td>
         <td>${sp.freq}</td>
-        <td>${amt}</td>
+        <td>${amtDisplay}</td>
       </tr>`;
     });
 
