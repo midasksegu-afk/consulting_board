@@ -1456,7 +1456,7 @@ const UI = (() => {
         const hasPg = Calc.state.pages[pid] && Calc.state.pages[pid].size > 0;
         if (hasOv || hasPg) checkedRates.push(rate);
       });
-      btn2.style.display = '';
+      btn2.style.display = 'none';  // 개별가DC 버튼 숨김 유지
       const isOn2      = Calc.isDcActive('individual');
       const rateValues = [...new Set(checkedRates)];
       const rateLabel  = rateValues.length === 0 ? '0%'
