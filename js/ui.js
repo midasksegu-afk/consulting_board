@@ -1491,7 +1491,7 @@ const UI = (() => {
 
     // 로드맵 박스 라벨 뱃지 — 특별관리 ON/OFF
     const specialBadge = document.getElementById('special-mgmt-badge');
-    if (specialBadge) specialBadge.style.display = Calc.isSpecialMgmtActive() ? '' : 'none';
+    if (specialBadge) specialBadge.style.visibility = Calc.isSpecialMgmtActive() ? 'visible' : 'hidden';
   }
 
   // 대표특별관리 토글
