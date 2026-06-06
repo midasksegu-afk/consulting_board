@@ -318,6 +318,7 @@ const Sign = (() => {
 
     const data = TERMS_DATA[tab];
     _renderDocument(data);
+    document.querySelector('.sg-doc-scroll')?.scrollTo(0, 0);
     _renderInputForm(data);
     _initCanvas();
     _updateSignPreview(null);
