@@ -877,8 +877,10 @@ const Sign = (() => {
       return;
     }
 
-    // 가입약관 탭 학년 확인
-    const grade = document.getElementById('f-grade')?.value || '';
+    // 가입약관 탭 학년 확인 — policy 탭에서 호출 시 URL 파라미터 fallback
+    const grade = document.getElementById('f-grade')?.value
+      || new URLSearchParams(window.location.search).get('grade')
+      || '';
     if (!grade) {
       alert('학년을 선택해 주세요.\n가입약관의 학년(고1/고2/고3)을 먼저 선택해야 출력할 수 있습니다.');
       document.getElementById('f-grade')?.focus();
