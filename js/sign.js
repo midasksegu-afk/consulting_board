@@ -470,8 +470,18 @@ const Sign = (() => {
           <div class="sg-form-divider">✏️ 직접 입력</div>
           <div class="sg-form-row">
             <label>가입 시작일</label>
-            <input class="sg-input" id="f-start" type="date"
-              oninput="Sign._calcExpiry()">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input class="sg-input" id="f-start" type="date"
+                oninput="Sign._calcExpiry()" style="flex:1;">
+              <button type="button" class="sg-input"
+                style="flex-shrink:0;width:52px;cursor:pointer;font-weight:700;font-size:12px;background:var(--sg-deep,#2A3340);color:#fff;border:none;border-radius:6px;padding:0 10px;height:38px;"
+                onclick="(function(){
+                  const d=new Date();
+                  const pad=n=>String(n).padStart(2,'0');
+                  document.getElementById('f-start').value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+                  Sign._calcExpiry();
+                })()">오늘</button>
+            </div>
           </div>
           <div class="sg-form-row">
             <label>가입기간 <span class="sg-auto-badge">자동계산</span></label>
