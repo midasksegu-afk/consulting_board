@@ -118,7 +118,7 @@
           <div class="total-box">
             <i class="ti ti-map"></i>
             <div class="total-inner">
-              <div class="total-label">로드맵</div>
+              <div class="total-label">로드맵<span id="special-mgmt-badge" style="display:none;margin-left:6px;font-size:11px;font-weight:700;color:#F5A623;">대표특별</span></div>
               <div class="total-amt" id="total-roadmap">0원</div>
             </div>
           </div>
@@ -151,7 +151,8 @@
             <button class="pkg-btn pkg-btn-select" onclick="UI.applySelectDc()">선택가 DC</button>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <button class="pkg-btn pkg-btn-2" onclick="UI.applyPackage(2)">개별 DC</button>
+            <button class="pkg-btn pkg-btn-2" style="display:none;" onclick="UI.applyPackage(2)">개별 DC</button>
+            <button class="pkg-btn pkg-btn-special" onclick="UI.applySpecialMgmt()">특별관리</button>
             <button class="pkg-btn pkg-btn-semester" onclick="UI.applySemesterDc()">2학기 DC<br><span class="sem-amt" style="font-size:10px;opacity:0.8;">-0만원</span></button>
           </div>
         </div>
@@ -245,10 +246,10 @@ function openSignPage() {
   // 학년 숫자 추출 ('고2' → '2')
   const gradeNum = gradeStr.replace(/[^0-9]/g, '') || Calc.getGrade() || '';
 
-  // DC 적용 합산값
-  const totals = Calc.isSelectDcActive()
-    ? Calc.getAllTotalsDcWithSelect()
-    : Calc.getAllTotalsDc();
+  // DC 적용 합산값 — special 포함
+  const totals = Calc.isSpecialMgmtActive()
+    ? (Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelectAndSpecial() : Calc.getAllTotalsDcWithSpecial())
+    : (Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect()           : Calc.getAllTotalsDc());
 
   // DC 내역 — 각각 고정 변수로 분리 (배열 인덱스 방식 제거)
   const cfg      = MK_CONFIG.resolve();
@@ -265,9 +266,11 @@ function openSignPage() {
           : (discount.semesterDcAmt || 0);
         return amt ? '2학기DC -' + amt + '만원' : '';
       })() : '';
+  const dcSpecialStr = Calc.isSpecialMgmtActive()
+    ? '대표특별관리 +' + (discount.specialMgmtAmt || 0) + '만원' : '';
 
   // 특약 표시용 문자열 (서명 폼 특약란)
-  const specialStr = [dcRoadmapStr, dcIndividualStr, dcSemesterStr].filter(Boolean).join(' / ');
+  const specialStr = [dcRoadmapStr, dcIndividualStr, dcSemesterStr, dcSpecialStr].filter(Boolean).join(' / ');
 
   // 선택된 pageId 수집 (연간관리형 카드 + 상세 체크박스)
   const selectedPageIds = new Set([
