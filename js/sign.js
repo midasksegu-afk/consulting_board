@@ -299,6 +299,8 @@ const Sign = (() => {
     if (copyWrap) copyWrap.style.display = (tab === 'terms') ? '' : 'none';
     // 탭 전환 후 폼 재채움
     setTimeout(_refillForm, 0);
+    // 서명 복원 — _refillForm의 guard 조건과 무관하게 항상 실행
+    setTimeout(_restoreSignOnly, 0);
     // 폴링 재시작 (탭별 서명 수신 대기)
     _startPolling();
   }
@@ -1332,6 +1334,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       const opt = gradeEl.querySelector(`option[value="${gradeVal}"]`);
       if (opt) { opt.selected = true; _onGradeChange(); }
     }
+  }
+
+  // 서명 전용 복원 — _refillForm guard 조건과 무관하게 항상 실행
+  function _restoreSignOnly() {
+    const sig = _currentTab === 'terms' ? _formData.termsSig : _formData.policySig;
+    if (sig) { _signatureData = sig; _updateSignPreview(sig); }
   }
 
 
