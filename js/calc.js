@@ -31,6 +31,7 @@ const Calc = (() => {
     pages:       {},  // 상세 페이지 체크 { 'rm-a': Set([0,1,...]), 'rm-d': Set([0,1]) }
     pageVisited: {},  // 첫 진입 여부 { 'rm-d': true }
     dc:          { roadmap: false, individual: false, select: false, semester: false }, // DC 토글 상태
+    special:     false,  // 대표특별관리 토글
   };
 
 
@@ -355,6 +356,7 @@ const Calc = (() => {
       pages:       pagesSerial,
       pageVisited: { ...state.pageVisited },
       dc:          { ...state.dc },
+      special:     state.special,
     };
   }
 
@@ -382,6 +384,7 @@ const Calc = (() => {
         semester:   !!snapshot.dc.semester,
       };
     }
+    state.special = !!snapshot.special;
 
     _notifyChange();
   }
@@ -396,6 +399,7 @@ const Calc = (() => {
     state.pages       = {};
     state.pageVisited = {};
     state.dc          = { roadmap: false, individual: false, select: false, semester: false };
+    state.special     = false;
     Store.clearSession();
     _notifyChange();
   }
@@ -607,6 +611,34 @@ const Calc = (() => {
   /* ============================================================
    * Public API
    * ============================================================ */
+
+  /* ============================================================
+   * 대표특별관리 — 기존 합산 함수 무관, 래핑만
+   * ============================================================ */
+  function toggleSpecialMgmt() {
+    state.special = !state.special;
+    _notifyChange();
+    return state.special;
+  }
+  function isSpecialMgmtActive() { return !!state.special; }
+  function getSpecialMgmtAmt() {
+    return state.special ? (cfg().discount.specialMgmtAmt || 0) * 10000 : 0;
+  }
+
+  // 기존 getAllTotalsDc 래핑 — special 가산만 추가, 기존 로직 무관
+  function getAllTotalsDcWithSpecial() {
+    const base       = getAllTotalsDc();
+    const specialAmt = getSpecialMgmtAmt();
+    return { ...base, roadmap: base.roadmap + specialAmt, grand: base.grand + specialAmt };
+  }
+
+  // 기존 getAllTotalsDcWithSelect 래핑 — special 가산만 추가, 기존 로직 무관
+  function getAllTotalsDcWithSelectAndSpecial() {
+    const base       = getAllTotalsDcWithSelect();
+    const specialAmt = getSpecialMgmtAmt();
+    return { ...base, roadmap: base.roadmap + specialAmt, grand: base.grand + specialAmt };
+  }
+
   return {
     // 학년
     setGrade, getGrade,
@@ -628,6 +660,9 @@ const Calc = (() => {
     toggleSelectDc, isSelectDcActive, getSelectDcTotal, getAllTotalsDcWithSelect,
     // 2학기 DC
     toggleSemesterDc, isSemesterDcActive,
+    // 대표특별관리
+    toggleSpecialMgmt, isSpecialMgmtActive, getSpecialMgmtAmt,
+    getAllTotalsDcWithSpecial, getAllTotalsDcWithSelectAndSpecial,
     // 변경 구독
     onChange,
     // state 직접 참조 (읽기 전용)

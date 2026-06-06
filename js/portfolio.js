@@ -96,9 +96,9 @@ const Portfolio = (() => {
   function _buildHTML(items, studentKey) {
     const config   = MK_CONFIG.resolve();
     const totals   = Calc.getAllTotals();
-    const totalsDc = Calc.isSelectDcActive()
-      ? Calc.getAllTotalsDcWithSelect()
-      : Calc.getAllTotalsDc();
+    const totalsDc = Calc.isSpecialMgmtActive()
+      ? (Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelectAndSpecial() : Calc.getAllTotalsDcWithSpecial())
+      : (Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect()           : Calc.getAllTotalsDc());
     // 2학기DC 차감액
     const semDisc  = totalsDc.semDisc || 0;
     // 개별가DC 차감액
@@ -142,6 +142,10 @@ const Portfolio = (() => {
       let extraDcHtml = '';
       if (groupKey === 'roadmap' && semDisc > 0) {
         extraDcHtml = `<div class="pf-extra-dc">추가할인 : 2학기DC &nbsp;-${fmt(semDisc)}</div>`;
+      }
+      if (groupKey === 'roadmap' && Calc.isSpecialMgmtActive()) {
+        const specialAmt = (cfg().discount.specialMgmtAmt || 0);
+        extraDcHtml += `<div class="pf-extra-dc">대표특별 ${specialAmt}만원</div>`;
       }
       if (groupKey === 'individual' && indDiscAmt > 0) {
         extraDcHtml = `<div class="pf-extra-dc">추가할인 : 개별가DC &nbsp;-${fmt(indDiscAmt)}</div>`;
@@ -205,6 +209,7 @@ const Portfolio = (() => {
 
         <div class="pf-special-box">
           <span class="pf-special-label">특약사항 :</span>
+          ${Calc.isSpecialMgmtActive() ? `<span style="font-size:12px;font-weight:600;color:#5b35c4;">대표특별 ${cfg().discount.specialMgmtAmt || 0}만원</span>` : ''}
         </div>
 
         <div class="pf-footer">
@@ -297,6 +302,7 @@ const Portfolio = (() => {
           if (rate) dcLabels.push(`로드맵 할인 (${rate}%)`);
         }
         if (Calc.isSemesterDcActive()) dcLabels.push('2학기 할인');
+        if (Calc.isSpecialMgmtActive()) dcLabels.push('대표특별관리');
       } else if (effGroup === 'individual') {
         if (Calc.isDcActive('individual')) {
           const rate = discount.individual || 0;

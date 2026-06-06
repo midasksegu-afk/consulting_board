@@ -73,10 +73,17 @@ const UI = (() => {
   /* ============================================================
    * 1. 초기화 — DOMContentLoaded 에서 호출
    * ============================================================ */
+  // 특별관리 상태 포함 최적 합산 함수 반환 헬퍼
+  function _getTotals() {
+    return Calc.isSpecialMgmtActive()
+      ? (Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelectAndSpecial() : Calc.getAllTotalsDcWithSpecial())
+      : (Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect()           : Calc.getAllTotalsDc());
+  }
+
   function init() {
     // Calc 변경 구독 → UI 갱신
     Calc.onChange((totals, state) => {
-      _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
+      _updateTotalBoxes(_getTotals());
       _updateLocalTotal(_currentPageId);
       _syncCheckboxes(state);
       _syncGradeButtons(state.grade);
@@ -885,7 +892,7 @@ const UI = (() => {
     if (!cb.checked && (pageId === 'rm-a' || pageId === 'rm-b') && Calc.isDcActive('roadmap')) {
       Calc.toggleDc('roadmap');
       _updateDcButtons();
-      _updateTotalBoxes(Calc.getAllTotalsDc());
+      _updateTotalBoxes(_getTotals());
       showToast('로드맵 DC가 해제되었습니다. 다시 선택해 주세요', 'warn');
     }
     const card = document.getElementById('ovcard-' + pageId);
@@ -1313,7 +1320,7 @@ const UI = (() => {
     _syncCheckboxes(Calc.state);               // aoc 체크박스 복원 (수시·면접·정시 등)
     _updateOvCardPrices(Calc.state.grade);
     _updateDcButtons();
-    _updateTotalBoxes(Calc.getAllTotalsDc());
+    _updateTotalBoxes(_getTotals());
     go(_currentPageId);
     _currentStudentKey  = key;
     _currentStudentMeta = data.meta || null;
@@ -1403,7 +1410,7 @@ const UI = (() => {
       Calc.toggleSemesterDc();
     }
     _updateDcButtons();
-    _updateTotalBoxes(Calc.getAllTotalsDc());
+    _updateTotalBoxes(_getTotals());
 
     const label = group === 'roadmap' ? '로드맵' : '개별';
     if (mutualMsg) {
@@ -1474,6 +1481,26 @@ const UI = (() => {
       const semAmtEl = btnSem.querySelector('.sem-amt');
       if (semAmtEl) semAmtEl.textContent = `-${amt}만원`;
     }
+
+    // 대표특별관리 버튼
+    const btnSpecial = document.querySelector('.pkg-btn-special');
+    if (btnSpecial) {
+      const isOn = Calc.isSpecialMgmtActive();
+      btnSpecial.classList.toggle('pkg-btn-active', isOn);
+    }
+
+    // 로드맵 박스 라벨 뱃지 — 특별관리 ON/OFF
+    const specialBadge = document.getElementById('special-mgmt-badge');
+    if (specialBadge) specialBadge.style.display = Calc.isSpecialMgmtActive() ? '' : 'none';
+  }
+
+  // 대표특별관리 토글
+  function applySpecialMgmt() {
+    const amt = cfg().discount.specialMgmtAmt || 0;
+    const isOn = Calc.toggleSpecialMgmt();
+    _updateDcButtons();
+    _updateTotalBoxes(_getTotals());
+    showToast(isOn ? `대표특별관리 +${amt}만원 적용` : '대표특별관리 해제', isOn ? 'success' : 'warn');
   }
 
   // 선택가 DC 토글
@@ -1513,7 +1540,7 @@ const UI = (() => {
       Calc.toggleSemesterDc();
     }
     _updateDcButtons();
-    _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
+    _updateTotalBoxes(_getTotals());
     if (isOn) {
       showToast(`선택가 DC (${rate}%) 할인이 적용되었습니다`, 'success');
     } else {
@@ -1536,7 +1563,7 @@ const UI = (() => {
       ? (disc.semesterDcAmt       || 0)
       : (disc.semesterDcAmtSingle || 0);
     _updateDcButtons();
-    _updateTotalBoxes(Calc.isSelectDcActive() ? Calc.getAllTotalsDcWithSelect() : Calc.getAllTotalsDc());
+    _updateTotalBoxes(_getTotals());
     if (isOn) {
       showToast(`2학기 DC (-${amt}만원) 적용되었습니다`, 'success');
     } else {
@@ -2474,6 +2501,7 @@ const UI = (() => {
     applyPackage,
     applySelectDc,
     applySemesterDc,
+    applySpecialMgmt,
     showToast,
     toggleAdminMode,
     openPageEdit,

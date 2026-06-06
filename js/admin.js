@@ -1112,6 +1112,10 @@ const Admin = (() => {
       <div class="ct-side-item ${_discountSection === 'semesterDc' ? 'ct-side-active' : ''}"
         onclick="Admin.loadDiscountSection('semesterDc')">
         <i class="ti ti-calendar-minus" style="font-size:14px;"></i> 2학기 DC
+      </div>
+      <div class="ct-side-item ${_discountSection === 'specialMgmt' ? 'ct-side-active' : ''}"
+        onclick="Admin.loadDiscountSection('specialMgmt')">
+        <i class="ti ti-star" style="font-size:14px;"></i> 대표특별관리
       </div>`;
 
     el.innerHTML = `
@@ -1263,7 +1267,39 @@ const Admin = (() => {
       </div>`;
     return;
   }
+
+  if (section === 'specialMgmt') {
+    const amt = disc.specialMgmtAmt ?? 30;
+    el.innerHTML = `
+      <div class="admin-editor-title">
+        <i class="ti ti-star"></i> 대표특별관리 가산 금액
+      </div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:16px;">
+        특별관리 버튼 클릭 시 로드맵 합계 및 총합계에 가산되는 금액입니다.
+      </div>
+      <div class="admin-field-group">
+        <label class="admin-field-label">가산 금액 (만원)</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input class="admin-input" style="width:80px;text-align:right;"
+            type="number" min="0"
+            value="${amt}"
+            oninput="Admin.updateSpecialMgmtAmt(this.value)">
+          <span style="font-size:13px;color:var(--text-2);">만원</span>
+        </div>
+      </div>
+      <div style="margin-top:20px;">
+        <button class="admin-add-btn" style="margin-top:0;" onclick="Admin.saveDiscountSection('specialMgmt')">
+          <i class="ti ti-device-floppy"></i> 저장
+        </button>
+      </div>`;
+    return;
+  }
 }
+
+  function updateSpecialMgmtAmt(value) {
+    if (!_draft.discount) _draft.discount = {};
+    _draft.discount.specialMgmtAmt = parseInt(value) || 0;
+  }
 
   function updateSemesterDcAmt(key, value) {
     if (!_draft.discount) _draft.discount = {};
@@ -1333,7 +1369,7 @@ const Admin = (() => {
   }
 
   function saveDiscountSection(section) {
-    const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액', semesterDc: '2학기 DC 차감 금액' };
+    const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액', semesterDc: '2학기 DC 차감 금액', specialMgmt: '대표특별관리' };
     if (!confirm(`${labelMap[section] || section} 설정을 저장하시겠습니까?`)) return;
     Store.saveConfig(_draft);
     showMsg(`✓ ${labelMap[section] || section} 설정이 저장되었습니다.`, true);
@@ -1425,7 +1461,7 @@ const Admin = (() => {
     renderDiscountTab, loadDiscountSection,
     updateIndividualDiscount, saveDiscountSection,
     updateSelectDcField, updateSemesterAmt, updateSemesterField,
-    updateSemesterDcAmt,
+    updateSemesterDcAmt, updateSpecialMgmtAmt,
     // 콘텐츠
     saveContentTab,
     // 프로그램명 필드 (공용)
