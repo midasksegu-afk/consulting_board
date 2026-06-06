@@ -935,8 +935,9 @@ const Sign = (() => {
     };
 
     // 두 HTML 생성 — _buildPrintHTML 재사용
-    const termsHtml  = _buildPrintHTML(TERMS_DATA['terms'],  termsForm,  termsSig);
-    const policyHtml = _buildPrintHTML(TERMS_DATA['policy'], policyForm, policySig);
+    const titleBoth  = [termsForm.name, termsForm.school, '가입약관_운영방침'].filter(Boolean).join('_');
+    const termsHtml  = _buildPrintHTML(TERMS_DATA['terms'],  termsForm,  termsSig,  titleBoth);
+    const policyHtml = _buildPrintHTML(TERMS_DATA['policy'], policyForm, policySig, titleBoth);
 
     // 두 문서를 하나의 창에 합쳐서 출력
     // termsHtml의 </body></html> 제거 후 policyHtml의 <body> 이후 내용 이어붙임
@@ -966,7 +967,7 @@ const Sign = (() => {
   /* ============================================================
    * 18. 출력 HTML 생성 — portfolio.js dt- 컨셉 통일
    * ============================================================ */
-  function _buildPrintHTML(data, form, signatureImg) {
+  function _buildPrintHTML(data, form, signatureImg, titleOverride) {
     const today = (() => {
       const d = new Date();
       const p = n => String(n).padStart(2, '0');
@@ -1118,7 +1119,7 @@ const Sign = (() => {
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>${[form.name, form.school, data.tabLabel].filter(Boolean).join('_')}</title>
+<title>${titleOverride || [form.name, form.school, data.tabLabel].filter(Boolean).join('_')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
