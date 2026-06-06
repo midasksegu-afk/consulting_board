@@ -1467,33 +1467,35 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       });
     });
 
-    // 대입전략 — 고3만 표시
-    rows += `<tr class="sg-group-row"><td colspan="4">대입전략 컨설팅 (고3)</td></tr>`;
-    strategyPages.forEach(sp => {
-      const prices  = _getPrices(sp.id);
-      let amt = '-';
-      if (prices) {
-        const idx  = sp.subIdx || 0;
-        const g3   = prices.filter(p => p.grade === 3 || String(p.grade) === '3');
-        if (g3[idx]) amt = fmtAmt(g3[idx].amt);
-      }
-      // 선택된 항목 강조 — sc-interview는 idx 포함 키(sc-interview-0/1)로 정확히 구분
-      const matchKey   = sp.id === 'sc-interview'
-        ? `sc-interview-${sp.subIdx || 0}`
-        : sp.id;
-      const isSelected = hasSelection && selectedPages.includes(matchKey);
-      const rowStyle = isSelected
-        ? 'background:#edf7f1;color:#1a6e3c;font-weight:700;'
-        : 'color:#aaa;';
-      const amtDisplay = isSelected && amt !== '-'
-        ? `<strong>${amt}</strong>`
-        : amt;
-      rows += `<tr style="${rowStyle}">
-        <td colspan="2">${sp.label}</td>
-        <td>${sp.freq}</td>
-        <td>${amtDisplay}</td>
-      </tr>`;
-    });
+    // 대입전략 — 고3 또는 학년 미선택 시만 표시
+    if (gradeNum === 0 || gradeNum === 3) {
+      rows += `<tr class="sg-group-row"><td colspan="4">대입전략 컨설팅 (고3)</td></tr>`;
+      strategyPages.forEach(sp => {
+        const prices  = _getPrices(sp.id);
+        let amt = '-';
+        if (prices) {
+          const idx  = sp.subIdx || 0;
+          const g3   = prices.filter(p => p.grade === 3 || String(p.grade) === '3');
+          if (g3[idx]) amt = fmtAmt(g3[idx].amt);
+        }
+        // 선택된 항목 강조 — sc-interview는 idx 포함 키(sc-interview-0/1)로 정확히 구분
+        const matchKey   = sp.id === 'sc-interview'
+          ? `sc-interview-${sp.subIdx || 0}`
+          : sp.id;
+        const isSelected = hasSelection && selectedPages.includes(matchKey);
+        const rowStyle = isSelected
+          ? 'background:#edf7f1;color:#1a6e3c;font-weight:700;'
+          : 'color:#aaa;';
+        const amtDisplay = isSelected && amt !== '-'
+          ? `<strong>${amt}</strong>`
+          : amt;
+        rows += `<tr style="${rowStyle}">
+          <td colspan="2">${sp.label}</td>
+          <td>${sp.freq}</td>
+          <td>${amtDisplay}</td>
+        </tr>`;
+      });
+    }
 
     return `<table class="sg-table">
   <thead>
