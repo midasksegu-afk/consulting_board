@@ -855,6 +855,78 @@ const Sign = (() => {
     _deleteSignature();
   }
 
+  /* ============================================================
+   * 17-E. 가입약관 + 운영방침 함께 출력
+   *        두 서명 모두 있을 때만 실행 — _buildPrintHTML 재사용
+   * ============================================================ */
+  function printBoth() {
+    // 두 서명 존재 확인
+    const termsSig  = _formData.termsSig  || (_currentTab === 'terms'  ? _signatureData : null);
+    const policySig = _formData.policySig || (_currentTab === 'policy' ? _signatureData : null);
+
+    if (!termsSig && !policySig) {
+      alert('가입약관과 운영방침 서명이 모두 없습니다.\n각 탭에서 서명을 완료해 주세요.');
+      return;
+    }
+    if (!termsSig) {
+      alert('가입약관 서명이 없습니다.\n가입약관 탭에서 서명을 완료해 주세요.');
+      return;
+    }
+    if (!policySig) {
+      alert('운영방침 동의서 서명이 없습니다.\n운영방침 탭에서 서명하거나 동일 서명 적용 체크박스를 이용해 주세요.');
+      return;
+    }
+
+    // 가입약관 탭 학년 확인
+    const grade = document.getElementById('f-grade')?.value || '';
+    if (!grade) {
+      alert('학년을 선택해 주세요.\n가입약관의 학년(고1/고2/고3)을 먼저 선택해야 출력할 수 있습니다.');
+      document.getElementById('f-grade')?.focus();
+      return;
+    }
+
+    // 폼 데이터 수집 — terms/policy 각각
+    const savedTab = _currentTab;
+
+    // terms 폼 데이터 조합 (현재 탭 무관하게 _formData 활용)
+    const get = (id) => document.getElementById(id)?.value?.trim() || '';
+    const gradeVal  = get('f-grade');
+    const termsForm = {
+      name:    _formData.name    || get('f-name'),
+      school:  _formData.schoolStr || get('f-school'),
+      product: gradeVal ? `${gradeVal} 학생부 관리 컨설팅` : '학생부 관리 컨설팅',
+      period:  _formData.start
+        ? (() => { const s = _formData.start.replace(/-/g,'.'); const y = parseInt(s); return `${s} ~ ${y}.12.31`; })()
+        : get('f-period-display'),
+      expiry:  get('f-expiry'),
+      amount:  _formData.amountStr || get('f-amount'),
+      special: _formData.specialStr || get('f-special'),
+      parent:  _formData.parent  || get('f-parent'),
+    };
+    const policyForm = {
+      name:   _formData.name    || get('f-name'),
+      school: _formData.schoolStr || get('f-school'),
+      phone:  _formData.phone   || get('f-phone'),
+    };
+
+    // 두 HTML 생성 — _buildPrintHTML 재사용
+    const termsHtml  = _buildPrintHTML(TERMS_DATA['terms'],  termsForm,  termsSig);
+    const policyHtml = _buildPrintHTML(TERMS_DATA['policy'], policyForm, policySig);
+
+    // 두 문서를 하나의 창에 합쳐서 출력
+    // termsHtml의 </body></html> 제거 후 policyHtml의 <body> 이후 내용 이어붙임
+    const termsBody   = termsHtml.replace(/<\/body>\s*<\/html>\s*$/, '');
+    const policyBody  = policyHtml.replace(/^[\s\S]*?<body>/, '').replace(/<\/body>\s*<\/html>\s*$/, '');
+    const combinedHtml = termsBody
+      + '\n<div style="page-break-before:always;"></div>\n'
+      + policyBody
+      + '\n</body></html>';
+
+    const win = window.open('', 'mk-sign-print');
+    win.document.write(combinedHtml);
+    win.document.close();
+  }
+
   async function _deleteSignature() {
     if (!_sessionId) return;
     try {
@@ -1595,6 +1667,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     useLocalSignature,
     clearSignature,
     printDocument,
+    printBoth,
     // 태블릿 내부 호출용
     _clearCanvas:       clearSignature,
     _submitFromTablet:  submitSignatureFromTablet,
