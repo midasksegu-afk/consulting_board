@@ -273,13 +273,22 @@ function openSignPage() {
   const specialStr = [dcRoadmapStr, dcIndividualStr, dcSemesterStr, dcSpecialStr].filter(Boolean).join(' / ');
 
   // 선택된 pageId 수집 (연간관리형 카드 + 상세 체크박스)
+  // sc-interview는 idx까지 포함 (sc-interview-0, sc-interview-1)
   const selectedPageIds = new Set([
     ...Object.keys(Calc.state.ov),
     ...Object.keys(Calc.state.pages).filter(id =>
       Calc.state.pages[id] && Calc.state.pages[id].size > 0
     ),
   ]);
-  const selectedPages = [...selectedPageIds].join(',');
+  const selectedPagesArr = [];
+  selectedPageIds.forEach(id => {
+    if (id === 'sc-interview') {
+      Calc.state.pages[id]?.forEach(idx => selectedPagesArr.push(`sc-interview-${idx}`));
+    } else {
+      selectedPagesArr.push(id);
+    }
+  });
+  const selectedPages = selectedPagesArr.join(',');
 
   // URL 파라미터 조합
   const params = new URLSearchParams({
