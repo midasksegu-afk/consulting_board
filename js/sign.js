@@ -1477,8 +1477,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         const g3   = prices.filter(p => p.grade === 3 || String(p.grade) === '3');
         if (g3[idx]) amt = fmtAmt(g3[idx].amt);
       }
-      // 선택된 항목 강조 — selectedPages 포함 여부 기준
-      const isSelected = hasSelection && selectedPages.includes(sp.id);
+      // 선택된 항목 강조 — pageId 포함 + 금액 일치 여부 병행 (sc-interview 중복 구분)
+      const pageSelected = hasSelection && selectedPages.includes(sp.id);
+      const amtMatched   = amt !== '-' && strategyAmt > 0 &&
+        String(strategyAmt).includes(amt.replace(/,/g, ''));
+      const isSelected   = pageSelected && (sp.id !== 'sc-interview' || amtMatched);
       const rowStyle = isSelected
         ? 'background:#edf7f1;color:#1a6e3c;font-weight:700;'
         : 'color:#aaa;';
