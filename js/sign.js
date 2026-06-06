@@ -326,6 +326,11 @@ const Sign = (() => {
     // 체크박스 — terms 탭에서만 표시
     const copyWrap = document.getElementById('sg-copy-sign-wrap');
     if (copyWrap) copyWrap.style.display = (tab === 'terms') ? '' : 'none';
+    // 동의 체크박스 — 탭별 표시/숨김
+    const termsAgreeWrap  = document.getElementById('sg-terms-agree-wrap');
+    const policyAgreeWrap = document.getElementById('sg-policy-agree-wrap');
+    if (termsAgreeWrap)  termsAgreeWrap.style.display  = (tab === 'terms')  ? '' : 'none';
+    if (policyAgreeWrap) policyAgreeWrap.style.display = (tab === 'policy') ? '' : 'none';
     // 탭 전환 후 폼 재채움
     setTimeout(_refillForm, 0);
     // 서명 복원 — _refillForm의 guard 조건과 무관하게 항상 실행
@@ -866,6 +871,15 @@ const Sign = (() => {
       alert('서명이 없습니다.\n아이패드로 서명하거나 서명란에 직접 서명 후 [서명 적용] 버튼을 눌러주세요.');
       return;
     }
+    // 동의 체크박스 확인
+    if (_currentTab === 'terms' && !document.getElementById('sg-terms-agree-chk')?.checked) {
+      _signToast('가입약관 동의 체크박스를 확인해 주세요.');
+      return;
+    }
+    if (_currentTab === 'policy' && !document.getElementById('sg-policy-agree-chk')?.checked) {
+      _signToast('운영방침 동의 체크박스를 확인해 주세요.');
+      return;
+    }
     const form = _collectFormData();
     const data = TERMS_DATA[_currentTab];
     const html = _buildPrintHTML(data, form, _signatureData);
@@ -907,6 +921,15 @@ const Sign = (() => {
     if (!grade) {
       alert('학년을 선택해 주세요.\n가입약관의 학년(고1/고2/고3)을 먼저 선택해야 출력할 수 있습니다.');
       document.getElementById('f-grade')?.focus();
+      return;
+    }
+    // 두 동의 체크박스 확인
+    if (!document.getElementById('sg-terms-agree-chk')?.checked) {
+      _signToast('가입약관 동의 체크박스를 확인해 주세요.');
+      return;
+    }
+    if (!document.getElementById('sg-policy-agree-chk')?.checked) {
+      _signToast('운영방침 동의 체크박스를 확인해 주세요.');
       return;
     }
 
