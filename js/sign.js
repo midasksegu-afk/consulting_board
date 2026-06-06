@@ -261,6 +261,25 @@ const Sign = (() => {
     _applyUrlParams();
   }
 
+  // sign.js 전용 토스트 — ui.js 의존 없이 독립 동작
+  function _signToast(msg) {
+    let toast = document.getElementById('sg-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'sg-toast';
+      toast.style.cssText = 'position:fixed;bottom:36px;left:50%;transform:translateX(-50%);'
+        + 'background:#1a1d2e;color:#fff;padding:12px 28px;border-radius:12px;'
+        + 'font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.15);'
+        + 'z-index:9999;display:flex;align-items:center;gap:10px;white-space:nowrap;'
+        + 'font-family:\'Noto Sans KR\',sans-serif;transition:opacity 0.3s;';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = '<span style="font-size:16px;">✓</span> ' + msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  }
+
   function _bindEvents() {
     document.getElementById('sg-tab-terms')?.addEventListener('click',  () => _switchTab('terms'));
     document.getElementById('sg-tab-policy')?.addEventListener('click', () => _switchTab('policy'));
@@ -268,6 +287,8 @@ const Sign = (() => {
     document.getElementById('sg-copy-sign-chk')?.addEventListener('change', function() {
       if (this.checked && _signatureData) {
         _formData.policySig = _signatureData;
+        _signToast('운영방침 동의서로 이동합니다.');
+        _switchTab('policy');
       }
     });
   }
@@ -1203,7 +1224,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 <div class="sg-pr-page">
   <div class="sg-pr-header">
     <div class="sg-pr-header-left">
-      <div class="sg-pr-brand">마이더스K교육컨설팅</div>
+      <div class="sg-pr-brand">MIDAS-K EDUCATION CONSULTING</div>
       <div class="sg-pr-doc-title">${data.tabLabel}</div>
     </div>
     <div class="sg-pr-header-right">
