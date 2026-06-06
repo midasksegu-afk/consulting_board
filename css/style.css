@@ -283,7 +283,7 @@ html, body {
 .grade-divider { width:1px; height:36px; background:var(--border); margin:0 4px; }
 
 /* 패키지 DC */
-.pkg-btns { display:flex; flex-direction:row; align-items:center; gap:6px; }
+.pkg-btns { display:grid; grid-template-columns:1fr 1fr; gap:6px; align-items:start; }
 .pkg-btns > div { display:flex; flex-direction:column; gap:3px; }
 .pkg-btn {
   display:inline-flex; align-items:center; justify-content:center;
