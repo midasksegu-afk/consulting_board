@@ -643,6 +643,24 @@
       box-shadow: 0 3px 10px rgba(43,75,175,0.3);
     }
     .sg-print-btn:hover { opacity: 0.9; }
+    .sg-print-btn-both {
+      width: 100%;
+      padding: 12px;
+      background: var(--surface);
+      color: var(--mk-blue);
+      border: 2px solid var(--mk-blue);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .sg-print-btn-both:hover { opacity: 0.8; }
 
     /* 모달 */
     .sg-modal-overlay {
@@ -884,6 +902,10 @@
       <button class="sg-print-btn" onclick="Sign.printDocument()">
         <i class="ti ti-printer" style="font-size:18px;"></i>
         PDF 출력 / 인쇄
+      </button>
+      <button class="sg-print-btn-both" onclick="Sign.printBoth()">
+        <i class="ti ti-printer" style="font-size:16px;"></i>
+        가입약관 + 운영방침 함께 출력
       </button>
 
     </div>
