@@ -1415,9 +1415,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       });
       if (!matched.length) return '-';
 
-      // note 없는 대표 항목 우선 — note 있는 항목(학기별 단독)은 비고 표시
-      const main = matched.filter(p => !p.note);
-      const sub  = matched.filter(p =>  p.note);
+      // label에 '2학기' 포함 여부로 main/sub 구분
+      const main = matched.filter(p => !String(p.label || '').includes('2학기'));
+      const sub  = matched.filter(p =>  String(p.label || '').includes('2학기'));
 
       const mainStr = main.length
         ? main.map(p => fmtAmt(p.amt)).join('<br>')
