@@ -264,6 +264,12 @@ const Sign = (() => {
   function _bindEvents() {
     document.getElementById('sg-tab-terms')?.addEventListener('click',  () => _switchTab('terms'));
     document.getElementById('sg-tab-policy')?.addEventListener('click', () => _switchTab('policy'));
+    // 체크박스 change — 이미 서명된 상태에서 체크 ON 시 즉시 policySig 저장
+    document.getElementById('sg-copy-sign-chk')?.addEventListener('change', function() {
+      if (this.checked && _signatureData) {
+        _formData.policySig = _signatureData;
+      }
+    });
   }
 
 
