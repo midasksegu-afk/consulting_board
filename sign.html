@@ -726,6 +726,41 @@
       50%    { opacity:1;  transform:scale(1.2); }
     }
 
+    /* 동일 서명 적용 체크박스 */
+    .sg-copy-sign-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--mk-blue-lt);
+      border: 1.5px solid rgba(43,75,175,0.2);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .sg-copy-sign-box input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: var(--mk-blue);
+      cursor: pointer;
+    }
+    .sg-copy-sign-box-label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .sg-copy-sign-box-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--mk-blue);
+    }
+    .sg-copy-sign-box-desc {
+      font-size: 11px;
+      color: var(--dt-ink3);
+      line-height: 1.5;
+    }
+
     /* 반응형 */
     @media (max-width: 900px) {
       .sg-body { flex-direction: column; padding: 16px; }
@@ -805,8 +840,8 @@
 
           <div class="sg-sign-methods">
 
-            <!-- 방법1: 아이패드 서명 -->
-            <div class="sg-ipad-section">
+            <!-- 방법1: 아이패드 서명 (미사용 — 숨김) -->
+            <div class="sg-ipad-section" style="display:none;">
               <div class="sg-sign-method-label">📱 아이패드로 서명받기</div>
               <button class="sg-ipad-btn" onclick="Sign.requestSignature()">
                 <i class="ti ti-qrcode"></i> QR 코드 표시
@@ -831,6 +866,15 @@
                 <button class="sg-btn-sm sg-btn-apply"  onclick="Sign.useLocalSignature()">서명 적용</button>
               </div>
             </div>
+
+            <!-- 운영방침 동일 서명 적용 체크박스 (terms 탭만 표시) -->
+            <label class="sg-copy-sign-box" id="sg-copy-sign-wrap">
+              <input type="checkbox" id="sg-copy-sign-chk">
+              <div class="sg-copy-sign-box-label">
+                <span class="sg-copy-sign-box-title">운영방침 동의서에 동일 서명 적용</span>
+                <span class="sg-copy-sign-box-desc">가입약관과 동일한 서명이 운영방침 동의서 서명란에 자동으로 입력됩니다.</span>
+              </div>
+            </label>
 
           </div>
         </div>
