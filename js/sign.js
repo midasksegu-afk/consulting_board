@@ -64,11 +64,17 @@ const Sign = (() => {
     if (_remotePages && _remotePages[pageId] && _remotePages[pageId].prices) {
       return _remotePages[pageId].prices;
     }
-    // fallback — localStorage 캐시에서 읽기 (Supabase 미저장 페이지 대응)
+    // fallback 1 — localStorage 캐시
     try {
       const cached = JSON.parse(localStorage.getItem('mk_config') || '{}');
-      return cached.pages?.[pageId]?.prices || null;
-    } catch (e) { return null; }
+      if (cached.pages?.[pageId]?.prices) return cached.pages[pageId].prices;
+    } catch (e) { /* 무시 */ }
+    // fallback 2 — config.js 기본값 (전역 MK_CONFIG)
+    try {
+      const base = window.MK_CONFIG?.resolve?.();
+      if (base?.pages?.[pageId]?.prices) return base.pages[pageId].prices;
+    } catch (e) { /* 무시 */ }
+    return null;
   }
 
 
