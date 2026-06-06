@@ -293,6 +293,7 @@ html, body {
   background:#1A1A2E; color:rgba(255,255,255,0.75);
   border:1px solid rgba(255,255,255,0.08);
   box-shadow:0 2px 8px rgba(0,0,0,0.18);
+  width:100%;
 }
 .pkg-btn:hover { background:#252045; border-color:rgba(183,156,255,0.4); color:#fff; }
 .pkg-btn-1, .pkg-btn-2, .pkg-btn-select { /* 통일 */ }
