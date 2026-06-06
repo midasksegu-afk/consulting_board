@@ -1543,7 +1543,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     // ── 대입전략 pages (고3만 표시)
     const strategyPages = [
       { id: 'sc-suisi',     label: '수시 원서전략 컨설팅', freq: '1회', grade: 3 },
-      { id: 'sc-jeongsi',   label: '정시 원서전략 컨설팅 (가채점 포함)', freq: '1회', grade: 3 },
+      { id: 'sc-jeongsi',   label: '정시 원서전략 컨설팅 (가채점 별도)', freq: '1회', grade: 3 },
       { id: 'sc-interview', label: '면접 컨설팅 — 일반학과', freq: '1회', grade: 3 },
       { id: 'sc-interview', label: '면접 컨설팅 — 의치한약수·SKY', freq: '1회', grade: 3, subIdx: 1 },
     ];
