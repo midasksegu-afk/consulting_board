@@ -778,6 +778,31 @@
       color: var(--dt-ink3);
       line-height: 1.5;
     }
+    /* 동의 체크박스 — terms/policy 탭 각각 표시 */
+    .sg-agree-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #f0faf4;
+      border: 1.5px solid rgba(10,92,53,0.25);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .sg-agree-box input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: #0a5c35;
+      cursor: pointer;
+    }
+    .sg-agree-box-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0a5c35;
+      line-height: 1.6;
+    }
 
     /* 반응형 */
     @media (max-width: 900px) {
@@ -892,6 +917,18 @@
                 <span class="sg-copy-sign-box-title">운영방침 동의서에 동일 서명 적용</span>
                 <span class="sg-copy-sign-box-desc">가입약관과 동일한 서명이 운영방침 동의서 서명란에 자동으로 입력됩니다.</span>
               </div>
+            </label>
+
+            <!-- 가입약관 동의 체크박스 (terms 탭만 표시) -->
+            <label class="sg-agree-box" id="sg-terms-agree-wrap">
+              <input type="checkbox" id="sg-terms-agree-chk">
+              <span class="sg-agree-box-text">위 사항에 대해 숙지하였으며 개인정보수집 및 이용에 동의합니다.</span>
+            </label>
+
+            <!-- 운영방침 동의 체크박스 (policy 탭만 표시, 초기 숨김) -->
+            <label class="sg-agree-box" id="sg-policy-agree-wrap" style="display:none;">
+              <input type="checkbox" id="sg-policy-agree-chk">
+              <span class="sg-agree-box-text">본인은 위 운영 방침과 지원 관련 세부 규정을 충분히 확인하였으며, 마이더스K교육컨설팅의 관리 범위 및 지원 제한 사항에 동의합니다.</span>
             </label>
 
           </div>
