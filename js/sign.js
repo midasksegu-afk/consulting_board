@@ -319,6 +319,7 @@ const Sign = (() => {
     const data = TERMS_DATA[tab];
     _renderDocument(data);
     document.querySelector('.sg-doc-scroll')?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
     _renderInputForm(data);
     _initCanvas();
     _updateSignPreview(null);
@@ -1225,7 +1226,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 <div class="sg-pr-page">
   <div class="sg-pr-header">
     <div class="sg-pr-header-left">
-      <div class="sg-pr-brand">MIDAS-K EDUCATION CONSULTING</div>
+      <div class="sg-pr-brand">마이더스K교육컨설팅</div>
       <div class="sg-pr-doc-title">${data.tabLabel}</div>
     </div>
     <div class="sg-pr-header-right">
