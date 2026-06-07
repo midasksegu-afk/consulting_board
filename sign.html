@@ -982,13 +982,13 @@
 <script src="js/config.js"></script>
 <script src="js/sign.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     // 아이패드 전용 서명 모드 확인
     const isTablet = Sign.checkTabletMode();
     // 아이패드 모드가 아니면 일반 UI 초기화
     if (!isTablet) {
-      Sign.init();
-      // B존 탭 3개 추가 — sign.js 무수정, sign.html에서 직접 append
+      await Sign.init();
+      // B존 탭 3개 추가 — Sign.init() 완료 후 append (_renderTabs 먼저 실행 보장)
       const tabContainer = document.getElementById('sg-tabs');
       if (tabContainer) {
         const curSearch = window.location.search;
