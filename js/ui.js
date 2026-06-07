@@ -1074,7 +1074,16 @@ const UI = (() => {
       const ok  = await Store.saveStudent(key, snap, meta);
       if (!ok) { showToast('저장 실패 — 네트워크 확인', 'error'); return; }
       if (isUpdate) _currentStudentMeta = meta;
-      else          _currentStudentKey  = null;
+      else {
+        _currentStudentKey  = newKey;
+        _currentStudentMeta = meta;
+        const tbTitle = document.getElementById('tb-title');
+        if (tbTitle) {
+          const gradeStr = meta.grade === 0 ? '중학생' : meta.grade ? `고${meta.grade}` : '';
+          tbTitle.textContent = [meta.name, meta.school, gradeStr, meta.goal].filter(Boolean).join(' · ');
+          tbTitle.style.color = 'var(--text-1)';
+        }
+      }
     }
 
     document.getElementById('student-modal')?.remove();
