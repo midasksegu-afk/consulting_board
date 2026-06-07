@@ -415,11 +415,11 @@ const Sign2 = (() => {
     const curSearch = window.location.search;
     container.innerHTML = `
       <button class="sg-tab-btn sg-tab-btn-a" data-tab="terms"
-        onclick="Sign2.goToSign('${curSearch}')">
+        onclick="Sign2._blockAzone()">
         📋 가입약관 <span class="sg-tab-sub">학부모 서명</span>
       </button>
       <button class="sg-tab-btn sg-tab-btn-a" data-tab="policy"
-        onclick="Sign2.goToSign('${curSearch}', 'policy')">
+        onclick="Sign2._blockAzone()">
         📄 운영방침 동의서 <span class="sg-tab-sub">학생 서명</span>
       </button>
       <div class="sg-tab-divider"></div>
@@ -434,17 +434,9 @@ const Sign2 = (() => {
       </button>`;
   }
 
-  // A존 탭 클릭 시 sign.html로 복귀
-  function goToSign(search, tab) {
-    const base = 'sign.html';
-    let url = base + (search || '');
-    if (tab) {
-      // tab 파라미터 추가 또는 교체
-      const p = new URLSearchParams(search.replace(/^\?/, ''));
-      p.set('tab', tab);
-      url = base + '?' + p.toString();
-    }
-    window.location.href = url;
+  // A존 탭 차단 — 개별 컨설팅 페이지에서는 로드맵 약관 접근 불가
+  function _blockAzone() {
+    _signToast('학년관리 로드맵 계약이 없습니다.');
   }
 
 
@@ -1408,7 +1400,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
   return {
     init,
     checkTabletMode,
-    goToSign,
+    _blockAzone,
     useLocalSignature,
     clearSignature,
     printDocument,
