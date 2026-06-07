@@ -1312,14 +1312,111 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
   /* ============================================================
    * Public API
    * ============================================================ */
+
+  /* ============================================================
+   * 아이패드 전용 서명 페이지 진입 확인
+   *     URL에 ?sign_session=xxx&doc=xxx 파라미터가 있으면 서명 전용 모드
+   * ============================================================ */
+  function checkTabletMode() {
+    const params = new URLSearchParams(window.location.search);
+    const sessId = params.get('sign_session');
+    const docType = params.get('doc');
+    if (!sessId) return false;
+
+    _currentTab = docType || 'jaeji';
+    _renderTabletUI();
+    return true;
+  }
+
+  function _renderTabletUI() {
+    document.body.innerHTML = `
+      <div class="sg-tablet-wrap">
+        <div class="sg-tablet-header">
+          <div class="sg-tablet-brand">마이더스K교육컨설팅</div>
+          <div class="sg-tablet-title">${TERMS_DATA[_currentTab]?.tabLabel || '서명'}</div>
+        </div>
+        <div class="sg-tablet-guide">아래 서명란에 손가락으로 서명해 주세요</div>
+        <div class="sg-tablet-canvas-area" id="sg-canvas-area">
+          <div class="sg-canvas-placeholder" id="sg-canvas-placeholder">
+            <span>✍ 여기에 서명하세요</span>
+          </div>
+          <canvas id="sg-canvas" width="700" height="200"></canvas>
+        </div>
+        <div class="sg-tablet-btns">
+          <button class="sg-tablet-btn sg-tablet-btn-clear"   onclick="Sign2._clearCanvas()">지우기</button>
+          <button class="sg-tablet-btn sg-tablet-btn-submit"  onclick="Sign2._submitFromTablet()">서명 완료</button>
+          <button class="sg-tablet-btn sg-tablet-btn-refresh" onclick="location.reload()">새로고침</button>
+        </div>
+        <div class="sg-tablet-confirm" id="sg-tablet-confirm">
+          <div class="sg-confirm-icon">✓</div>
+          <div class="sg-confirm-text">서명이 전송되었습니다</div>
+        </div>
+      </div>`;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      body{margin:0;font-family:'Noto Sans KR',sans-serif;background:#F2F4F8;display:flex;align-items:center;justify-content:center;min-height:100vh}
+      .sg-tablet-wrap{width:100%;max-width:760px;padding:32px 24px}
+      .sg-tablet-header{text-align:center;margin-bottom:20px}
+      .sg-tablet-brand{font-size:11px;font-weight:700;letter-spacing:.22em;color:#86868B;margin-bottom:6px}
+      .sg-tablet-title{font-size:26px;font-weight:800;color:#2A3340}
+      .sg-tablet-guide{text-align:center;font-size:14px;color:#43434A;margin-bottom:20px}
+      .sg-tablet-canvas-area{position:relative;background:#fff;border:2px solid #2A3340;border-radius:12px;overflow:hidden;margin-bottom:20px}
+      .sg-canvas-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:18px;pointer-events:none;z-index:1}
+      #sg-canvas{display:block;width:100%;touch-action:none}
+      .sg-tablet-btns{display:flex;gap:12px}
+      .sg-tablet-btn{flex:1;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+      .sg-tablet-btn-clear{background:#F2F4F8;color:#2A3340;border:1.5px solid #ccc}
+      .sg-tablet-btn-submit{background:#2A3340;color:#fff}
+      .sg-tablet-btn-refresh{background:#455367;color:#fff}
+      .sg-tablet-confirm{display:none;text-align:center;margin-top:24px;padding:20px;background:#edf7f1;border-radius:10px}
+      .sg-tablet-confirm.visible{display:block}
+      .sg-confirm-icon{font-size:40px;color:#1a6e3c;margin-bottom:8px}
+      .sg-confirm-text{font-size:16px;font-weight:700;color:#1a6e3c}
+    `;
+    document.head.appendChild(style);
+    _initCanvas();
+  }
+
+  async function submitSignatureFromTablet() {
+    if (!_hasSignature) {
+      alert('서명을 먼저 해주세요.');
+      return;
+    }
+    const imgData = _canvas.toDataURL('image/png');
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${SIG_TABLE}`, {
+        method:  'POST',
+        headers: _headers({ 'Prefer': 'return=minimal' }),
+        body:    JSON.stringify({
+          session_id: _sessionId,
+          image_data: imgData,
+          doc_type:   _currentTab,
+        }),
+      });
+      if (!res.ok) throw new Error('저장 실패');
+
+      document.getElementById('sg-tablet-confirm')?.classList.add('visible');
+      document.getElementById('sg-canvas-area')?.classList.add('submitted');
+    } catch (e) {
+      alert('서명 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('[Sign2] submitSignature 실패:', e);
+    }
+  }
+
   return {
     init,
+    checkTabletMode,
     goToSign,
     useLocalSignature,
     clearSignature,
     printDocument,
     _calcExpiry,
     _refillAmount,
+    // 태블릿 내부 호출용
+    _clearCanvas:      clearSignature,
+    _submitFromTablet: submitSignatureFromTablet,
   };
 
 })();
