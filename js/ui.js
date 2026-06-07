@@ -248,15 +248,19 @@ const UI = (() => {
     const config = cfg();
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
-      if (!page || !page.ovCard || page.ovCard.fixed || page.isOverview) return;
+      if (!page || !page.ovCard || page.isOverview) return;
       if (page.ovCard.noAutoCheck) return; // rm-c 제외
+
       const cb   = document.getElementById('ovchk-' + pageId);
       const card = document.getElementById('ovcard-' + pageId);
+
       if (grade === 0) {
+        // 학년 해제 시 — fixed 카드 포함 전체 체크 해제
         if (cb) cb.checked = false;
         if (card) card.classList.remove('card-selected');
         Calc.selectOv(pageId, false);
       } else {
+        if (page.ovCard.fixed) return; // grade > 0 시 fixed 카드는 기존대로 skip
         if (cb) cb.checked = true;
         if (card) card.classList.add('card-selected');
         Calc.selectOv(pageId, true);
