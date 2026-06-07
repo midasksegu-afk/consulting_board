@@ -1017,6 +1017,18 @@
         const selPages = (sp.get('selectedPages') || '').split(',').map(s => s.trim()).filter(Boolean);
         const hasGyogwa = selPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'));
 
+        // 개별만 선택된 경우 A존 탭(가입약관/운영방침) 흐리게 + 클릭 차단
+        // rm-* 이 하나도 없고 ind-* 또는 pg-* 만 있을 때
+        const hasRoadmap = selPages.some(id => id.startsWith('rm-'));
+        const hasIndOnly = selPages.length > 0 && !hasRoadmap;
+        if (hasIndOnly) {
+          tabContainer.querySelectorAll('.sg-tab-btn').forEach(btn => {
+            btn.style.opacity = '0.3';
+            btn.style.pointerEvents = 'none';
+            btn.title = '학년관리 로드맵 계약이 없습니다.';
+          });
+        }
+
         const bTabs = [
           { tab: 'jaeji',   icon: '📝', label: '기재관리(개별)',      sub: '학부모 서명', pageId: 'ind-a' },
           { tab: 'suhaeng', icon: '🔬', label: '수행관리(개별)',      sub: '학부모 서명', pageId: 'ind-b' },
