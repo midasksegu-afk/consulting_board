@@ -302,6 +302,7 @@ const Sign2 = (() => {
   let _pollTimer    = null;
   let _signatureData = null;
   let _formData      = {};
+  let _selectedPages = [];       // URL selectedPages 파라미터 파싱값
 
 
   /* ============================================================
@@ -310,13 +311,27 @@ const Sign2 = (() => {
   async function init() {
     await _deleteSignature();
     await _loadRemoteConfig();
+
+    // selectedPages 파싱 — 초기화 최우선
+    const _p = new URLSearchParams(window.location.search);
+    const _spRaw = _p.get('selectedPages') || '';
+    _selectedPages = _spRaw.split(',').map(s => s.trim()).filter(Boolean);
+
     _renderTabs();
     _bindEvents();
 
-    // URL tab 파라미터로 초기 탭 결정
-    const p = new URLSearchParams(window.location.search);
-    const tab = p.get('tab') || 'jaeji';
-    _switchTab(TERMS_DATA[tab] ? tab : 'jaeji');
+    // 첫 탭 결정 — tab 파라미터 우선, 없으면 selectedPages로 자동 결정
+    const tabParam = _p.get('tab') || '';
+    let firstTab = 'jaeji';
+    if (tabParam && TERMS_DATA[tabParam]) {
+      firstTab = tabParam;
+    } else {
+      // selectedPages 기반 자동 결정
+      if (_selectedPages.includes('ind-a'))      firstTab = 'jaeji';
+      else if (_selectedPages.includes('ind-b')) firstTab = 'suhaeng';
+      else if (_selectedPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'))) firstTab = 'gyogwa';
+    }
+    _switchTab(firstTab);
 
     _startPolling();
     _applyUrlParams();
@@ -350,7 +365,22 @@ const Sign2 = (() => {
   /* ============================================================
    * 6. 탭 전환
    * ============================================================ */
+  // 탭별 선택 여부 확인
+  function _isTabSelected(tab) {
+    if (!_selectedPages || _selectedPages.length === 0) return true; // 파라미터 없으면 전체 허용
+    if (tab === 'jaeji')   return _selectedPages.includes('ind-a');
+    if (tab === 'suhaeng') return _selectedPages.includes('ind-b');
+    if (tab === 'gyogwa')  return _selectedPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'));
+    return true;
+  }
+
   function _switchTab(tab) {
+    // 미선택 탭 차단
+    if (!_isTabSelected(tab)) {
+      _signToast('해당 컨설팅 계약이 진행되지 않았습니다.');
+      return;
+    }
+
     _currentTab = tab;
     _signatureData = null;
 
@@ -608,7 +638,7 @@ const Sign2 = (() => {
           <div class="sg-form-row">
             <label>상품명 <span class="sg-auto-badge">자동</span></label>
             <div style="display:flex;gap:6px;align-items:center;">
-              <select class="sg-input" id="f-grade" style="width:80px;flex-shrink:0;">
+              <select class="sg-input" id="f-grade" style="width:80px;flex-shrink:0;" onchange="Sign2._refillAmount()">
                 <option value="">학년</option>
                 <option value="고1">고1</option>
                 <option value="고2">고2</option>
@@ -1139,6 +1169,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       return man.toLocaleString('ko-KR') + '만원';
     };
 
+    // 금액: grand 전체 아닌 탭별 pageId prices에서 직접 읽기
+    // _formData.amountStr는 탭 전환 시 _renderInputForm에서 재계산되므로 여기선 fallback용만 저장
     const amountStr = grand ? fmtMan(grand) : '';
 
     const dcParts = [];
@@ -1180,7 +1212,34 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     };
     setVal('f-name',    _formData.name);
     setVal('f-school',  _formData.schoolStr);
-    setVal('f-amount',  _formData.amountStr);
+
+    // 금액 — 탭별 pageId prices에서 직접 읽기 (grand 전체 사용 안 함)
+    const tabData = TERMS_DATA[_currentTab];
+    if (tabData) {
+      const prices = tabData.pricePageId
+        ? _getPrices(tabData.pricePageId)
+        : _getGyogwaPrices();
+      if (prices && prices.length) {
+        const fmtAmt = (n) => Number(n).toLocaleString('ko-KR') + '원';
+        // 학년 선택값 기반 필터
+        const gradeEl = document.getElementById('f-grade');
+        const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
+        const matched = gradeNum
+          ? prices.filter(p => {
+              if (!p.grade) return true;
+              const gs = String(p.grade).split(',').map(g => Number(g.trim()));
+              return gs.includes(gradeNum);
+            })
+          : prices;
+        // 2학기 제외 main 금액만
+        const main = matched.filter(p => !String(p.label || '').includes('2학기'));
+        const display = (main.length ? main : matched)
+          .map(p => fmtAmt(p.amt)).join(' / ');
+        const amtEl = document.getElementById('f-amount');
+        if (amtEl && display) amtEl.value = display;
+      }
+    }
+
     setVal('f-special', _formData.specialStr);
     setVal('f-start',   _formData.start);
     setVal('f-parent',  _formData.parent);
@@ -1192,8 +1251,34 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     if (gradeEl && grade) {
       const gradeVal = grade.startsWith('고') ? grade : '고' + grade;
       const opt = gradeEl.querySelector(`option[value="${gradeVal}"]`);
-      if (opt) opt.selected = true;
+      if (opt) { opt.selected = true; }
     }
+    // 학년 선택 후 금액 재계산 트리거
+    if (grade) setTimeout(_refillAmount, 10);
+  }
+
+  // 학년 드롭다운 변경 시 금액 재계산
+  function _refillAmount() {
+    const tabData = TERMS_DATA[_currentTab];
+    if (!tabData) return;
+    const prices = tabData.pricePageId
+      ? _getPrices(tabData.pricePageId)
+      : _getGyogwaPrices();
+    if (!prices || !prices.length) return;
+    const gradeEl = document.getElementById('f-grade');
+    const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
+    const matched = gradeNum
+      ? prices.filter(p => {
+          if (!p.grade) return true;
+          const gs = String(p.grade).split(',').map(g => Number(g.trim()));
+          return gs.includes(gradeNum);
+        })
+      : prices;
+    const main = matched.filter(p => !String(p.label || '').includes('2학기'));
+    const display = (main.length ? main : matched)
+      .map(p => Number(p.amt).toLocaleString('ko-KR') + '원').join(' / ');
+    const amtEl = document.getElementById('f-amount');
+    if (amtEl && display) amtEl.value = display;
   }
 
 
@@ -1234,6 +1319,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     clearSignature,
     printDocument,
     _calcExpiry,
+    _refillAmount,
   };
 
 })();
