@@ -857,11 +857,10 @@ const Sign2 = (() => {
         parent:  get('f-parent'),
       };
     } else {
-      const grade   = get('f-grade');
-      const baseLabel = _currentTab === 'jaeji'
-        ? '학생부 기재 관리 컨설팅'
-        : '수행 관리 컨설팅';
-      const product = grade ? `${grade} ${baseLabel}` : baseLabel;
+      // f-product에 이미 _refillAmount가 학기 포함 상품명 세팅해놓음 — 그대로 사용
+      const product = get('f-product') || (get('f-grade')
+        ? get('f-grade') + ' ' + (_currentTab === 'jaeji' ? '학생부 기재 관리 컨설팅' : '수행 관리 컨설팅')
+        : (_currentTab === 'jaeji' ? '학생부 기재 관리 컨설팅' : '수행 관리 컨설팅'));
       return {
         name:    get('f-name'),
         school:  get('f-school'),
@@ -927,7 +926,7 @@ const Sign2 = (() => {
             </tr>
             <tr>
               <th>가입금액</th>
-              <td>${form.amount || '　　　　　'}원</td>
+              <td>${form.amount || '　　　　　'}</td>
               <th>특약</th>
               <td>${form.special || ''}</td>
             </tr>
@@ -949,12 +948,12 @@ const Sign2 = (() => {
               <th>가입기간</th>
               <td colspan="3">
                 ${form.period || '　　년 　월 　일 ~ 　　년 　월 　일'}
-                <span style="font-size:11px;color:#666;">&nbsp;(관리 종료일 : 1학기 8/31, 2학기 ~1/31)</span>
+                <span style="font-size:11px;color:#666;">&nbsp;(관리 종료일 : 1학기 8/31, 2학기 ${_currentTab === 'jaeji' ? '~1/31' : '~12/31'})</span>
               </td>
             </tr>
             <tr>
               <th>가입금액</th>
-              <td>${form.amount || '　　　　　'}원</td>
+              <td>${form.amount || '　　　　　'}</td>
               <th>특약</th>
               <td>${form.special || ''}</td>
             </tr>
