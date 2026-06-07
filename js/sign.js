@@ -1888,7 +1888,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       highlightLine(idx);
       const rate = parseFloat(document.getElementById('mk-tts-rate')?.value || 1.0);
       const _ttsClean = (t) => t
-        .replace(/(\d+)~(\d+)/g, '$1에서 $2')
+        .replace(/(\S+)~(\S+)/g, '$1에서 $2')
         .replace(/1개월/g, '일개월').replace(/2개월/g, '이개월').replace(/3개월/g, '삼개월')
         .replace(/4개월/g, '사개월').replace(/5개월/g, '오개월').replace(/6개월/g, '육개월')
         .replace(/7개월/g, '칠개월').replace(/8개월/g, '팔개월').replace(/9개월/g, '구개월')
