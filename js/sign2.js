@@ -1463,7 +1463,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       }
     });
     if (data.finalNote) lines.push(data.finalNote);
-    lines.push('이상으로 약관 낭독을 마칩니다. 동의하시면 아래 서명란에 서명해 주세요. 감사합니다.');
+    lines.push(`이상으로 ${data.tabLabel} 안내를 마칩니다. 내용에 궁금한 점이 있으시면 담당 선생님께 문의해 주시고, 동의하시면 서명란에 서명해 주세요. 감사합니다.`);
     return lines;
   }
 
