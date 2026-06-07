@@ -308,6 +308,13 @@ function openSignPage() {
 
   // 개별 선택 시 sign2.html로, 로드맵/대입전략은 sign.html로
   const hasInd = selectedPagesArr.some(id => !id.startsWith('rm-') && !id.startsWith('sc-') && id.length > 0);
+  if (hasInd) {
+    const indPageId = selectedPagesArr.find(id => !id.startsWith('rm-') && !id.startsWith('sc-'));
+    const indIdxSet = Calc.state.pages[indPageId];
+    const idx = indIdxSet ? [...indIdxSet][0] : undefined;
+    const indLabel = (idx !== undefined) ? (cfg.pages[indPageId]?.prices?.[idx]?.label || '') : '';
+    if (indLabel) params.set('indLabel', indLabel);
+  }
   const targetPage = hasInd ? 'sign2.html' : 'sign.html';
   window.open(targetPage + '?' + params.toString(), 'mk-sign');
 }
