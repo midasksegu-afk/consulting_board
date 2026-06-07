@@ -372,7 +372,7 @@ const Sign2 = (() => {
     if (!_selectedPages || _selectedPages.length === 0) return true; // 파라미터 없으면 전체 허용
     if (tab === 'jaeji')   return _selectedPages.includes('ind-a');
     if (tab === 'suhaeng') return _selectedPages.includes('ind-b');
-    if (tab === 'gyogwa')  return _selectedPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'));
+    if (tab === 'gyogwa')  return _selectedPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-a') && !id.startsWith('ind-b'));
     return true;
   }
 
