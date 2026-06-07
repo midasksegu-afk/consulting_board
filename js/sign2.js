@@ -1323,7 +1323,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     const docType = params.get('doc');
     if (!sessId) return false;
 
-    _currentTab = docType || 'jaeji';
+    _currentTab = docType || 'ind'; // doc 없으면 '개별 컨설팅' 표시
     _renderTabletUI();
     return true;
   }
@@ -1333,7 +1333,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       <div class="sg-tablet-wrap">
         <div class="sg-tablet-header">
           <div class="sg-tablet-brand">마이더스K교육컨설팅</div>
-          <div class="sg-tablet-title">${TERMS_DATA[_currentTab]?.tabLabel || '서명'}</div>
+          <div class="sg-tablet-title">${TERMS_DATA[_currentTab]?.tabLabel || '개별 컨설팅'}</div>
         </div>
         <div class="sg-tablet-guide">아래 서명란에 손가락으로 서명해 주세요</div>
         <div class="sg-tablet-canvas-area" id="sg-canvas-area">
