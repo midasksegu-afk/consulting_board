@@ -1267,14 +1267,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           return gs.includes(gradeNum);
         })
       : prices;
-    // 금액 표시 — 2학기 제외한 main 항목 우선
+    // URL grand 금액으로 정확한 price 항목 1개 특정
+    const grandAmt = Number(new URLSearchParams(window.location.search).get('grand') || 0);
+    const exact = grandAmt ? matched.find(p => p.amt === grandAmt) : null;
+    // 정확한 항목 있으면 그것만, 없으면 2학기 제외 main 우선
     const main = matched.filter(p => !String(p.label || '').includes('2학기'));
-    const display = (main.length ? main : matched)
-      .map(p => Number(p.amt).toLocaleString('ko-KR') + '원').join(' / ');
+    const target = exact || (main.length ? main[0] : matched[0]);
+    const display = target ? Number(target.amt).toLocaleString('ko-KR') + '원' : '';
     const amtEl = document.getElementById('f-amount');
     if (amtEl && display) amtEl.value = display;
-    // label 저장 — matched 전체 기준 (2학기 label 포함 여부 판단용)
-    _selectedPriceLabel = matched.map(p => p.label || '').join(' ');
+    // label 저장 — 특정된 항목 1개 기준
+    _selectedPriceLabel = target ? (target.label || '') : '';
     // 상품명 업데이트 — label 기반 (학기관리/학년관리 표시)
     const prodEl = document.getElementById('f-product');
     if (prodEl) {
