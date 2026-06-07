@@ -1779,6 +1779,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         lines.push(tmp.textContent.trim());
       });
     }
+    lines.push('이상으로 약관 낭독을 마칩니다. 동의하시면 아래 서명란에 서명해 주세요. 감사합니다.');
     return lines.filter(l => l.trim().length > 0);
   }
 
@@ -1848,8 +1849,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           </button>
           <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
             <span style="font-size:12px;color:#86868B;">속도</span>
-            <input type="range" id="mk-tts-rate" min="0.7" max="1.8" step="0.1" value="1.0" style="width:90px;">
-            <span id="mk-tts-rate-val" style="font-size:13px;font-weight:600;min-width:28px;">1.0</span>
+            <input type="range" id="mk-tts-rate" min="0.7" max="1.8" step="0.1" value="1.6" style="width:90px;">
+            <span id="mk-tts-rate-val" style="font-size:13px;font-weight:600;min-width:28px;">1.6</span>
           </div>
         </div>
       </div>`;
@@ -1864,9 +1865,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       });
       const el = document.getElementById('mk-tts-line-' + idx);
       if (!el) return;
-      el.style.color = '#15151A';
-      el.style.background = '#F2F4F8';
-      el.style.fontWeight = '600';
+      el.style.color = '#0a5c35';
+      el.style.background = '#e8f5ee';
+      el.style.fontWeight = '700';
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       document.getElementById('mk-tts-prog').style.width =
         Math.round(((idx + 1) / lines.length) * 100) + '%';
@@ -1886,7 +1887,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       currentLine = idx;
       highlightLine(idx);
       const rate = parseFloat(document.getElementById('mk-tts-rate')?.value || 1.0);
-      uttRef = new SpeechSynthesisUtterance(lines[idx]);
+      const _ttsClean = (t) => t
+        .replace(/(\d+)~(\d+)/g, '$1에서 $2')
+        .replace(/1개월/g, '일개월').replace(/2개월/g, '이개월').replace(/3개월/g, '삼개월')
+        .replace(/4개월/g, '사개월').replace(/5개월/g, '오개월').replace(/6개월/g, '육개월')
+        .replace(/7개월/g, '칠개월').replace(/8개월/g, '팔개월').replace(/9개월/g, '구개월')
+        .replace(/10개월/g, '십개월').replace(/11개월/g, '십일개월').replace(/12개월/g, '십이개월');
+      uttRef = new SpeechSynthesisUtterance(_ttsClean(lines[idx]));
       uttRef.lang = 'ko-KR';
       uttRef.rate = rate;
       const voices = synth.getVoices();
