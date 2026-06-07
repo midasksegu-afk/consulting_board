@@ -331,7 +331,7 @@ const Sign2 = (() => {
       // selectedPages 기반 자동 결정
       if (_selectedPages.includes('ind-a'))      firstTab = 'jaeji';
       else if (_selectedPages.includes('ind-b')) firstTab = 'suhaeng';
-      else if (_selectedPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'))) firstTab = 'gyogwa';
+      else if (_selectedPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-a') && !id.startsWith('ind-b'))) firstTab = 'gyogwa';
     }
     _switchTab(firstTab);
 
