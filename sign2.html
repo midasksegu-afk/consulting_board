@@ -716,7 +716,10 @@
 <script src="js/sign2.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    Sign2.init();
+    const isTablet = Sign2.checkTabletMode();
+    if (!isTablet) {
+      Sign2.init();
+    }
   });
 </script>
 
