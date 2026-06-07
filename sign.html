@@ -831,6 +831,22 @@
       text-decoration: none;
     }
     .sg-tab-btn-b:hover { color: var(--dt-deep); }
+    /* B존 탭 — 활성 (선택된 개별 프로그램) */
+    .sg-tab-btn-b-active {
+      border: 2px solid var(--mk-blue);
+      border-radius: 8px;
+      background: var(--mk-blue-lt);
+      color: var(--mk-blue);
+      font-weight: 700;
+      padding: 10px 18px;
+      margin: 6px 3px;
+    }
+    .sg-tab-btn-b-active .sg-tab-sub { color: var(--mk-blue); opacity: 0.7; }
+    /* B존 탭 — 비활성 (선택 안 된 프로그램) */
+    .sg-tab-btn-b-dim {
+      opacity: 0.35;
+      pointer-events: none;
+    }
 
     /* 반응형 */
     @media (max-width: 900px) {
@@ -996,14 +1012,20 @@
         divider.className = 'sg-tab-divider';
         tabContainer.appendChild(divider);
 
+        // selectedPages 파싱 — 선택된 개별 프로그램 파악
+        const sp = new URLSearchParams(curSearch);
+        const selPages = (sp.get('selectedPages') || '').split(',').map(s => s.trim()).filter(Boolean);
+        const hasGyogwa = selPages.some(id => id && !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'));
+
         const bTabs = [
-          { tab: 'jaeji',   icon: '📝', label: '기재관리(개별)',     sub: '학부모 서명' },
-          { tab: 'suhaeng', icon: '🔬', label: '수행관리(개별)',     sub: '학부모 서명' },
-          { tab: 'gyogwa',  icon: '📊', label: '교과+정시관리(개별)', sub: '학부모 서명' },
+          { tab: 'jaeji',   icon: '📝', label: '기재관리(개별)',      sub: '학부모 서명', pageId: 'ind-a' },
+          { tab: 'suhaeng', icon: '🔬', label: '수행관리(개별)',      sub: '학부모 서명', pageId: 'ind-b' },
+          { tab: 'gyogwa',  icon: '📊', label: '교과+정시관리(개별)', sub: '학부모 서명', pageId: null   },
         ];
-        bTabs.forEach(({ tab, icon, label, sub }) => {
+        bTabs.forEach(({ tab, icon, label, sub, pageId }) => {
+          const isActive = pageId ? selPages.includes(pageId) : hasGyogwa;
           const btn = document.createElement('a');
-          btn.className = 'sg-tab-btn-b';
+          btn.className = 'sg-tab-btn-b' + (isActive ? ' sg-tab-btn-b-active' : ' sg-tab-btn-b-dim');
           btn.href = 'sign2.html?tab=' + tab + (curSearch ? '&' + curSearch.replace(/^\?/, '') : '');
           btn.innerHTML = icon + ' ' + label + ' <span class="sg-tab-sub">' + sub + '</span>';
           tabContainer.appendChild(btn);
