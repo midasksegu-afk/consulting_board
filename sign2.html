@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>마이더스K — 가입약관 · 운영방침 서명</title>
+  <title>마이더스K — 개별 컨설팅 가입약관 서명</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <style>
     /* ================================================================
-       sign.html 전용 스타일
-       portfolio.js dt- / pf- 컨셉 통일
+       sign2.html 전용 스타일 — sign.html CSS 완전 승계
     ================================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -115,9 +114,10 @@
     #sg-tabs {
       display: flex;
       gap: 0;
+      align-items: center;
     }
     .sg-tab-btn {
-      padding: 14px 28px;
+      padding: 14px 22px;
       border: none;
       border-bottom: 3px solid transparent;
       background: transparent;
@@ -137,6 +137,11 @@
       color: var(--dt-deep);
       border-bottom-color: var(--dt-deep);
     }
+    /* A존 탭 — 비활성 스타일 (sign.html로 이동하는 버튼) */
+    .sg-tab-btn-a {
+      opacity: 0.55;
+    }
+    .sg-tab-btn-a:hover { opacity: 0.85; }
     .sg-tab-sub {
       font-size: 10px;
       font-weight: 500;
@@ -145,6 +150,14 @@
     }
     .sg-tab-btn.active .sg-tab-sub {
       color: var(--dt-acc);
+    }
+    /* 탭 구분선 */
+    .sg-tab-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--dt-line);
+      margin: 0 8px;
+      flex-shrink: 0;
     }
 
     /* ── 본문 영역 ── */
@@ -213,14 +226,6 @@
     .sg-section {
       margin-bottom: 16px;
     }
-    .sg-sub-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--dt-deep);
-      padding: 8px 0 4px;
-      border-bottom: 2px solid var(--dt-deep);
-      margin-bottom: 10px;
-    }
     .sg-section-title {
       display: flex;
       align-items: center;
@@ -252,13 +257,6 @@
       color: var(--dt-ink2);
       vertical-align: top;
       line-height: 1.6;
-    }
-    .sg-group-row td {
-      background: var(--dt-tint);
-      font-weight: 700;
-      color: var(--dt-deep);
-      font-size: 11px;
-      letter-spacing: .04em;
     }
     .sg-ol {
       list-style: none;
@@ -312,15 +310,6 @@
       flex-shrink: 0;
     }
     .sg-notice-desc { color: var(--dt-ink3); margin-left: 4px; }
-    .sg-alert {
-      background: #FBEAEF;
-      border: 1px solid rgba(139,28,58,.2);
-      border-radius: 6px;
-      padding: 10px 14px;
-      font-size: 12px;
-      color: #8b1c3a;
-      font-weight: 600;
-    }
     .sg-numbered-list { display: flex; flex-direction: column; gap: 0; }
     .sg-num-row {
       display: flex;
@@ -344,35 +333,6 @@
       font-weight: 700;
       flex-shrink: 0;
       margin-top: 3px;
-    }
-    .sg-refund-note {
-      font-size: 11px;
-      color: var(--dt-ink3);
-      line-height: 1.7;
-      padding: 8px 0;
-      margin-top: 4px;
-    }
-    .sg-final-notes {
-      margin-top: 12px;
-      padding: 14px 16px;
-      background: #F0F4FC;
-      border: 1.5px solid rgba(42,51,64,.18);
-      border-radius: 8px;
-    }
-    .sg-final-note-item {
-      display: flex;
-      gap: 10px;
-      font-size: 12px;
-      color: var(--dt-ink2);
-      line-height: 1.75;
-      margin-bottom: 8px;
-    }
-    .sg-final-note-item:last-child { margin-bottom: 0; }
-    .sg-final-note-num {
-      font-weight: 800;
-      color: var(--dt-deep);
-      flex-shrink: 0;
-      width: 16px;
     }
 
     /* ── 우측: 서명 패널 ── */
@@ -537,40 +497,7 @@
       margin-bottom: 6px;
     }
 
-    /* 방법1: 아이패드 서명 */
-    .sg-ipad-section {
-      padding: 12px;
-      background: var(--dt-tint);
-      border: 1px solid var(--dt-line);
-      border-radius: 8px;
-    }
-    .sg-ipad-btn {
-      width: 100%;
-      padding: 11px;
-      background: var(--dt-deep);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity 0.15s;
-    }
-    .sg-ipad-btn:hover { opacity: 0.88; }
-    .sg-ipad-desc {
-      font-size: 11px;
-      color: var(--dt-ink3);
-      margin-top: 8px;
-      text-align: center;
-      line-height: 1.5;
-    }
-
-    /* 방법2: 직접 서명 */
+    /* 직접 서명 */
     .sg-local-section {
       padding: 12px;
       background: #fff;
@@ -623,162 +550,7 @@
     .sg-btn-clear  { background: var(--dt-tint); color: var(--dt-deep); border: 1px solid var(--dt-line); }
     .sg-btn-apply  { background: var(--dt-acc);  color: #fff; }
 
-    /* 출력 버튼 */
-    .sg-print-btn {
-      width: 100%;
-      padding: 14px;
-      background: var(--mk-blue);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity 0.15s;
-      box-shadow: 0 3px 10px rgba(43,75,175,0.3);
-    }
-    .sg-print-btn:hover { opacity: 0.9; }
-    .sg-print-btn-both {
-      width: 100%;
-      padding: 12px;
-      background: var(--surface);
-      color: var(--mk-blue);
-      border: 2px solid var(--mk-blue);
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity 0.15s;
-    }
-    .sg-print-btn-both:hover { opacity: 0.8; }
-
-    /* 모달 */
-    .sg-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(21,21,26,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      backdrop-filter: blur(4px);
-    }
-    .sg-modal-box {
-      background: #fff;
-      border-radius: 14px;
-      width: 380px;
-      overflow: hidden;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-    }
-    .sg-modal-header {
-      background: var(--dt-deep);
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .sg-modal-header button {
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: #fff;
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .sg-modal-body { padding: 24px; text-align: center; }
-    .sg-qr-wrap {
-      background: #fff;
-      border: 1px solid var(--dt-line);
-      border-radius: 10px;
-      padding: 12px;
-      display: inline-block;
-      margin-bottom: 14px;
-    }
-    .sg-qr-desc {
-      font-size: 13px;
-      color: var(--dt-ink2);
-      line-height: 1.6;
-      margin-bottom: 10px;
-    }
-    .sg-qr-url {
-      font-size: 10px;
-      color: var(--dt-ink3);
-      word-break: break-all;
-      background: var(--dt-tint);
-      border-radius: 4px;
-      padding: 6px 10px;
-      margin-bottom: 14px;
-    }
-    .sg-poll-status {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--dt-ink2);
-    }
-    .sg-poll-dot {
-      width: 8px; height: 8px;
-      background: var(--mk-blue);
-      border-radius: 50%;
-      animation: sgPulse 1.2s ease-in-out infinite;
-    }
-    @keyframes sgPulse {
-      0%,100%{ opacity:.3; transform:scale(.8); }
-      50%    { opacity:1;  transform:scale(1.2); }
-    }
-
-    /* 동일 서명 적용 체크박스 */
-    .sg-copy-sign-box {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      background: var(--mk-blue-lt);
-      border: 1.5px solid rgba(43,75,175,0.2);
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .sg-copy-sign-box input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      margin-top: 2px;
-      flex-shrink: 0;
-      accent-color: var(--mk-blue);
-      cursor: pointer;
-    }
-    .sg-copy-sign-box-label {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    .sg-copy-sign-box-title {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--mk-blue);
-    }
-    .sg-copy-sign-box-desc {
-      font-size: 11px;
-      color: var(--dt-ink3);
-      line-height: 1.5;
-    }
-    /* 동의 체크박스 — terms/policy 탭 각각 표시 */
+    /* 동의 체크박스 */
     .sg-agree-box {
       display: flex;
       align-items: flex-start;
@@ -804,33 +576,26 @@
       line-height: 1.6;
     }
 
-    /* 탭 구분선 — A존 / B존 사이 */
-    .sg-tab-divider {
-      width: 1px;
-      height: 32px;
-      background: var(--dt-line);
-      margin: 0 8px;
-      flex-shrink: 0;
-    }
-    /* B존 탭 버튼 */
-    .sg-tab-btn-b {
-      padding: 14px 20px;
+    /* 출력 버튼 */
+    .sg-print-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--mk-blue);
+      color: #fff;
       border: none;
-      border-bottom: 3px solid transparent;
-      background: transparent;
+      border-radius: 8px;
       font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--dt-ink3);
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 2px;
-      transition: all 0.15s;
-      text-decoration: none;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+      box-shadow: 0 3px 10px rgba(43,75,175,0.3);
     }
-    .sg-tab-btn-b:hover { color: var(--dt-deep); }
+    .sg-print-btn:hover { opacity: 0.9; }
 
     /* 반응형 */
     @media (max-width: 900px) {
@@ -848,7 +613,7 @@
     <div class="sg-topbar-left">
       <span class="sg-topbar-brand">MIDAS-K EDUCATION CONSULTING</span>
       <div class="sg-topbar-divider"></div>
-      <span class="sg-topbar-title">가입약관 · 운영방침 동의서</span>
+      <span class="sg-topbar-title">개별 컨설팅 가입약관 동의서</span>
     </div>
     <div class="sg-topbar-right">
       <a href="index.html" class="sg-back-btn">
@@ -910,20 +675,7 @@
           </div>
 
           <div class="sg-sign-methods">
-
-            <!-- 방법1: 아이패드 서명 (미사용 — 숨김) -->
-            <div class="sg-ipad-section" style="display:none;">
-              <div class="sg-sign-method-label">📱 아이패드로 서명받기</div>
-              <button class="sg-ipad-btn" onclick="Sign.requestSignature()">
-                <i class="ti ti-qrcode"></i> QR 코드 표시
-              </button>
-              <div class="sg-ipad-desc">
-                아이패드 카메라로 QR 스캔 후<br>
-                고객이 직접 서명합니다
-              </div>
-            </div>
-
-            <!-- 방법2: 직접 서명 -->
+            <!-- 직접 서명 -->
             <div class="sg-local-section">
               <div class="sg-sign-method-label">✍ 직접 서명 (이 화면에서)</div>
               <div class="sg-canvas-wrap">
@@ -933,30 +685,15 @@
                 <canvas id="sg-canvas" width="700" height="200"></canvas>
               </div>
               <div class="sg-canvas-btns">
-                <button class="sg-btn-sm sg-btn-clear"  onclick="Sign.clearSignature()">지우기</button>
-                <button class="sg-btn-sm sg-btn-apply"  onclick="Sign.useLocalSignature()">서명 적용</button>
+                <button class="sg-btn-sm sg-btn-clear" onclick="Sign2.clearSignature()">지우기</button>
+                <button class="sg-btn-sm sg-btn-apply" onclick="Sign2.useLocalSignature()">서명 적용</button>
               </div>
             </div>
 
-            <!-- 가입약관 동의 체크박스 (terms 탭만 표시) -->
-            <label class="sg-agree-box" id="sg-terms-agree-wrap">
-              <input type="checkbox" id="sg-terms-agree-chk">
+            <!-- 동의 체크박스 -->
+            <label class="sg-agree-box">
+              <input type="checkbox" id="sg2-agree-chk">
               <span class="sg-agree-box-text">위 사항에 대해 숙지하였으며 개인정보수집 및 이용에 동의합니다.</span>
-            </label>
-
-            <!-- 운영방침 동일 서명 적용 체크박스 (terms 탭만 표시) -->
-            <label class="sg-copy-sign-box" id="sg-copy-sign-wrap">
-              <input type="checkbox" id="sg-copy-sign-chk">
-              <div class="sg-copy-sign-box-label">
-                <span class="sg-copy-sign-box-title">운영방침 동의서에 동일 서명 적용</span>
-                <span class="sg-copy-sign-box-desc">가입약관과 동일한 서명이 운영방침 동의서 서명란에 자동으로 입력됩니다.</span>
-              </div>
-            </label>
-
-            <!-- 운영방침 동의 체크박스 (policy 탭만 표시, 초기 숨김) -->
-            <label class="sg-agree-box" id="sg-policy-agree-wrap" style="display:none;">
-              <input type="checkbox" id="sg-policy-agree-chk">
-              <span class="sg-agree-box-text">본인은 위 운영 방침과 지원 관련 세부 규정을 충분히 확인하였으며, 마이더스K교육컨설팅의 관리 범위 및 지원 제한 사항에 동의합니다.</span>
             </label>
 
           </div>
@@ -964,13 +701,9 @@
       </div>
 
       <!-- 출력 버튼 -->
-      <button class="sg-print-btn" onclick="Sign.printDocument()">
+      <button class="sg-print-btn" onclick="Sign2.printDocument()">
         <i class="ti ti-printer" style="font-size:18px;"></i>
         PDF 출력 / 인쇄
-      </button>
-      <button class="sg-print-btn-both" onclick="Sign.printBoth()">
-        <i class="ti ti-printer" style="font-size:16px;"></i>
-        가입약관 + 운영방침 함께 출력
       </button>
 
     </div>
@@ -980,36 +713,10 @@
 
 <!-- ── JS 로드 ── -->
 <script src="js/config.js"></script>
-<script src="js/sign.js"></script>
+<script src="js/sign2.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // 아이패드 전용 서명 모드 확인
-    const isTablet = Sign.checkTabletMode();
-    // 아이패드 모드가 아니면 일반 UI 초기화
-    if (!isTablet) {
-      Sign.init();
-      // B존 탭 3개 추가 — sign.js 무수정, sign.html에서 직접 append
-      const tabContainer = document.getElementById('sg-tabs');
-      if (tabContainer) {
-        const curSearch = window.location.search;
-        const divider = document.createElement('div');
-        divider.className = 'sg-tab-divider';
-        tabContainer.appendChild(divider);
-
-        const bTabs = [
-          { tab: 'jaeji',   icon: '📝', label: '기재관리(개별)',     sub: '학부모 서명' },
-          { tab: 'suhaeng', icon: '🔬', label: '수행관리(개별)',     sub: '학부모 서명' },
-          { tab: 'gyogwa',  icon: '📊', label: '교과+정시관리(개별)', sub: '학부모 서명' },
-        ];
-        bTabs.forEach(({ tab, icon, label, sub }) => {
-          const btn = document.createElement('a');
-          btn.className = 'sg-tab-btn-b';
-          btn.href = 'sign2.html?tab=' + tab + (curSearch ? '&' + curSearch.replace(/^\?/, '') : '');
-          btn.innerHTML = icon + ' ' + label + ' <span class="sg-tab-sub">' + sub + '</span>';
-          tabContainer.appendChild(btn);
-        });
-      }
-    }
+    Sign2.init();
   });
 </script>
 
