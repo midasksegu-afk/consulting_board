@@ -1252,32 +1252,29 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
   // 학년 드롭다운 변경 시 금액 재계산
   function _refillAmount() {
-    const tabData = TERMS_DATA[_currentTab];
-    if (!tabData) return;
-    const prices = tabData.pricePageId
-      ? _getPrices(tabData.pricePageId)
-      : _getGyogwaPrices();
-    if (!prices || !prices.length) return;
-    const gradeEl = document.getElementById('f-grade');
-    const gradeNum = gradeEl ? (parseInt(gradeEl.value.replace(/[^0-9]/g, '')) || 0) : 0;
-    const matched = gradeNum
-      ? prices.filter(p => {
-          if (!p.grade) return true;
-          const gs = String(p.grade).split(',').map(g => Number(g.trim()));
-          return gs.includes(gradeNum);
-        })
-      : prices;
-    // indLabel 파라미터로 정확한 price 항목 특정
+    // indLabel URL 파라미터 직접 사용 — 관리자 설정값 그대로
     const indLabel = new URLSearchParams(window.location.search).get('indLabel') || '';
-    const target = indLabel
-      ? (matched.find(p => p.label === indLabel) || matched[0])
-      : matched.find(p => !String(p.label || '').includes('2학기')) || matched[0];
-    const display = target ? Number(target.amt).toLocaleString('ko-KR') + '원' : '';
-    const amtEl = document.getElementById('f-amount');
-    if (amtEl && display) amtEl.value = display;
-    // label 저장 — 특정된 항목 1개 기준
-    _selectedPriceLabel = target ? (target.label || '') : '';
-    // 상품명 업데이트 — label 기반 (학기관리/학년관리 표시)
+    _selectedPriceLabel = indLabel;
+
+    // 금액 표시 — prices에서 indLabel 매칭
+    const tabData = TERMS_DATA[_currentTab];
+    if (tabData) {
+      const prices = tabData.pricePageId
+        ? _getPrices(tabData.pricePageId)
+        : _getGyogwaPrices();
+      if (prices && prices.length) {
+        const target = indLabel
+          ? prices.find(p => String(p.label || '') === indLabel)
+          : null;
+        const amt = target ? target.amt
+          : prices.find(p => !String(p.label || '').includes('2학기'))?.amt
+            || prices[0]?.amt;
+        const amtEl = document.getElementById('f-amount');
+        if (amtEl && amt) amtEl.value = Number(amt).toLocaleString('ko-KR') + '원';
+      }
+    }
+
+    // 상품명 업데이트
     const prodEl = document.getElementById('f-product');
     if (prodEl) {
       const isJaeji = _currentTab === 'jaeji';
@@ -1287,7 +1284,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         : ' [ 학년관리 ]';
       prodEl.value = baseName + semester;
     }
-    // label 저장 후 가입기간 재계산
+
+    // 가입기간 재계산
     const startEl = document.getElementById('f-start');
     if (startEl && startEl.value) Sign2._calcExpiry();
   }
