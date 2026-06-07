@@ -65,12 +65,14 @@ const Calc = (() => {
 
     // 학년 무관 페이지 선택값 보존 — prices 전체에 grade 속성이 없는 페이지
     // (학년 변경과 무관한 상품이므로 초기화 대상에서 제외)
+    // 단, autoCheck 페이지(rm-d/e)는 학년 연동이므로 보존 제외
     const config = cfg();
     const gradeAgnosticPages = {};
     const gradeAgnosticOv    = {};
     MK_CONFIG.pageOrder.forEach(pageId => {
       const page = config.pages[pageId];
       if (!page) return;
+      if (page.autoCheck) return; // autoCheck 페이지는 학년 연동 — 보존 제외
       const prices = page.prices || [];
       const isGradeAgnostic = prices.length > 0 && prices.every(p => !p.grade);
       if (!isGradeAgnostic) return;
@@ -88,8 +90,11 @@ const Calc = (() => {
     Object.assign(state.ov,    gradeAgnosticOv);
 
     // 학년 선택 시 rm-d/e isDefault 항목 즉시 자동 체크
+    // 학년 해제 시 DC 상태 초기화
     if (state.grade !== 0) {
       _autoCheckDefaults();
+    } else {
+      state.dc = { roadmap: false, individual: false, select: false, semester: false };
     }
 
     _notifyChange();
