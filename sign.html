@@ -1022,39 +1022,41 @@
         const hasRoadmap = selPages.some(id => id.startsWith('rm-'));
         const hasIndOnly = selPages.length > 0 && !hasRoadmap;
         if (hasIndOnly) {
-          // A존 탭 2개(가입약관/운영방침) — 오버레이로 클릭 완전 차단
+          // A존 탭 2개 흐리게
           ['sg-tab-terms', 'sg-tab-policy'].forEach(btnId => {
             const btn = document.getElementById(btnId);
-            if (!btn) return;
-            // 탭 버튼 흐리게
-            btn.style.opacity = '0.3';
-            btn.style.position = 'relative';
-            // 투명 오버레이로 클릭 완전 차단
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:absolute;inset:0;cursor:not-allowed;z-index:10;';
-            overlay.title = '학년관리 로드맵 계약이 없습니다.';
-            overlay.addEventListener('click', e => {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              // 토스트 메시지
-              let toast = document.getElementById('sg-toast');
-              if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'sg-toast';
-                toast.style.cssText = 'position:fixed;bottom:36px;left:50%;transform:translateX(-50%);'
-                  + 'background:#1a1d2e;color:#fff;padding:12px 28px;border-radius:12px;'
-                  + 'font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.15);'
-                  + 'z-index:9999;display:flex;align-items:center;gap:10px;white-space:nowrap;'
-                  + "font-family:'Noto Sans KR',sans-serif;transition:opacity 0.3s;";
-                document.body.appendChild(toast);
-              }
-              toast.innerHTML = '<span style="font-size:16px;">⚠️</span> 학년관리 로드맵 계약이 없습니다.';
-              toast.style.opacity = '1';
-              clearTimeout(toast._timer);
-              toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
-            });
-            btn.appendChild(overlay);
+            if (btn) btn.style.opacity = '0.3';
           });
+          // 탭바 렌더 완료 후 fixed 오버레이로 A존 탭 완전 차단
+          // (sign.js 이벤트보다 캡처 단계에서 먼저 잡기 위해 document 레벨 capture 사용)
+          const _showBlockToast = () => {
+            let toast = document.getElementById('sg-toast');
+            if (!toast) {
+              toast = document.createElement('div');
+              toast.id = 'sg-toast';
+              toast.style.cssText = 'position:fixed;bottom:36px;left:50%;transform:translateX(-50%);'
+                + 'background:#1a1d2e;color:#fff;padding:12px 28px;border-radius:12px;'
+                + 'font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.15);'
+                + 'z-index:9999;display:flex;align-items:center;gap:10px;white-space:nowrap;'
+                + "font-family:'Noto Sans KR',sans-serif;transition:opacity 0.3s;";
+              document.body.appendChild(toast);
+            }
+            toast.innerHTML = '<span style="font-size:16px;">⚠️</span> 학년관리 로드맵 계약이 없습니다.';
+            toast.style.opacity = '1';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+          };
+          // capture:true — sign.js 버블링 이벤트보다 먼저 실행
+          document.addEventListener('click', e => {
+            const terms  = document.getElementById('sg-tab-terms');
+            const policy = document.getElementById('sg-tab-policy');
+            if (e.target === terms || terms?.contains(e.target) ||
+                e.target === policy || policy?.contains(e.target)) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              _showBlockToast();
+            }
+          }, true); // capture 단계
         }
 
         const bTabs = [
