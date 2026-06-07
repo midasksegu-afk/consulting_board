@@ -1439,6 +1439,204 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     }
   }
 
+  /* ============================================================
+   * TTS 모달 — 약관 전문 낭독
+   * ============================================================ */
+  function _extractTermsText(data) {
+    const lines = [];
+    if (data.title) lines.push(data.title.replace(/\n/g, ' '));
+    (data.sections || []).forEach(sec => {
+      if (sec.title) lines.push(sec.title);
+      if (sec.intro) lines.push(sec.intro);
+      if (sec.items) {
+        sec.items.forEach(item => {
+          if (typeof item === 'string') lines.push(item);
+          else if (item.title && item.desc) lines.push(item.title + '. ' + item.desc);
+        });
+      }
+      if (sec.rows) {
+        sec.rows.forEach(r => lines.push(r.period + ': ' + r.rule));
+      }
+      if (sec.refundTable) {
+        sec.refundTable.forEach(r => lines.push(r.period + ': ' + r.rule));
+      }
+    });
+    if (data.finalNote) lines.push(data.finalNote);
+    return lines;
+  }
+
+  function openTtsModal() {
+    if (document.getElementById('mk-tts-modal')) return;
+    const data = TERMS_DATA[_currentTab];
+    if (!data) return;
+    const lines = _extractTermsText(data);
+
+    const synth = window.speechSynthesis;
+    let uttRef = null;
+    let currentLine = 0;
+    let isPlaying = false;
+
+    // ── 모달 DOM 생성 ──
+    const overlay = document.createElement('div');
+    overlay.id = 'mk-tts-modal';
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:9999;
+      background:rgba(21,21,26,0.72);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Noto Sans KR',sans-serif;`;
+
+    overlay.innerHTML = `
+      <div style="
+        background:#fff;border-radius:14px;width:min(720px,94vw);
+        max-height:88vh;display:flex;flex-direction:column;overflow:hidden;
+        box-shadow:0 24px 64px rgba(0,0,0,0.35);">
+
+        <!-- 헤더 -->
+        <div style="background:#2A3340;padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+          <i class="ti ti-volume" style="color:rgba(255,255,255,0.8);font-size:18px;"></i>
+          <span style="color:#fff;font-size:14px;font-weight:700;flex:1;" id="mk-tts-title">${data.tabLabel} — 약관 낭독</span>
+          <button id="mk-tts-close" style="
+            background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+            color:#fff;border-radius:6px;width:30px;height:30px;cursor:pointer;
+            font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+
+        <!-- 진행 바 -->
+        <div style="height:3px;background:#f0f2f5;flex-shrink:0;">
+          <div id="mk-tts-prog" style="height:100%;width:0%;background:#2A3340;transition:width .4s;"></div>
+        </div>
+
+        <!-- 약관 본문 스크롤 영역 -->
+        <div id="mk-tts-scroll" style="flex:1;overflow-y:auto;padding:28px 32px;scroll-behavior:smooth;">
+          <div id="mk-tts-lines" style="display:flex;flex-direction:column;gap:14px;">
+            ${lines.map((l, i) => `
+              <p id="mk-tts-line-${i}" style="
+                margin:0;font-size:20px;line-height:1.85;color:#86868B;
+                transition:color .3s,background .3s;border-radius:6px;padding:6px 10px;">
+                ${l.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+              </p>`).join('')}
+          </div>
+        </div>
+
+        <!-- 컨트롤 바 -->
+        <div style="
+          padding:16px 24px;background:#f8f9fb;
+          border-top:1px solid rgba(0,0,0,0.08);
+          display:flex;align-items:center;gap:12px;flex-shrink:0;">
+          <button id="mk-tts-play" style="
+            display:flex;align-items:center;gap:7px;
+            padding:10px 22px;border-radius:8px;border:none;cursor:pointer;
+            background:#2A3340;color:#fff;font-size:14px;font-weight:700;
+            font-family:inherit;transition:opacity .15s;">
+            <i class="ti ti-player-play" id="mk-tts-play-icon"></i>
+            <span id="mk-tts-play-label">재생</span>
+          </button>
+          <button id="mk-tts-stop" style="
+            display:flex;align-items:center;gap:7px;
+            padding:10px 18px;border-radius:8px;cursor:pointer;
+            background:#fff;border:1px solid rgba(0,0,0,0.15);
+            color:#2A3340;font-size:14px;font-weight:600;
+            font-family:inherit;transition:opacity .15s;">
+            <i class="ti ti-player-stop"></i> 처음부터
+          </button>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span style="font-size:12px;color:#86868B;">속도</span>
+            <input type="range" id="mk-tts-rate" min="0.7" max="1.8" step="0.1" value="1.0"
+              style="width:90px;">
+            <span id="mk-tts-rate-val" style="font-size:13px;font-weight:600;min-width:28px;">1.0</span>
+          </div>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    // ── 헬퍼 ──
+    function highlightLine(idx) {
+      document.querySelectorAll('[id^="mk-tts-line-"]').forEach(el => {
+        el.style.color = '#86868B';
+        el.style.background = 'transparent';
+        el.style.fontWeight = 'normal';
+      });
+      const el = document.getElementById('mk-tts-line-' + idx);
+      if (!el) return;
+      el.style.color = '#15151A';
+      el.style.background = '#F2F4F8';
+      el.style.fontWeight = '600';
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const pct = Math.round(((idx + 1) / lines.length) * 100);
+      document.getElementById('mk-tts-prog').style.width = pct + '%';
+    }
+
+    function setPlayUI(playing) {
+      isPlaying = playing;
+      const icon  = document.getElementById('mk-tts-play-icon');
+      const label = document.getElementById('mk-tts-play-label');
+      if (!icon || !label) return;
+      icon.className  = playing ? 'ti ti-player-pause' : 'ti ti-player-play';
+      label.textContent = playing ? '일시정지' : '재생';
+    }
+
+    function speakLine(idx) {
+      if (idx >= lines.length) { setPlayUI(false); return; }
+      currentLine = idx;
+      highlightLine(idx);
+      const rate = parseFloat(document.getElementById('mk-tts-rate')?.value || 1.0);
+      uttRef = new SpeechSynthesisUtterance(lines[idx]);
+      uttRef.lang = 'ko-KR';
+      uttRef.rate = rate;
+      const voices = synth.getVoices();
+      const koVoice = voices.find(v => v.lang.startsWith('ko'));
+      if (koVoice) uttRef.voice = koVoice;
+      uttRef.onend = () => { if (isPlaying) speakLine(idx + 1); };
+      uttRef.onerror = () => { if (isPlaying) speakLine(idx + 1); };
+      synth.speak(uttRef);
+    }
+
+    function stopAll() {
+      synth.cancel();
+      setPlayUI(false);
+    }
+
+    function closeModal() {
+      stopAll();
+      overlay.remove();
+    }
+
+    // ── 이벤트 ──
+    document.getElementById('mk-tts-close').addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+    document.getElementById('mk-tts-play').addEventListener('click', () => {
+      if (isPlaying) {
+        stopAll();
+      } else {
+        setPlayUI(true);
+        speakLine(currentLine);
+      }
+    });
+
+    document.getElementById('mk-tts-stop').addEventListener('click', () => {
+      stopAll();
+      currentLine = 0;
+      document.getElementById('mk-tts-prog').style.width = '0%';
+      document.querySelectorAll('[id^="mk-tts-line-"]').forEach(el => {
+        el.style.color = '#86868B';
+        el.style.background = 'transparent';
+        el.style.fontWeight = 'normal';
+      });
+      document.getElementById('mk-tts-scroll').scrollTop = 0;
+    });
+
+    document.getElementById('mk-tts-rate').addEventListener('input', e => {
+      document.getElementById('mk-tts-rate-val').textContent =
+        parseFloat(e.target.value).toFixed(1);
+    });
+
+    // 목소리 로드 대기
+    if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => {};
+    setTimeout(() => synth.getVoices(), 200);
+  }
+
   return {
     init,
     checkTabletMode,
@@ -1448,6 +1646,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     printDocument,
     _calcExpiry,
     _refillAmount,
+    openTtsModal,
     // 태블릿 내부 호출용
     _clearCanvas:      clearSignature,
     _submitFromTablet: submitSignatureFromTablet,
