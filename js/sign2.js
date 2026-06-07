@@ -246,12 +246,7 @@ const Sign2 = (() => {
       pricePageId: null, // _getGyogwaPrices() 로 동적 로드
       sections: [
         {
-          title: '1. 가입정보',
-          type:  'gyogwa-info',
-          // 가입정보 테이블은 _renderInputForm에서 별도 렌더
-        },
-        {
-          title: '2. 컨설팅 항목',
+          title: '1. 컨설팅 항목',
           type:  'gyogwa-items',
           rows: [
             { num: '1', desc: '내신, 모의 성적누적 및 대학별 환산점수 관리 (레포트 제공)' },
@@ -261,7 +256,7 @@ const Sign2 = (() => {
           ],
         },
         {
-          title: '3. 가입 유의사항',
+          title: '2. 가입 유의사항',
           type:  'numbered',
           items: [
             '교과 + 정시 관리 컨설팅은 1년 단위 관리 프로그램이며, 결제와 동시에 효력이 발생합니다.',
@@ -270,7 +265,7 @@ const Sign2 = (() => {
           ],
         },
         {
-          title: '4. 가입해지 시 환불규정',
+          title: '3. 가입해지 시 환불규정',
           type:  'gyogwa-refund',
           items: [
             '성적 입력 이후 해지 시 시스템 세팅비용(20만원) 차감 후 환불됩니다.',
@@ -1278,9 +1273,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       }
     }
 
-    // 상품명 업데이트
+    // 상품명 업데이트 — gyogwa 탭은 상품명 고정값 유지, 건드리지 않음
     const prodEl = document.getElementById('f-product');
-    if (prodEl) {
+    if (prodEl && _currentTab !== 'gyogwa') {
       const isJaeji = _currentTab === 'jaeji';
       const baseName = isJaeji ? '학생부 기재 관리 컨설팅' : '수행 관리 컨설팅';
       const semester = _selectedPriceLabel.includes('2학기') ? ' [ 2학기 학기관리 ]'
