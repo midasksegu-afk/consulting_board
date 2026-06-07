@@ -1252,8 +1252,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
   // 학년 드롭다운 변경 시 금액 재계산
   function _refillAmount() {
-    // indLabel URL 파라미터 직접 사용 — 관리자 설정값 그대로
-    const indLabel = new URLSearchParams(window.location.search).get('indLabel') || '';
+    // 탭별 파라미터 읽기 — 관리자 설정값 그대로
+    const p = new URLSearchParams(window.location.search);
+    const indLabel = _currentTab === 'jaeji'  ? (p.get('indLabelA') || '')
+                   : _currentTab === 'suhaeng' ? (p.get('indLabelB') || '')
+                   : _currentTab === 'gyogwa'  ? (p.get('indLabelG') || '')
+                   : '';
     _selectedPriceLabel = indLabel;
 
     // 금액 표시 — prices에서 indLabel 매칭
