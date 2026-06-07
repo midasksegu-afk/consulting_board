@@ -806,7 +806,7 @@ const Sign2 = (() => {
     if (!_sessionId) return;
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/${SIG_TABLE}?session_id=eq.${_sessionId}&doc_type=eq.${_currentTab}&limit=1`,
+        `${SUPABASE_URL}/rest/v1/${SIG_TABLE}?session_id=eq.${_sessionId}&doc_type=eq.ind&limit=1`,
         { method: 'GET', headers: _headers({ 'Accept': 'application/json' }) }
       );
       if (!res.ok) return;
@@ -1384,7 +1384,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         body:    JSON.stringify({
           session_id: _sessionId,
           image_data: imgData,
-          doc_type:   _currentTab,
+          doc_type:   'ind',
         }),
       });
       if (!res.ok) throw new Error('저장 실패');
