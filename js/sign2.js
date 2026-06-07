@@ -1496,7 +1496,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         <!-- 헤더 -->
         <div style="background:#2A3340;padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
           <i class="ti ti-volume" style="color:rgba(255,255,255,0.8);font-size:18px;"></i>
-          <span style="color:#fff;font-size:14px;font-weight:700;flex:1;" id="mk-tts-title">${data.tabLabel} — 약관 낭독</span>
+          <span style="color:#fff;font-size:14px;font-weight:700;flex:1;" id="mk-tts-title">${data.tabLabel} — 약관 안내</span>
+          <span id="mk-tts-timer" style="
+            font-size:12px;color:rgba(255,255,255,0.6);
+            white-space:nowrap;margin-right:4px;"></span>
           <button id="mk-tts-close" style="
             background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
             color:#fff;border-radius:6px;width:30px;height:30px;cursor:pointer;
@@ -1552,6 +1555,27 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 
     document.body.appendChild(overlay);
 
+    // 예상 시간 계산 — 전체 글자수 기준
+    function _calcRemainSec(fromIdx) {
+      const rate = parseFloat(document.getElementById('mk-tts-rate')?.value || 1.6);
+      const remainChars = lines.slice(fromIdx).join('').length;
+      return Math.round(remainChars / (rate * 6.5));
+    }
+    function _fmtTime(sec) {
+      if (sec >= 60) {
+        const m = Math.floor(sec / 60), s = sec % 60;
+        return s > 0 ? `약 ${m}분 ${s}초` : `약 ${m}분`;
+      }
+      return `약 ${sec}초`;
+    }
+    function _updateTimer(fromIdx) {
+      const el = document.getElementById('mk-tts-timer');
+      if (!el) return;
+      const sec = _calcRemainSec(fromIdx);
+      el.textContent = isPlaying ? `⏱ ${_fmtTime(sec)} 남음` : `⏱ ${_fmtTime(_calcRemainSec(0))}`;
+    }
+    _updateTimer(0);
+
     // ── 헬퍼 ──
     function highlightLine(idx) {
       document.querySelectorAll('[id^="mk-tts-line-"]').forEach(el => {
@@ -1567,6 +1591,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       const pct = Math.round(((idx + 1) / lines.length) * 100);
       document.getElementById('mk-tts-prog').style.width = pct + '%';
+      _updateTimer(idx);
     }
 
     function setPlayUI(playing) {
@@ -1633,11 +1658,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
         el.style.fontWeight = 'normal';
       });
       document.getElementById('mk-tts-scroll').scrollTop = 0;
+      _updateTimer(0);
     });
 
     document.getElementById('mk-tts-rate').addEventListener('input', e => {
       document.getElementById('mk-tts-rate-val').textContent =
         parseFloat(e.target.value).toFixed(1);
+      _updateTimer(currentLine);
     });
 
     // 목소리 로드 대기
