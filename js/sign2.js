@@ -1293,9 +1293,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       // 교과+정시: 1년 단위
       const endStr = `${startYear + 1}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
       if (periodEl) periodEl.value = `${val.replace(/-/g,'.')} ~ ${endStr} (1년)`;
-    } else {
-      // 기재/수행: 학기 단위 — 종료일 표시만
-      const endStr = `${startYear}.12.31`;
+    } else if (_currentTab === 'jaeji') {
+      // 기재관리: 1~8월 시작 → 8/31, 9월~ 시작 → 다음년도 1/31
+      const month = d.getMonth() + 1;
+      const endStr = month <= 8
+        ? `${startYear}.08.31`
+        : `${startYear + 1}.01.31`;
+      if (periodEl) periodEl.value = `${val.replace(/-/g,'.')} ~ ${endStr}`;
+    } else if (_currentTab === 'suhaeng') {
+      // 수행관리: 1~8월 시작 → 8/31, 9월~ 시작 → 12/31
+      const month = d.getMonth() + 1;
+      const endStr = month <= 8
+        ? `${startYear}.08.31`
+        : `${startYear}.12.31`;
       if (periodEl) periodEl.value = `${val.replace(/-/g,'.')} ~ ${endStr}`;
     }
   }
