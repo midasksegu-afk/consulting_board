@@ -303,6 +303,7 @@ const Sign2 = (() => {
   let _signatureData = null;
   let _formData      = {};
   let _selectedPages = [];       // URL selectedPages 파라미터 파싱값
+  let _selectedPriceLabel = '';   // 선택된 price label (1학기/2학기/학년관리 판단용)
 
 
   /* ============================================================
@@ -1271,6 +1272,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       .map(p => Number(p.amt).toLocaleString('ko-KR') + '원').join(' / ');
     const amtEl = document.getElementById('f-amount');
     if (amtEl && display) amtEl.value = display;
+    // 선택된 label 저장 — 1학기/2학기/학년관리 판단용
+    const selected = main.length ? main : matched;
+    _selectedPriceLabel = selected.map(p => p.label || '').join(' ');
+    // label 저장 후 가입기간 재계산
+    const startEl = document.getElementById('f-start');
+    if (startEl && startEl.value) Sign2._calcExpiry();
   }
 
 
@@ -1294,18 +1301,30 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       const endStr = `${startYear + 1}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
       if (periodEl) periodEl.value = `${val.replace(/-/g,'.')} ~ ${endStr} (1년)`;
     } else if (_currentTab === 'jaeji') {
-      // 기재관리: 1~8월 시작 → 8/31, 9월~ 시작 → 다음년도 1/31
-      const month = d.getMonth() + 1;
-      const endStr = month <= 8
-        ? `${startYear}.08.31`
-        : `${startYear + 1}.01.31`;
+      // 기재관리 — label 기반 판단
+      // 2학기: ~ 다음년도 1/31 / 1학기: ~ 8/31 / 학년관리: ~ 다음년도 1/31
+      let endStr;
+      if (_selectedPriceLabel.includes('2학기')) {
+        endStr = `${startYear + 1}.01.31`;
+      } else if (_selectedPriceLabel.includes('1학기')) {
+        endStr = `${startYear}.08.31`;
+      } else {
+        // 학년관리 — 다음년도 1/31
+        endStr = `${startYear + 1}.01.31`;
+      }
       if (periodEl) periodEl.value = `${val.replace(/-/g,'.')} ~ ${endStr}`;
     } else if (_currentTab === 'suhaeng') {
-      // 수행관리: 1~8월 시작 → 8/31, 9월~ 시작 → 12/31
-      const month = d.getMonth() + 1;
-      const endStr = month <= 8
-        ? `${startYear}.08.31`
-        : `${startYear}.12.31`;
+      // 수행관리 — label 기반 판단
+      // 2학기: ~ 12/31 / 1학기: ~ 8/31 / 학년관리: ~ 12/31
+      let endStr;
+      if (_selectedPriceLabel.includes('2학기')) {
+        endStr = `${startYear}.12.31`;
+      } else if (_selectedPriceLabel.includes('1학기')) {
+        endStr = `${startYear}.08.31`;
+      } else {
+        // 학년관리 — 12/31
+        endStr = `${startYear}.12.31`;
+      }
       if (periodEl) periodEl.value = `${val.replace(/-/g,'.')} ~ ${endStr}`;
     }
   }
