@@ -1267,12 +1267,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           return gs.includes(gradeNum);
         })
       : prices;
-    // URL grand 금액으로 정확한 price 항목 1개 특정
-    const grandAmt = Number(new URLSearchParams(window.location.search).get('grand') || 0);
-    const exact = grandAmt ? matched.find(p => p.amt === grandAmt) : null;
-    // 정확한 항목 있으면 그것만, 없으면 2학기 제외 main 우선
-    const main = matched.filter(p => !String(p.label || '').includes('2학기'));
-    const target = exact || (main.length ? main[0] : matched[0]);
+    // indLabel 파라미터로 정확한 price 항목 특정
+    const indLabel = new URLSearchParams(window.location.search).get('indLabel') || '';
+    const target = indLabel
+      ? (matched.find(p => p.label === indLabel) || matched[0])
+      : matched.find(p => !String(p.label || '').includes('2학기')) || matched[0];
     const display = target ? Number(target.amt).toLocaleString('ko-KR') + '원' : '';
     const amtEl = document.getElementById('f-amount');
     if (amtEl && display) amtEl.value = display;
