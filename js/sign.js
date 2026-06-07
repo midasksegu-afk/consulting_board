@@ -1502,7 +1502,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
             desc: '❶ 탐구 주제 선정, 자료 활용 방향, 보고서 전개 방식 등 학생 맞춤 수행 방향 제시',
             freq: '-' },
           { title: '3. [옵션 B] 보고서 설계도 / 초안 제시',
-            desc: '❶ 탐구 주제, 보고서 흐름, 실제 작성 가능 초안 틀 제공',
+            desc: '❶ 탐구 주제, 보고서 흐름, 실제 작성 가능 초안 틀 제공<br>단. \'옵션B\'의 세특구원자 보고서 설계도는 별도 과금 됩니다. (건당 5,500~7,500원)',
             freq: '-' },
         ],
       },
@@ -1716,6 +1716,41 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     (data.sections || []).forEach(sec => {
       if (sec.title) lines.push(sec.title);
       if (sec.text)  lines.push(sec.text);
+
+      // consulting-items 타입 — roadmapPages 데이터를 텍스트로 변환
+      if (sec.type === 'consulting-items') {
+        const roadmapPages = [
+          { label: 'A. 세특 관리', programs: [
+            { title: '1. 세특 강화 솔루션', desc: '각종 활동 결과물을 학교 제출용 자기평가서 혹은 세특으로 기재 요약. 비인지적 역량, 교과회귀, 고찰점 강화하여 재구성. 국수영사과 교과, 자율·동아리·진로·행특 영역별 최대 2~3건' },
+            { title: '2. 심화 확장 스토리 구축', desc: 'N차 심화 탐구 연결 및 이전 활동을 심화 확장하는 주제와 보고서 설계도 제공. 학생부 분석 및 심화 확장 주제 추천. 학생부 분석 연 1회 제공' },
+          ]},
+          { label: 'B. 수행 관리', programs: [
+            { title: '1. 수행 조건 분석', desc: '수행 과제의 조건, 제출 형식, 활용 자료를 먼저 파악. 학생이 놓치기 쉬운 핵심 기준 정리. 국수영사과 교과 및 기타 진로 연관 교과 영역별 최대 2건' },
+            { title: '2. 옵션 A — 방향성 코칭', desc: '탐구 주제 선정, 자료 활용 방향, 보고서 전개 방식 등 학생 맞춤 수행 방향 제시' },
+            { title: '3. 옵션 B — 보고서 설계도 및 초안 제시', desc: '탐구 주제, 보고서 흐름, 실제 작성 가능 초안 틀 제공. 단, 옵션 B의 세특구원자 보고서 설계도는 별도 과금됩니다. 건당 5,500원에서 7,500원' },
+          ]},
+          { label: 'C. 주제 추천', programs: [
+            { title: '세특구원자 플랫폼 활용', desc: '24시간 키워드 검색, 탐구 주제 직접 선정. 로드맵 컨설팅 회원 구독 할인 적용, 6개월 40%, 연 50%' },
+          ]},
+          { label: 'D. 대면관리 (필수)', programs: [
+            { title: '1. RPM 컨설팅', desc: '교과 및 창체 세특 코칭과 활동 방향 설계. 동아리·진로 등 창체 주제 선정 지원' },
+            { title: '2. 성적 누적 분석', desc: '내신·모의성적 누적 및 전형별 가중치 관리. 부족 과목 학습 운영 전략. 목표 대학 포트폴리오 누적 관리' },
+            { title: '3. 맞춤 상담', desc: '학생 맞춤 진로·진학 컨설팅. 학부모 질의응답 1:1 대면 상시 제공' },
+          ]},
+          { label: 'E. 기본관리 (필수)', programs: [
+            { title: '1. 학종특강', desc: '서류 평가 메커니즘 교육. 세특 디자인 수업 및 심화 탐구 빌드업 전략. 컨설팅 활용법' },
+            { title: '2. 행정관리', desc: '상담 스케줄 관리. 컨설팅 밴드 운영 관리. 성적 입력 및 기재 베이스 관리' },
+          ]},
+        ];
+        roadmapPages.forEach(page => {
+          lines.push(page.label);
+          page.programs.forEach(prog => {
+            lines.push(prog.title + '. ' + prog.desc);
+          });
+        });
+        return;
+      }
+
       if (sec.items) {
         sec.items.forEach(item => {
           if (typeof item === 'string') lines.push(item);
@@ -1725,13 +1760,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       if (sec.rows) {
         sec.rows.forEach(r => lines.push(r.period + ': ' + r.rule));
       }
+      if (sec.note) lines.push(sec.note);
       // 차감금액 table은 content 문자열에서 텍스트만 추출
       if (sec.content) {
         const tmp = document.createElement('div');
         tmp.innerHTML = sec.content;
         tmp.querySelectorAll('tr').forEach(tr => {
           const cells = [...tr.querySelectorAll('td,th')].map(c => c.textContent.trim()).filter(Boolean);
-          if (cells.length) lines.push(cells.join(' — '));
+          if (cells.length) lines.push(cells.join('. '));
         });
       }
     });
