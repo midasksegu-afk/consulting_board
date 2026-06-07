@@ -1237,7 +1237,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     setVal('f-start',   _formData.start);
     setVal('f-parent',  _formData.parent);
     setVal('f-phone',   _formData.phone);
-    if (_formData.start) Sign2._calcExpiry();
+    // _calcExpiry는 _refillAmount에서 label 저장 후 호출 — 여기서 직접 호출 안 함
 
     const grade = new URLSearchParams(window.location.search).get('grade') || '';
     const gradeEl = document.getElementById('f-grade');
@@ -1275,6 +1275,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
     if (amtEl && display) amtEl.value = display;
     // label 저장 — matched 전체 기준 (2학기 label 포함 여부 판단용)
     _selectedPriceLabel = matched.map(p => p.label || '').join(' ');
+    // 상품명 업데이트 — label 기반 (학기관리/학년관리 표시)
+    const prodEl = document.getElementById('f-product');
+    if (prodEl) {
+      const isJaeji = _currentTab === 'jaeji';
+      const baseName = isJaeji ? '학생부 기재 관리 컨설팅' : '수행 관리 컨설팅';
+      const semester = _selectedPriceLabel.includes('2학기') ? ' [ 2학기 학기관리 ]'
+        : _selectedPriceLabel.includes('1학기') ? ' [ 1학기 학기관리 ]'
+        : ' [ 학년관리 ]';
+      prodEl.value = baseName + semester;
+    }
     // label 저장 후 가입기간 재계산
     const startEl = document.getElementById('f-start');
     if (startEl && startEl.value) Sign2._calcExpiry();
