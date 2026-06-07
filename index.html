@@ -309,11 +309,20 @@ function openSignPage() {
   // 개별 선택 시 sign2.html로, 로드맵/대입전략은 sign.html로
   const hasInd = selectedPagesArr.some(id => !id.startsWith('rm-') && !id.startsWith('sc-') && id.length > 0);
   if (hasInd) {
-    const indPageId = selectedPagesArr.find(id => !id.startsWith('rm-') && !id.startsWith('sc-'));
-    const indIdxSet = Calc.state.pages[indPageId];
-    const idx = indIdxSet ? [...indIdxSet][0] : undefined;
-    const indLabel = (idx !== undefined) ? (cfg.pages[indPageId]?.prices?.[idx]?.label || '') : '';
-    if (indLabel) params.set('indLabel', indLabel);
+    // 탭별 label 분리 — ind-a(기재)/ind-b(수행)/pg-*(교과정시) 각각
+    const getIndLabel = (pageId) => {
+      if (!pageId) return '';
+      const idxSet = Calc.state.pages[pageId];
+      const idx = idxSet ? [...idxSet][0] : undefined;
+      return (idx !== undefined) ? (cfg.pages[pageId]?.prices?.[idx]?.label || '') : '';
+    };
+    const lblA = getIndLabel('ind-a');
+    const lblB = getIndLabel('ind-b');
+    const gyogwaId = selectedPagesArr.find(id => !id.startsWith('rm-') && !id.startsWith('sc-') && !id.startsWith('ind-'));
+    const lblG = getIndLabel(gyogwaId);
+    if (lblA) params.set('indLabelA', lblA);
+    if (lblB) params.set('indLabelB', lblB);
+    if (lblG) params.set('indLabelG', lblG);
   }
   const targetPage = hasInd ? 'sign2.html' : 'sign.html';
   window.open(targetPage + '?' + params.toString(), 'mk-sign');
