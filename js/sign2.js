@@ -1267,14 +1267,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
           return gs.includes(gradeNum);
         })
       : prices;
+    // 금액 표시 — 2학기 제외한 main 항목 우선
     const main = matched.filter(p => !String(p.label || '').includes('2학기'));
     const display = (main.length ? main : matched)
       .map(p => Number(p.amt).toLocaleString('ko-KR') + '원').join(' / ');
     const amtEl = document.getElementById('f-amount');
     if (amtEl && display) amtEl.value = display;
-    // 선택된 label 저장 — 1학기/2학기/학년관리 판단용
-    const selected = main.length ? main : matched;
-    _selectedPriceLabel = selected.map(p => p.label || '').join(' ');
+    // label 저장 — matched 전체 기준 (2학기 label 포함 여부 판단용)
+    _selectedPriceLabel = matched.map(p => p.label || '').join(' ');
     // label 저장 후 가입기간 재계산
     const startEl = document.getElementById('f-start');
     if (startEl && startEl.value) Sign2._calcExpiry();
