@@ -22,7 +22,6 @@ const Admin = (() => {
     const input = document.getElementById('pin-input')?.value;
     if (Store.verifyPin(input)) {
       localStorage.setItem('mk_admin_auth', '1');  // localStorage — 메인화면 자물쇠와 공유
-      initDraft();
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
       switchTab('tab-program');
@@ -39,6 +38,7 @@ const Admin = (() => {
    * 2. 탭 전환
    * ============================================================ */
   function switchTab(tabId) {
+    initDraft();  // 탭 전환 시마다 최신 localStorage로 _draft 갱신 — 메인 편집기 덮어쓰기 방지
     _currentTab = tabId;
     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
@@ -447,14 +447,6 @@ const Admin = (() => {
   }
 
   function saveProgram(pageId) {
-    // 저장 직전 localStorage 최신값으로 _draft 재동기화
-    // — 메인 편집기에서 저장한 내용을 admin _draft가 덮어쓰는 문제 방지
-    const latest = Store.loadConfig();
-    if (latest) {
-      const currentPage = _draft.pages[pageId];
-      _draft = JSON.parse(JSON.stringify(latest));
-      if (currentPage) _draft.pages[pageId] = currentPage;
-    }
     // pageOrder를 _draft에 동기화
     _draft._pageOrder = [...MK_CONFIG.pageOrder];
     Store.saveConfig(_draft);
