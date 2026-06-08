@@ -447,6 +447,14 @@ const Admin = (() => {
   }
 
   function saveProgram(pageId) {
+    // 저장 직전 localStorage 최신값으로 _draft 재동기화
+    // — 메인 편집기에서 저장한 내용을 admin _draft가 덮어쓰는 문제 방지
+    const latest = Store.loadConfig();
+    if (latest) {
+      const currentPage = _draft.pages[pageId];
+      _draft = JSON.parse(JSON.stringify(latest));
+      if (currentPage) _draft.pages[pageId] = currentPage;
+    }
     // pageOrder를 _draft에 동기화
     _draft._pageOrder = [...MK_CONFIG.pageOrder];
     Store.saveConfig(_draft);
