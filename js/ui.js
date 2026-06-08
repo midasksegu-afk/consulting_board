@@ -1730,6 +1730,7 @@ const UI = (() => {
         if (el.id) UI._syncSizeBtn(el.id);
         if (el.id) UI._syncColorBtn(el.id);
       });
+      _applyPasteGuard(modal);
     }, 0);
   }
 
@@ -1980,6 +1981,22 @@ const UI = (() => {
     el.style.display = isOpen ? 'none' : 'block';
   }
 
+  // paste 서식 오염 차단 — container 내 모든 .rich-editor에 등록
+  // plain text만 삽입, 외부 font-family·text-align·color·font-size 전부 차단
+  // 내부 툴바(bold/italic/color 등) 기능은 그대로 유지
+  function _applyPasteGuard(container) {
+    container.querySelectorAll('.rich-editor').forEach(el => {
+      // 중복 등록 방지
+      if (el._pasteGuarded) return;
+      el._pasteGuarded = true;
+      el.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      });
+    });
+  }
+
   // contenteditable 명령 실행
   function _richCmd(cmd, val, targetId) {
     if (typeof val === 'string' && val.startsWith('#')) {
@@ -2205,12 +2222,13 @@ const UI = (() => {
       </div>`;
 
     document.body.appendChild(modal);
-    // 편집기 열자마자 폰트 크기 버튼 활성화
+    // 편집기 열자마자 폰트 크기 버튼 활성화 + paste 서식 차단 등록
     setTimeout(() => {
       modal.querySelectorAll('.rich-editor').forEach(el => {
         if (el.id) UI._syncSizeBtn(el.id);
         if (el.id) UI._syncColorBtn(el.id);
       });
+      _applyPasteGuard(modal);
     }, 0);
   }
 
@@ -2290,6 +2308,9 @@ const UI = (() => {
     if (pr) pr.innerHTML = _buildProgramRows(pageId);
     if (cr) cr.innerHTML = _buildCondRows(pageId);
     if (nr) nr.innerHTML = _buildNoteRows(pageId);
+    // 새로 생긴 rich-editor에도 paste 서식 차단 등록
+    const modal = document.getElementById('page-edit-modal');
+    if (modal) _applyPasteGuard(modal);
   }
 
   // 프로그램 항목 추가/삭제
