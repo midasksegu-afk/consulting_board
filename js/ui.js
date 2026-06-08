@@ -737,7 +737,7 @@ const UI = (() => {
           <span class="p-title">${titleHtml}</span>
         </div>
         <div class="p-desc">
-          ${(p.items || []).filter(i => i && i !== '<br>').map(i => `<div class="p-item-line">${i}</div>`).join('')}
+          ${(p.items || []).map(i => `<div class="p-item-line">${i}</div>`).join('')}
         </div>
       </div>`;
     }).join('');
@@ -1992,7 +1992,11 @@ const UI = (() => {
       el.addEventListener('paste', function(e) {
         e.preventDefault();
         const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-        document.execCommand('insertText', false, text);
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        selection.deleteFromDocument();
+        selection.getRangeAt(0).insertNode(document.createTextNode(text));
+        selection.collapseToEnd();
       });
     });
   }
