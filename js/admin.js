@@ -22,6 +22,7 @@ const Admin = (() => {
     const input = document.getElementById('pin-input')?.value;
     if (Store.verifyPin(input)) {
       localStorage.setItem('mk_admin_auth', '1');  // localStorage — 메인화면 자물쇠와 공유
+      initDraft();
       document.getElementById('pin-screen').style.display = 'none';
       document.getElementById('admin-body').style.display = 'flex';
       switchTab('tab-program');
@@ -38,7 +39,6 @@ const Admin = (() => {
    * 2. 탭 전환
    * ============================================================ */
   function switchTab(tabId) {
-    initDraft();  // 탭 전환 시마다 최신 localStorage로 _draft 갱신 — 메인 편집기 덮어쓰기 방지
     _currentTab = tabId;
     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
@@ -441,14 +441,40 @@ const Admin = (() => {
     _draft.overviewNotice = value;
   }
 
+  /* ============================================================
+   * 저장 전 최신 localStorage 동기화 헬퍼
+   * — 관리자가 편집한 fields만 최신 데이터 위에 얹어서 덮어쓰기 방지
+   * pageId: 페이지 단위 필드일 경우 해당 pageId, 없으면 null
+   * fields: 복원할 필드명 배열, null이면 최상위 _draft 전체 보존
+   * ============================================================ */
+  function _syncBeforeSave(pageId, fields) {
+    const latest = Store.loadConfig();
+    if (!latest) return;
+    if (pageId && fields) {
+      // 관리자가 편집한 페이지 필드만 보존
+      const cur = _draft.pages[pageId];
+      _draft = JSON.parse(JSON.stringify(latest));
+      if (cur && _draft.pages[pageId]) {
+        fields.forEach(f => { _draft.pages[pageId][f] = cur[f]; });
+      }
+    } else if (fields) {
+      // 최상위 필드 보존 (pages 외)
+      const preserved = {};
+      fields.forEach(f => { preserved[f] = _draft[f]; });
+      _draft = JSON.parse(JSON.stringify(latest));
+      fields.forEach(f => { _draft[f] = preserved[f]; });
+    }
+    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+  }
+
   function saveOverview() {
+    _syncBeforeSave(null, ['overviewNotice']);
     Store.saveConfig(_draft);
     showMsg('✓ 전체 개요가 저장되었습니다.', true);
   }
 
   function saveProgram(pageId) {
-    // pageOrder를 _draft에 동기화
-    _draft._pageOrder = [...MK_CONFIG.pageOrder];
+    _syncBeforeSave(pageId, ['prices', 'sbLabel', 'sbIcon']);
     Store.saveConfig(_draft);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
     renderProgramTab();
@@ -788,6 +814,7 @@ const Admin = (() => {
     const page = _draft.pages[_contentPageId];
     const label = page ? page.sbLabel : '콘텐츠';
     if (!confirm(`"${label}" 콘텐츠를 저장하시겠습니까?`)) return;
+    _syncBeforeSave(_contentPageId, ['programs', 'conditions', 'notes']);
     Store.saveConfig(_draft);
     showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true);
   }
@@ -1082,6 +1109,7 @@ const Admin = (() => {
 
   function saveDcDiscount() {
     if (!confirm('DC 할인율을 저장하시겠습니까?')) return;
+    _syncBeforeSave(null, ['discount']);
     Store.saveConfig(_draft);
     showMsg('✓ DC 할인율이 저장되었습니다.', true);
   }
@@ -1371,6 +1399,7 @@ const Admin = (() => {
   function saveDiscountSection(section) {
     const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액', semesterDc: '2학기 DC 차감 금액', specialMgmt: '대표특별관리' };
     if (!confirm(`${labelMap[section] || section} 설정을 저장하시겠습니까?`)) return;
+    _syncBeforeSave(null, ['discount']);
     Store.saveConfig(_draft);
     showMsg(`✓ ${labelMap[section] || section} 설정이 저장되었습니다.`, true);
   }
@@ -1380,6 +1409,7 @@ const Admin = (() => {
    * ============================================================ */
   function saveAll() {
     if (!confirm('전체 설정을 저장하시겠습니까?')) return;
+    _syncBeforeSave(null, null);
     Store.saveConfig(_draft);
     showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true);
   }
@@ -1428,6 +1458,7 @@ const Admin = (() => {
   }
 
   function saveGroupLabels() {
+    _syncBeforeSave(null, ['groups']);
     Store.saveConfig(_draft);
     showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
     renderProgramTab();
