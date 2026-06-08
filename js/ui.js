@@ -2254,7 +2254,7 @@ const UI = (() => {
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
           onclick="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
           onkeyup="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
-          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(v=>v&&v!=='<br>').length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(v=>v&&v!=='<br>'):[this.innerHTML.trim()]"
+          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=this.innerHTML.split(/<\/?div>|<\/?p>|<br\s*\/?>/).map(s=>s.trim()).filter(v=>v&&v!=='<br>')"
         >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
       </div>`;
     }).join('');
