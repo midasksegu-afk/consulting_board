@@ -2474,6 +2474,11 @@ const UI = (() => {
 
   function _savePageEdit(pageId) {
     if (!confirm('수정사항을 반영하시겠습니까?')) return;
+    // 저장 직전 — 편집기 DOM을 직접 읽어 items 갱신 (타이핑 없이 저장한 경우도 정확히 반영)
+    (window.mkEditDraft.pages[pageId]?.programs || []).forEach((p, idx) => {
+      const el = document.getElementById(`prog-items-${pageId}-${idx}`);
+      if (el) p.items = _collectLines(el);
+    });
     _editDraft = window.mkEditDraft;
     showToast('저장 중...', 'success');
     Store.saveConfig(_editDraft, (ok) => {
