@@ -737,7 +737,7 @@ const UI = (() => {
           <span class="p-title">${titleHtml}</span>
         </div>
         <div class="p-desc">
-          ${(p.items || []).map(i => `<div class="p-item-line">${i}</div>`).join('')}
+          ${(p.items || []).filter(i => i && i.trim()).map(i => `<div class="p-item-line">${i}</div>`).join('')}
         </div>
       </div>`;
     }).join('');
@@ -1729,6 +1729,7 @@ const UI = (() => {
       modal.querySelectorAll('.rich-editor').forEach(el => {
         if (el.id) UI._syncSizeBtn(el.id);
         if (el.id) UI._syncColorBtn(el.id);
+        UI._attachPasteGuard(el);
       });
     }, 0);
   }
@@ -2205,11 +2206,12 @@ const UI = (() => {
       </div>`;
 
     document.body.appendChild(modal);
-    // 편집기 열자마자 폰트 크기 버튼 활성화
+    // 편집기 열자마자 폰트 크기 버튼 활성화 + 붙여넣기 가드 등록
     setTimeout(() => {
       modal.querySelectorAll('.rich-editor').forEach(el => {
         if (el.id) UI._syncSizeBtn(el.id);
         if (el.id) UI._syncColorBtn(el.id);
+        UI._attachPasteGuard(el);
       });
     }, 0);
   }
@@ -2217,6 +2219,40 @@ const UI = (() => {
   /* ============================================================
    * rows 생성 독립 함수 — draft 기반, 모달/DOM 부분 업데이트 공용
    * ============================================================ */
+  // contenteditable 줄 수집 헬퍼
+  // 브라우저가 첫 줄을 텍스트노드로 만들고 이후 줄을 <div>로 만드는 구조를 모두 처리
+  function _collectLines(el) {
+    const lines = [];
+    el.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        // 첫 줄이 텍스트노드인 경우
+        const t = node.textContent;
+        if (t) lines.push(t);
+      } else if (node.nodeName === 'DIV' || node.nodeName === 'P') {
+        // 일반 줄 — innerHTML 그대로 (서식 보존)
+        const h = node.innerHTML.trim();
+        if (h && h !== '<br>') lines.push(h);
+      } else {
+        // span 등 인라인 요소가 최상위에 온 경우 (서식 적용된 첫 줄)
+        const h = node.outerHTML;
+        if (h) lines.push(h);
+      }
+    });
+    return lines;
+  }
+
+  // 붙여넣기 서식 오염 방지 헬퍼
+  // contenteditable 요소에 한 번만 등록 — 외부 HTML 서식을 plain text로 변환 후 삽입
+  function _attachPasteGuard(el) {
+    if (!el || el._pasteGuardAttached) return;
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    });
+    el._pasteGuardAttached = true;
+  }
+
   function _buildProgramRows(pageId) {
     return (window.mkEditDraft.pages[pageId].programs || []).map((p, idx) => {
       const tid = `prog-items-${pageId}-${idx}`;
@@ -2236,7 +2272,7 @@ const UI = (() => {
           style="border-radius:0 0 var(--radius-sm) var(--radius-sm);min-height:60px;padding:8px;"
           onclick="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
           onkeyup="UI._syncSizeBtn('${tid}');UI._syncColorBtn('${tid}')"
-          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean).length?Array.from(this.querySelectorAll('div,p')).map(e=>e.innerHTML.trim()).filter(Boolean):[this.innerHTML.trim()]"
+          oninput="window.mkEditDraft.pages['${pageId}'].programs[${idx}].items=UI._collectLines(this)"
         >${(p.items || []).map(i => `<div>${i}</div>`).join('')}</div>
       </div>`;
     }).join('');
@@ -2530,9 +2566,10 @@ const UI = (() => {
     getCurrentStudentKey: () => _currentStudentKey,
     _richCmd,
     _syncSizeBtn, _syncColorBtn, _syncOvIconBtns,
-    _insertText,
+    _insertText, _attachPasteGuard,
     _toggleScPopup,
     _buildProgramRows, _buildCondRows, _buildNoteRows, _refreshRows,
+    _collectLines,
     _addProgram, _removeProgram,
     _addCond, _removeCond,
     _addNote, _removeNote,

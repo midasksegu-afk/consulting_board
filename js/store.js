@@ -135,8 +135,11 @@ const Store = (() => {
    *  syncConfigFromServer : Supabase → localStorage 동기화 (초기화 시 1회 호출)
    * ============================================================ */
   function saveConfig(data, onSaved) {
+    const savedAt = new Date().toISOString();
     _write(KEYS.CONFIG, data);
-    // Supabase 백그라운드 저장 — 완료 후 CONFIG_SAVED_AT 기록 + 콜백 실행
+    // 로컬 저장 즉시 타임스탬프 기록 — Supabase 완료 전 강력새로고침 시 롤백 방지
+    localStorage.setItem(KEYS.CONFIG_SAVED_AT, savedAt);
+    // Supabase 백그라운드 저장 — 완료 후 콜백 실행
     fetch(`${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`, {
       method: 'GET',
       headers: _headers({ 'Accept': 'application/json' }),
@@ -147,15 +150,12 @@ const Store = (() => {
       const url    = method === 'PATCH'
         ? `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?key=eq.settings`
         : `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}`;
-      const savedAt = new Date().toISOString();
       return fetch(url, {
         method,
         headers: _headers({ 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ key: 'settings', data, updated_at: savedAt }),
       }).then(res => {
         if (res.ok) {
-          // Supabase 완료 후에만 시각 기록 (타이밍 버그 수정)
-          localStorage.setItem(KEYS.CONFIG_SAVED_AT, savedAt);
           _configChannel?.postMessage({ type: 'config_updated' });
           if (typeof onSaved === 'function') onSaved(true);
         } else {

@@ -442,14 +442,36 @@ const Admin = (() => {
   }
 
   function saveOverview() {
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      base.overviewNotice = _draft.overviewNotice;
+      // ovCard.tree 편집분 반영
+      Object.keys(_draft.pages || {}).forEach(id => {
+        if (_draft.pages[id].ovCard && base.pages?.[id]) {
+          base.pages[id].ovCard = _draft.pages[id].ovCard;
+        }
+      });
+    });
+    Store.saveConfig(merged);
     showMsg('✓ 전체 개요가 저장되었습니다.', true);
   }
 
   function saveProgram(pageId) {
-    // pageOrder를 _draft에 동기화
-    _draft._pageOrder = [...MK_CONFIG.pageOrder];
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      if (base.pages && _draft.pages?.[pageId]) {
+        const src = _draft.pages[pageId];
+        const tgt = base.pages[pageId] || {};
+        // 가격·구조 필드만 얹기 — programs/conditions/notes/ovCard는 메인 편집기 소관
+        tgt.prices    = src.prices;
+        tgt.sbLabel   = src.sbLabel;
+        tgt.sbIcon    = src.sbIcon;
+        tgt.iconClass = src.iconClass;
+        tgt.group     = src.group;
+        tgt.isSpecial = src.isSpecial;
+        tgt.isMain    = src.isMain;
+        base.pages[pageId] = tgt;
+      }
+    });
+    Store.saveConfig(merged);
     showMsg(`✓ "${_draft.pages[pageId]?.sbLabel}" 저장되었습니다.`, true);
     renderProgramTab();
     if (pageId) loadProgramPage(pageId);
@@ -788,7 +810,14 @@ const Admin = (() => {
     const page = _draft.pages[_contentPageId];
     const label = page ? page.sbLabel : '콘텐츠';
     if (!confirm(`"${label}" 콘텐츠를 저장하시겠습니까?`)) return;
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      if (base.pages?.[_contentPageId] && page) {
+        base.pages[_contentPageId].programs  = page.programs;
+        base.pages[_contentPageId].conditions = page.conditions;
+        base.pages[_contentPageId].notes      = page.notes;
+      }
+    });
+    Store.saveConfig(merged);
     showMsg(`✓ "${label}" 콘텐츠가 저장되었습니다.`, true);
   }
 
@@ -1082,7 +1111,10 @@ const Admin = (() => {
 
   function saveDcDiscount() {
     if (!confirm('DC 할인율을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      base.discount = _draft.discount;
+    });
+    Store.saveConfig(merged);
     showMsg('✓ DC 할인율이 저장되었습니다.', true);
   }
 
@@ -1371,7 +1403,10 @@ const Admin = (() => {
   function saveDiscountSection(section) {
     const labelMap = { roadmap: '로드맵', individual: '개별', selectDc: '선택가 DC', semester: '2학기 금액', semesterDc: '2학기 DC 차감 금액', specialMgmt: '대표특별관리' };
     if (!confirm(`${labelMap[section] || section} 설정을 저장하시겠습니까?`)) return;
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      base.discount = _draft.discount;
+    });
+    Store.saveConfig(merged);
     showMsg(`✓ ${labelMap[section] || section} 설정이 저장되었습니다.`, true);
   }
 
@@ -1380,7 +1415,11 @@ const Admin = (() => {
    * ============================================================ */
   function saveAll() {
     if (!confirm('전체 설정을 저장하시겠습니까?')) return;
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      // 전체 저장 — _draft 모든 필드를 베이스에 덮어씀
+      Object.assign(base, _draft);
+    });
+    Store.saveConfig(merged);
     showMsg('✓ 전체 설정이 저장되었습니다. 메인 화면을 새로고침하면 반영됩니다.', true);
   }
 
@@ -1428,7 +1467,10 @@ const Admin = (() => {
   }
 
   function saveGroupLabels() {
-    Store.saveConfig(_draft);
+    const merged = _mergedDraft(base => {
+      base.groups = _draft.groups;
+    });
+    Store.saveConfig(merged);
     showMsg('✓ 그룹 헤더명이 저장되었습니다.', true);
     renderProgramTab();
   }
@@ -1441,6 +1483,26 @@ const Admin = (() => {
     }
     _draft    = JSON.parse(JSON.stringify(MK_CONFIG.resolve()));
     _unlocked = true;
+  }
+
+  /* ============================================================
+   * 저장 직전 머지 헬퍼
+   * 최신 localStorage를 베이스로 삼고, _draft의 편집 필드만 덮어씌워 반환.
+   * 메인(ui.js)이 저장한 내용과 관리자 편집 내용이 공존하도록 보장.
+   * applyFn(base) : base 객체에 _draft 편집분을 직접 반영하는 함수
+   * ============================================================ */
+  function _mergedDraft(applyFn) {
+    // 최신 localStorage 로드 — 메인이 저장한 내용 포함
+    const latest = Store.loadConfig();
+    // localStorage에 아무것도 없으면 _draft 그대로 사용
+    const base = latest
+      ? JSON.parse(JSON.stringify(latest))
+      : JSON.parse(JSON.stringify(_draft));
+    // _pageOrder는 항상 MK_CONFIG 기준으로 동기화
+    base._pageOrder = [...MK_CONFIG.pageOrder];
+    // 관리자 편집분 얹기
+    applyFn(base);
+    return base;
   }
 
   return {
