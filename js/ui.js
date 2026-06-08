@@ -737,7 +737,7 @@ const UI = (() => {
           <span class="p-title">${titleHtml}</span>
         </div>
         <div class="p-desc">
-          ${(p.items || []).map(i => `<div class="p-item-line">${i}</div>`).join('')}
+          ${(p.items || []).filter(i => i && i !== '<br>').map(i => `<div class="p-item-line">${i}</div>`).join('')}
         </div>
       </div>`;
     }).join('');
