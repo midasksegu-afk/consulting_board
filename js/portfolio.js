@@ -247,8 +247,9 @@ const Portfolio = (() => {
       const page = config.pages[pageId];
       if (!page) return '';
 
-      // 섹션 라벨 (A. / B. 등) — sbLabel 앞 글자
-      const secLetter = (page.sbLabel || '').substring(0, 2);
+      // 섹션 라벨 (A. / B. 등) — sbLabel 앞 글자 / individual은 고정
+      const isIndividual = page.group === 'individual';
+      const secLetter = isIndividual ? '개별' : (page.sbLabel || '').substring(0, 2);
       const secGroup  = page.group === 'roadmap' ? '학년 관리 로드맵'
                       : page.group === 'individual' ? '개별 관리 컨설팅'
                       : '대입 전략 컨설팅';
@@ -336,11 +337,11 @@ const Portfolio = (() => {
         <div class="dt-header-line"></div>
 
         <div class="dt-banner">
-          <div class="dt-banner-num">${secLetter}</div>
+          <div class="${isIndividual ? 'dt-banner-num-ind' : 'dt-banner-num'}">${isIndividual ? '개별<br>관리' : secLetter}</div>
           <div class="dt-banner-divider"></div>
           <div style="flex:1">
-            <div class="dt-banner-label">SECTION ${secLetter.replace('.','').trim()} · ${secGroup}</div>
-            <div class="dt-banner-title">${(page.sbLabel || '').substring(3)}</div>
+            <div class="dt-banner-label">SECTION ${isIndividual ? '개별' : secLetter.replace('.','').trim()} · ${secGroup}</div>
+            <div class="dt-banner-title">${isIndividual ? (page.sbLabel || '') : (page.sbLabel || '').substring(3)}</div>
             <div class="dt-banner-sub">${page.subtitle || ''}</div>
           </div>
           ${dcBadgeHtml}
@@ -468,6 +469,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-badge-outline{font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;color:var(--dt-deep);line-height:1;flex-shrink:0}
+.dt-banner-num-ind{font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:700;color:var(--dt-deep);line-height:1.3;flex-shrink:0;text-align:center}
 .dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
 .dt-banner-label{font-family:'Noto Sans KR',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.24em;color:var(--dt-acc);margin-bottom:3px}
 .dt-banner-title{font-size:17px;font-weight:800;color:var(--dt-ink);letter-spacing:-.015em}
@@ -593,6 +595,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
 .dt-badge-outline{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--dt-acc);border:1px solid var(--dt-line);border-radius:3px;padding:4px 10px}
 .dt-banner{background:var(--dt-tint);border-bottom:1px solid var(--dt-line);padding:14px 28px;display:flex;align-items:center;gap:14px}
 .dt-banner-num{font-size:26px;font-weight:800;color:var(--dt-deep);line-height:1;flex-shrink:0}
+.dt-banner-num-ind{font-size:16px;font-weight:700;color:var(--dt-deep);line-height:1.3;flex-shrink:0;text-align:center}
 .dt-banner-divider{width:1px;height:32px;background:var(--dt-line);flex-shrink:0}
 .dt-banner-label{font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dt-acc);margin-bottom:3px}
 .dt-banner-title{font-size:17px;font-weight:800;color:var(--dt-ink);letter-spacing:-.015em}
