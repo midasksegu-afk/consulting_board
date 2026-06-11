@@ -248,7 +248,7 @@ const Portfolio = (() => {
       if (!page) return '';
 
       // 섹션 라벨 (A. / B. 등) — sbLabel 앞 글자 / individual은 고정
-      const isIndividual = pageId.startsWith('ind-');
+      const isIndividual = page.group === 'individual';
       const secLetter = isIndividual ? '개별' : (page.sbLabel || '').substring(0, 2);
       const secGroup  = page.group === 'roadmap' ? '학년 관리 로드맵'
                       : page.group === 'individual' ? '개별 관리 컨설팅'
