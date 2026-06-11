@@ -1523,7 +1523,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#15151A;padding
       { id: 'rm-d', label: 'D. 대면관리 (필수)',
         programs: [
           { title: '1. RPM 컨설팅 (Roadmap·Planning·Mentoring)',
-            desc: '❶ 교과 & 창체 세특 코칭 + 활동 방향 설계<br>❷ 동아리·진로 등 창체 주제 선정이 막힐 경우 구체적 실행 방안 제시',
+            desc: '❶ 교과 & 창체 세특 코칭 + 활동 방향 설계<br>❷ 동아리·진로 등 창체 주제 선정이 막힐 경우 구체적 실행 방안 제시<br>❸ 단, 수행관리 ONLY 회원 창체(자율, 동아리, 진로) 활동에 대한 주제 추천은 세특구원자 6개월~1년 기간 구독자에 한해 지원.',
             freq: '연 관리' },
           { title: '2. 성적 누적 분석',
             desc: '❶ 내신/모의성적 누적 및 전형별 가중치 관리<br>❷ 부족 과목 학습 운영 전략<br>❸ 목표 대학 포트폴리오 누적 관리',
