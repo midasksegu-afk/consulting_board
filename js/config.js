@@ -15,7 +15,7 @@ const MK_CONFIG = {
    * ============================================================ */
   app: {
     brandName:   'MK MIDAS K',
-    brandSub:    '학생부 관리 컨설팅',
+    brandSub:    '학생부 전략 컨설팅',
     brandEn:     'Education Consulting',
     license:     '대구광역시 교육청 컨설팅부문 정식인가 제5513호',
     copyright:   '© 2025 마이더스K교육컨설팅',
@@ -50,7 +50,7 @@ const MK_CONFIG = {
    *    group 값은 calc.js / portfolio.js 에서 합산 키로 사용
    * ============================================================ */
   groups: {
-    roadmap:    { label: '학년 관리 로드맵',  sbSection: true },
+    roadmap:    { label: '학년 전략 로드맵',  sbSection: true },
     individual: { label: '개별 컨설팅',      sbSection: true },
     strategy:   { label: '대입 전략 컨설팅', sbSection: true },
   },
@@ -74,9 +74,9 @@ const MK_CONFIG = {
     'rm-a': {
       group:      'roadmap',
       sbIcon:     'ti-pencil',
-      sbLabel:    'A. 세특 관리',
-      title:      'A. 세특 관리',
-      subtitle:   '생기부 기재 관리 (자기평가서 / 세특) — 심화 확장 스토리 구축',
+      sbLabel:    'A. 세특 전략',
+      title:      'A. 세특 전략',
+      subtitle:   '생기부 기재 전략 (자기평가서 / 세특) — 심화 확장 스토리 구축',
       iconBg:     '#FFE3D4',
       iconColor:  '#C45000',
       iconClass:  'ti-pencil',
@@ -111,17 +111,17 @@ const MK_CONFIG = {
           items: [
             '국/수/영/사/과 교과, 자율/동아리/진로/행특',
             '진로 관련 교과목 지원',
-            '연결 주제는 기재관리 시 선별 추천',
+            '연결 주제는 기재전략 시 선별 추천',
           ],
         },
         {
           num: '❸',
           title: '심화 확장 스토리 구축',
           items: [
-            'N차 심화 탐구 연결 (기재관리 시 선별)',
+            'N차 심화 탐구 연결 (기재전략 시 선별)',
             '이전 활동을 심화 확장하는 수행 및 창체 활동 주제 + 보고서 설계도 제공',
             '학생부 분석 및 심화 확장 주제 추천 — 생기부 확정본 기준 작성',
-            '연간관리 로드맵 회원 전용 게시판 운영',
+            '연간전략 로드맵 회원 전용 게시판 운영',
           ],
         },
       ],
@@ -130,7 +130,7 @@ const MK_CONFIG = {
           title: '지원 교과 영역',
           type: 'tags+text',
           tags: ['국어','수학','영어','사회','과학','자율활동','동아리','진로','행특','진로과목'],
-          text: '진로 관련 교과목 지원. 연결 주제는 기재관리 시 선별 추천.',
+          text: '진로 관련 교과목 지원. 연결 주제는 기재전략 시 선별 추천.',
         },
         {
           title: '운영 방식',
@@ -139,7 +139,7 @@ const MK_CONFIG = {
         },
       ],
       notes: [
-        { color: 'blue',  icon: 'ti-info-circle', text: '기재관리 개별 회원은 세특 전략 개별 컨설팅으로 진행 가능 (+40만원 추가). 심화 확장 스토리는 로드맵 회원 기본 제공.' },
+        { color: 'blue',  icon: 'ti-info-circle', text: '기재전략 개별 회원은 세특 전략 개별 컨설팅으로 진행 가능 (+40만원 추가). 심화 확장 스토리는 로드맵 회원 기본 제공.' },
         { color: 'red',   icon: 'ti-ban',         text: '보고서 미접수로 인한 세특 기재 불가 시, 가입 기간 경과 후에는 환불 및 다른 컨설팅으로 변경이 불가합니다.' },
       ],
     },
@@ -148,8 +148,8 @@ const MK_CONFIG = {
     'rm-b': {
       group:      'roadmap',
       sbIcon:     'ti-layout-list',
-      sbLabel:    'B. 수행 관리',
-      title:      'B. 수행 관리',
+      sbLabel:    'B. 수행 전략',
+      title:      'B. 수행 전략',
       subtitle:   '수행 조건 분석 / 방향성 코칭 / 보고서 설계도',
       iconBg:     '#FFD3E1',
       iconColor:  '#b01a4e',
@@ -177,7 +177,7 @@ const MK_CONFIG = {
       ],
       conditions: [
         { title: '지원 범위', type: 'tags+text', tags: ['국어','수학','영어','사회','과학','진로과목'], text: '교과 세특 전 영역. 주요교과 영역별 최대 2건 제공.' },
-        { title: '운영 방식', type: 'text', text: '수행 공지를 밴드에 업로드하면 자동 지원. 수행관리와 주제 추천은 별도 과금.' },
+        { title: '운영 방식', type: 'text', text: '수행 공지를 밴드에 업로드하면 자동 지원. 수행전략와 주제 추천은 별도 과금.' },
       ],
       notes: [
         { color: 'red', icon: 'ti-ban', text: '보고서 대리 작성, 중간 첨삭 등 수행평가 공정성을 저해하는 지원은 불가합니다. (교육청 단속사항)' },
@@ -279,8 +279,8 @@ const MK_CONFIG = {
     'rm-e': {
       group:      'roadmap',
       sbIcon:     'ti-settings',
-      sbLabel:    'E. 기본 관리',
-      title:      'E. 기본 관리',
+      sbLabel:    'E. 기본 전략',
+      title:      'E. 기본 전략',
       subtitle:   '학종 특강 / 입시 행정 관리',
       iconBg:     '#FFD3E1',
       iconColor:  '#8b1c3a',
@@ -312,8 +312,8 @@ const MK_CONFIG = {
     'ind-a': {
       group:      'individual',
       sbIcon:     'ti-pencil',
-      sbLabel:    'A. 기재 관리',
-      title:      '[개별] A. 기재 관리',
+      sbLabel:    'A. 기재 전략',
+      title:      '[개별] A. 기재 전략',
       subtitle:   '자기평가서·세특 기재 요약 / 누적 관리',
       iconBg:     '#FFE3D4',
       iconColor:  '#C45000',
@@ -338,8 +338,8 @@ const MK_CONFIG = {
     'ind-b': {
       group:      'individual',
       sbIcon:     'ti-test-pipe',
-      sbLabel:    'B. 수행 관리',
-      title:      '[개별] B. 수행 관리',
+      sbLabel:    'B. 수행 전략',
+      title:      '[개별] B. 수행 전략',
       subtitle:   '수행 방향성 코칭 / 보고서 설계도',
       iconBg:     '#e4f7ef',
       iconColor:  '#0a5c35',
@@ -383,7 +383,7 @@ const MK_CONFIG = {
         { title: '대상 학년', type: 'text', text: '전년 생기부가 있는 고2~고3 학생 대상. 고1은 기재 정리 이후 연결 주제 추천.' },
       ],
       notes: [
-        { color: 'blue', icon: 'ti-info-circle', text: '로드맵 회원은 기본 제공. 기재관리 개별 회원은 +40만원 추가.' },
+        { color: 'blue', icon: 'ti-info-circle', text: '로드맵 회원은 기본 제공. 기재전략 개별 회원은 +40만원 추가.' },
       ],
     },
 
