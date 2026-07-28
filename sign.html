@@ -1018,9 +1018,9 @@
         tabContainer.appendChild(divider);
 
         const bTabs = [
-          { tab: 'jaeji',   icon: '📝', label: '기재관리(개별)',      sub: '학부모 서명', pageId: 'ind-a' },
-          { tab: 'suhaeng', icon: '🔬', label: '수행관리(개별)',      sub: '학부모 서명', pageId: 'ind-b' },
-          { tab: 'gyogwa',  icon: '📊', label: '교과+정시관리(개별)', sub: '학부모 서명', pageId: null   },
+          { tab: 'jaeji',   icon: '📝', label: '기재전략(개별)',      sub: '학부모 서명', pageId: 'ind-a' },
+          { tab: 'suhaeng', icon: '🔬', label: '수행전략(개별)',      sub: '학부모 서명', pageId: 'ind-b' },
+          { tab: 'gyogwa',  icon: '📊', label: '교과+정시전략(개별)', sub: '학부모 서명', pageId: null   },
         ];
         bTabs.forEach(({ tab, icon, label, sub, pageId }) => {
           const isActive = pageId ? selPages2.includes(pageId) : hasGyogwa;
