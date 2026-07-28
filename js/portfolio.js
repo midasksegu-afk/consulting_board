@@ -185,7 +185,7 @@ const Portfolio = (() => {
             <span class="pf-brand">마이더스K교육컨설팅</span>
             <span class="pf-teachers-box">티처스 컨설턴트</span>
           </div>
-          <div class="pf-main-title">학생부 관리 컨설팅 포트폴리오</div>
+          <div class="pf-main-title">학생부 전략 컨설팅 포트폴리오</div>
         </div>
 
         <div class="pf-info-card">
@@ -214,7 +214,7 @@ const Portfolio = (() => {
 
         <div class="pf-footer">
           <div class="pf-footer-left">
-            <div class="pf-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div>
+            <div class="pf-footer-brand">티처스 컨설턴트의 학생부 전략 컨설팅</div>
             <div class="pf-footer-contact">
               <span class="pf-footer-ci">☎ 053-782-0331</span>
               <span class="pf-footer-ci">월~토 AM 10:00 - PM 18:30</span>
@@ -251,8 +251,8 @@ const Portfolio = (() => {
       const isIndividual = page.group === 'individual';
       const isStrategy   = page.group === 'strategy';
       const secLetter = (isIndividual || isStrategy) ? '' : (page.sbLabel || '').substring(0, 2);
-      const secGroup  = page.group === 'roadmap' ? '학년 관리 로드맵'
-                      : page.group === 'individual' ? '개별 관리 컨설팅'
+      const secGroup  = page.group === 'roadmap' ? '학년 전략 로드맵'
+                      : page.group === 'individual' ? '개별 전략 컨설팅'
                       : '대입 전략 컨설팅';
 
       // 01 프로그램 구성
@@ -338,7 +338,7 @@ const Portfolio = (() => {
         <div class="dt-header-line"></div>
 
         <div class="dt-banner">
-          <div class="${isIndividual ? 'dt-banner-num-ind' : isStrategy ? 'dt-banner-num-str' : 'dt-banner-num'}">${isIndividual ? '개별<br>관리' : isStrategy ? '대입<br>전략' : secLetter}</div>
+          <div class="${isIndividual ? 'dt-banner-num-ind' : isStrategy ? 'dt-banner-num-str' : 'dt-banner-num'}">${isIndividual ? '개별<br>전략' : isStrategy ? '대입<br>전략' : secLetter}</div>
           <div class="dt-banner-divider"></div>
           <div style="flex:1">
             <div class="dt-banner-label">SECTION ${isIndividual ? '개별' : isStrategy ? '대입전략' : secLetter.replace('.','').trim()} · ${secGroup}</div>
@@ -360,7 +360,7 @@ const Portfolio = (() => {
 
         <div class="dt-footer">
           <div>
-            <div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div>
+            <div class="dt-footer-brand">티처스 컨설턴트의 학생부 전략 컨설팅</div>
             <div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div>
           </div>
           <div class="dt-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
@@ -731,8 +731,8 @@ mkApplyZoom();
   function _buildChecklistPage(selectedPageIds, studentKey) {
     const config  = MK_CONFIG.resolve();
     const groups  = [
-      { key: 'roadmap',    label: '학년 관리 로드맵' },
-      { key: 'individual', label: '개별 관리 컨설팅' },
+      { key: 'roadmap',    label: '학년 전략 로드맵' },
+      { key: 'individual', label: '개별 전략 컨설팅' },
       { key: 'strategy',   label: '대입 전략 컨설팅' },
     ];
 
@@ -788,7 +788,7 @@ mkApplyZoom();
         </div>
         ${groupsHtml}
         <div class="dt-footer" style="margin-top:auto">
-          <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
+          <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 전략 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
           <div class="dt-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
         </div>
       </div>`;
@@ -849,7 +849,7 @@ mkApplyZoom();
           <div class="it-EXPERT-text">유웨이 · 진학사 대입컨설턴트 출신 &nbsp;|&nbsp; 채널A \'성적을 부탁해 티처스\' 대구 의대편 컨설턴트</div>
         </div>
         <div class="dt-footer">
-          <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 관리 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
+          <div><div class="dt-footer-brand">티처스 컨설턴트의 학생부 전략 컨설팅</div><div class="dt-footer-contact">☎ 053-782-0331 · 월~토 AM 10:00 – PM 18:30</div></div>
           <div class="dt-footer-badge">대구광역시 교육청<br>정식인가 제5513호</div>
         </div>
       </div>`;
